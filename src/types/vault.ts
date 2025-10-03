@@ -13,6 +13,7 @@ export interface PendingWithdrawal {
   createdAt: string;
   claimAt: string;
   estSolOut: number;
+  txUrl?: string;
 }
 
 // Complete vault statistics
@@ -153,4 +154,37 @@ export interface WithdrawPreview {
   estSOL: number;
   availableAt: Date;
   queuePosition?: number;
+}
+
+// Portfolio types
+export type PortfolioEventTag = "Deposit" | "WithdrawRequest" | "Claim";
+
+export interface PortfolioEvent {
+  id: string;
+  tag: PortfolioEventTag;
+  ts: string;
+  amountSol?: number;
+  shares?: number;
+  ppsAt?: number;
+  txUrl: string;
+  status?: "pending" | "success";
+}
+
+export interface PortfolioSummary {
+  wallet: string;
+  sharesTotal: number;
+  sharesUnlocked: number;
+  sharesLocked: number;
+  currentValueSol: number;
+  currentValueUsd: number;
+  costBasisSol: number;
+  unrealizedSol: number;
+  realizedSol: number;
+  nextUnlock?: { date: string; shares: number };
+  allUnlocks?: Array<{ date: string; shares: number }>;
+}
+
+export interface PpsPoint {
+  t: string;
+  pps: number;
 }
