@@ -1,35 +1,60 @@
-import { getMockVaultStats, getMockVaultEvents } from "@/lib/solana/mock-data";
-import { deriveFromEvents } from "@/lib/derive";
-import type { VaultStats, VaultEvent } from "@/types/vault";
+import { getMockVaultStats, getMockVaultEvents, getMockCollateralSnapshot, getMockParamChanges } from "@/lib/solana/mock-data";
+import type { VaultStats, VaultEvent, CollateralSnapshot, ParamChange, DerivedMetrics, ReconciliationData } from "@/types/vault";
 
-export function useTransparency() {
-  // Wire to existing mocks
-  const stats: VaultStats = getMockVaultStats();
-  const events: VaultEvent[] = getMockVaultEvents();
+export function deriveFromEvents(events: VaultEvent[]): DerivedMetrics {
+  const sorted = [...events].sort((a, b) => +new Date(a.ts) - +new Date(b.ts));
+  let assets = 0;
+  let supply = 0;
+  const ppsSeries: { t: string; pps: number }[] = [];
 
-  // Derive PPS and APY from events
-  const { seriesPps, seriesApy } = deriveFromEvents(events);
+  for (const ev of sorted) {
+    if (ev.tag === "Deposit") {
+      assets += ev.amountSol ?? 0;
+      supply += ev.shares ?? 0;
+    } else if (ev.tag === "Claim") {
+      assets -= ev.amountSol ?? 0;
+      supply -= Math.abs(ev.shares ?? 0);
+    } else if (ev.tag === "Repayment") {
+      assets += ev.amountSol ?? 0;
+    }
+    const pps = supply > 0 ? assets / supply : 0;
+    ppsSeries.push({ t: ev.ts, pps });
+  }
 
-  // Download events as JSON
-  const downloadEvents = (filter?: unknown) => {
-    const dataStr = JSON.stringify(filter ? events : events, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `vault-events-${Date.now()}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  const roll = (windowDays: number) =>
+    ppsSeries.map((pt, i) => {
+      const j = Math.max(0, i - windowDays);
+      const basePps = ppsSeries[j]?.pps ?? 0;
+      const apr = basePps > 0 ? ((pt.pps / basePps - 1) * 365) / windowDays : 0;
+      return { t: pt.t, apr };
+    });
 
   return {
-    stats,
-    addresses: stats.addresses,
-    events,
-    derived: {
-      pricePerShareSeries: seriesPps,
-      apySeries: seriesApy,
-    },
-    downloadEvents,
+    ppsSeries,
+    apr7d: roll(7),
+    apr30d: roll(30),
+    assetsNow: assets,
+    supplyNow: supply,
+    ppsNow: supply > 0 ? assets / supply : 0,
   };
+}
+
+export function useTransparency() {
+  const stats: VaultStats = getMockVaultStats();
+  const snapshot: CollateralSnapshot = getMockCollateralSnapshot();
+  const events: VaultEvent[] = getMockVaultEvents();
+  const paramChanges: ParamChange[] = getMockParamChanges();
+
+  const derived = deriveFromEvents(events);
+  const reconciliation: ReconciliationData = {
+    assetsOnChain: derived.assetsNow,
+    supply: derived.supplyNow,
+    pps: derived.ppsNow,
+    tvl: stats.tvl,
+    delta: derived.assetsNow - stats.tvl,
+  };
+
+  const lastUpdated = new Date().toISOString();
+
+  return { stats, snapshot, events, paramChanges, derived, reconciliation, lastUpdated };
 }

@@ -8,6 +8,9 @@ import type {
   ShareLot,
   VaultStats,
   VaultEvent,
+  CollateralSnapshot,
+  CollateralItem,
+  ParamChange,
 } from "@/types/vault";
 
 // Mock Vault Contract Addresses
@@ -649,6 +652,156 @@ export const getMockPortfolioEvents = (wallet: string) => {
       ppsAt: 1.00,
       txUrl: `${baseUrl}/9M3N4O5pQrStUvWxYz1A2bCdEfGhIjKlMnOpQrStUvWx123456789MNO?cluster=${cluster}`,
       status: "success" as const,
+    },
+  ];
+};
+
+// Transparency mock data
+export const getMockCollateralSnapshot = (): CollateralSnapshot => {
+  const items: CollateralItem[] = [
+    {
+      id: "coll-1",
+      label: "Clinic A – Batch #1029",
+      kind: "Receivable",
+      notionalSol: 450000,
+      status: "performing",
+      maturityAt: new Date("2025-11-15T00:00:00Z").toISOString(),
+      lastPaymentAt: new Date("2025-09-29T00:00:00Z").toISOString(),
+      ltv: 0.85,
+      tags: ["Healthcare", "BR"],
+    },
+    {
+      id: "coll-2",
+      label: "Clinic B – Batch #1030",
+      kind: "Invoice",
+      notionalSol: 380000,
+      status: "performing",
+      maturityAt: new Date("2025-12-01T00:00:00Z").toISOString(),
+      lastPaymentAt: new Date("2025-09-23T00:00:00Z").toISOString(),
+      ltv: 0.82,
+      tags: ["Healthcare", "BR"],
+    },
+    {
+      id: "coll-3",
+      label: "Clinic C – Batch #1027",
+      kind: "Receivable",
+      notionalSol: 520000,
+      status: "matured",
+      maturityAt: new Date("2025-10-01T00:00:00Z").toISOString(),
+      lastPaymentAt: new Date("2025-09-16T00:00:00Z").toISOString(),
+      ltv: 0.88,
+      tags: ["Healthcare", "BR"],
+    },
+    {
+      id: "coll-4",
+      label: "Clinic D – Batch #1031",
+      kind: "Receivable",
+      notionalSol: 300000,
+      status: "performing",
+      maturityAt: new Date("2025-11-30T00:00:00Z").toISOString(),
+      lastPaymentAt: new Date("2025-09-29T00:00:00Z").toISOString(),
+      ltv: 0.80,
+      tags: ["Healthcare", "BR"],
+    },
+    {
+      id: "coll-5",
+      label: "Clinic E – Batch #1026",
+      kind: "Invoice",
+      notionalSol: 400000,
+      status: "repaid",
+      maturityAt: new Date("2025-09-20T00:00:00Z").toISOString(),
+      lastPaymentAt: new Date("2025-09-20T00:00:00Z").toISOString(),
+      ltv: 0.85,
+      tags: ["Healthcare", "BR"],
+    },
+    {
+      id: "coll-6",
+      label: "Liquidity Buffer",
+      kind: "CashBuffer",
+      notionalSol: 150000,
+      status: "buffer",
+      tags: ["Buffer"],
+    },
+  ];
+
+  const deployedSol = items
+    .filter(i => i.status === "performing" || i.status === "matured")
+    .reduce((sum, i) => sum + i.notionalSol, 0);
+
+  const liquidityBufferSol = items
+    .filter(i => i.status === "buffer")
+    .reduce((sum, i) => sum + i.notionalSol, 0);
+
+  const totalNotionalSol = deployedSol + liquidityBufferSol;
+  const performingCount = items.filter(i => i.status === "performing").length;
+  const totalActiveCount = items.filter(i => i.status === "performing" || i.status === "matured").length;
+  const performingPct = totalActiveCount > 0 ? (performingCount / totalActiveCount) * 100 : 0;
+
+  const performingItems = items.filter(i => i.maturityAt && i.status === "performing");
+  const avgMaturityDays = performingItems.length > 0
+    ? Math.round(
+        performingItems.reduce((sum, i) => {
+          const days = Math.ceil((new Date(i.maturityAt!).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          return sum + days;
+        }, 0) / performingItems.length
+      )
+    : undefined;
+
+  return {
+    deployedSol,
+    liquidityBufferSol,
+    capRemainingSol: 2600000,
+    totalNotionalSol,
+    performingPct,
+    avgMaturityDays,
+    items,
+  };
+};
+
+export const getMockParamChanges = (): ParamChange[] => {
+  const baseUrl = "https://explorer.solana.com/tx";
+  const cluster = "devnet";
+
+  return [
+    {
+      id: "param-1",
+      key: "Vault Cap",
+      oldValue: 3000000,
+      newValue: 5000000,
+      ts: new Date("2025-07-01T00:00:00Z").toISOString(),
+      txUrl: `${baseUrl}/PARAM1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
+    },
+    {
+      id: "param-2",
+      key: "Liquidity Buffer %",
+      oldValue: "5%",
+      newValue: "6.25%",
+      ts: new Date("2025-08-10T00:00:00Z").toISOString(),
+      txUrl: `${baseUrl}/PARAM2A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
+    },
+    {
+      id: "param-3",
+      key: "Principal Lockup",
+      oldValue: "60 days",
+      newValue: "90 days",
+      ts: new Date("2025-06-15T00:00:00Z").toISOString(),
+      txUrl: `${baseUrl}/PARAM3A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
+    },
+    {
+      id: "param-4",
+      key: "Withdrawal Delay",
+      oldValue: "1 day",
+      newValue: "2 days",
+      ts: new Date("2025-06-20T00:00:00Z").toISOString(),
+      txUrl: `${baseUrl}/PARAM4A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
+    },
+    {
+      id: "param-5",
+      key: "Liquidity Buffer SOL",
+      oldValue: 100000,
+      newValue: 150000,
+      ts: new Date("2025-09-01T00:00:00Z").toISOString(),
+      txUrl: `${baseUrl}/PARAM5A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
     },
   ];
 };

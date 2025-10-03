@@ -188,3 +188,55 @@ export interface PpsPoint {
   t: string;
   pps: number;
 }
+
+// Transparency types
+export type CollateralKind = "Receivable" | "Invoice" | "CashBuffer" | "Reserve" | "Other";
+export type CollateralStatus = "performing" | "matured" | "repaid" | "in-default" | "buffer";
+
+export interface CollateralItem {
+  id: string;
+  label: string;
+  kind: CollateralKind;
+  notionalSol: number;
+  status: CollateralStatus;
+  maturityAt?: string;
+  lastPaymentAt?: string;
+  ltv?: number;
+  tags?: string[];
+}
+
+export interface CollateralSnapshot {
+  deployedSol: number;
+  liquidityBufferSol: number;
+  capRemainingSol: number;
+  totalNotionalSol: number;
+  performingPct: number;
+  avgMaturityDays?: number;
+  items: CollateralItem[];
+}
+
+export interface ParamChange {
+  id: string;
+  key: string;
+  oldValue: string | number;
+  newValue: string | number;
+  ts: string;
+  txUrl: string;
+}
+
+export interface DerivedMetrics {
+  ppsSeries: Array<{ t: string; pps: number }>;
+  apr7d: Array<{ t: string; apr: number }>;
+  apr30d: Array<{ t: string; apr: number }>;
+  assetsNow: number;
+  supplyNow: number;
+  ppsNow: number;
+}
+
+export interface ReconciliationData {
+  assetsOnChain: number;
+  supply: number;
+  pps: number;
+  tvl: number;
+  delta: number;
+}

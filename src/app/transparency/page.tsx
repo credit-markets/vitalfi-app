@@ -1,25 +1,31 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { AccountsPanel } from "@/components/transparency/AccountsPanel";
-import { ParamsPanel } from "@/components/transparency/ParamsPanel";
-import { DerivationCharts } from "@/components/transparency/DerivationCharts";
-import { EventInspector } from "@/components/transparency/EventInspector";
-import { Badge } from "@/components/ui/badge";
+import { HeaderFacts } from "@/components/transparency/HeaderFacts";
+import { CollateralOverview } from "@/components/transparency/CollateralOverview";
+import { DerivationsCharts } from "@/components/transparency/DerivationsCharts";
+import { ParametersPanel } from "@/components/transparency/ParametersPanel";
+import { ReconciliationCard } from "@/components/transparency/ReconciliationCard";
+import { AccountsCard } from "@/components/transparency/AccountsCard";
+import { EventFeed } from "@/components/transparency/EventFeed";
+import { Disclosures } from "@/components/transparency/Disclosures";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useTransparency } from "@/hooks/useTransparency";
 import { cn } from "@/lib/utils";
+import type { EventTag } from "@/types/vault";
 
 export default function TransparencyPage() {
   const { isCollapsed } = useSidebar();
-  const { stats, addresses, events, derived, downloadEvents } =
-    useTransparency();
+  const { stats, snapshot, events, paramChanges, derived, reconciliation, lastUpdated } = useTransparency();
+  const eventFeedRef = useRef<HTMLDivElement>(null);
+  const [eventFilters, setEventFilters] = useState<EventTag[]>(["Repayment", "Claim"]);
 
-  const status = stats.paused ? "Paused" : "Active";
-  const statusVariant = stats.paused
-    ? ("destructive" as const)
-    : ("default" as const);
+  const handleViewEvents = () => {
+    setEventFilters(["Repayment"]);
+    eventFeedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,38 +40,26 @@ export default function TransparencyPage() {
         )}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          {/* Page Header */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                  Transparency
-                </h1>
-                <p className="text-sm sm:text-base text-muted-foreground mt-2">
-                  On-chain accounts, parameters, and derivations for Healthy
-                  Yield
-                </p>
-              </div>
-              <Badge variant={statusVariant} className="text-sm px-4 py-2">
-                Status: {status}
-              </Badge>
-            </div>
+          <HeaderFacts stats={stats} snapshot={snapshot} lastUpdated={lastUpdated} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <section className="lg:col-span-7 space-y-6">
+              <CollateralOverview snapshot={snapshot} tvl={stats.tvl} />
+              <DerivationsCharts derived={derived} onViewEvents={handleViewEvents} />
+            </section>
+
+            <aside className="lg:col-span-5 space-y-6">
+              <ParametersPanel stats={stats} paramChanges={paramChanges} />
+              <ReconciliationCard reconciliation={reconciliation} />
+              <AccountsCard addresses={stats.addresses} />
+            </aside>
           </div>
 
-          {/* Accounts & Parameters Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AccountsPanel addresses={addresses} />
-            <ParamsPanel stats={stats} addresses={addresses} />
+          <div ref={eventFeedRef}>
+            <EventFeed events={events} defaultFilters={eventFilters} />
           </div>
 
-          {/* Derivations & Charts */}
-          <DerivationCharts
-            pricePerShareSeries={derived.pricePerShareSeries}
-            apySeries={derived.apySeries}
-          />
-
-          {/* Event Inspector */}
-          <EventInspector events={events} onDownload={downloadEvents} />
+          <Disclosures />
         </div>
       </main>
     </div>
