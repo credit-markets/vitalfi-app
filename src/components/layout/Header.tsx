@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { WalletButton } from "@/components/wallet/WalletButton";
-import { Home, TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
+import { BarChart3, User } from "lucide-react";
 
 export function Header() {
+  const pathname = usePathname();
+
   const navLinks = [
-    { name: "Dashboard", href: "/", icon: Home },
-    { name: "Deposit", href: "/deposit", icon: TrendingUp },
-    { name: "Withdraw", href: "/withdraw", icon: TrendingDown },
-    { name: "Vault", href: "/vault", icon: BarChart3 },
+    { name: "Vault", href: "/", icon: BarChart3 },
+    { name: "Portfolio", href: "/portfolio", icon: User },
   ];
 
   return (
@@ -32,20 +33,22 @@ export function Header() {
               />
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              VitalFi
-            </span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
+              const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-all rounded-lg hover:bg-primary/5 flex items-center gap-2"
+                  className={`px-4 py-2 text-sm font-medium transition-all rounded-lg flex items-center gap-2 ${
+                    isActive
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                  }`}
                 >
                   <Icon className="w-4 h-4" />
                   {link.name}

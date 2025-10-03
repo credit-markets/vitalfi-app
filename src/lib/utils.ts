@@ -25,6 +25,7 @@ export function formatPercentage(value: number, decimals: number = 2): string {
   return `${formatNumber(value, decimals)}%`;
 }
 
-export function shortenAddress(address: string, chars: number = 4): string {
+export function shortenAddress(address: string | undefined, chars: number = 4): string {
+  if (!address) return "";
   return `${address.slice(0, chars)}...${address.slice(-chars)}`;
 }
