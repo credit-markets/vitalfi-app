@@ -62,9 +62,16 @@ export function ValueCard({ summary, ppsSeries }: ValueCardProps) {
         {/* Next Unlock */}
         {summary.nextUnlock && (
           <div className="pt-4 border-t border-border">
-            <div className="text-xs text-muted-foreground mb-2">Next Unlock</div>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs text-muted-foreground">Next Unlock</div>
+              {summary.allUnlocks && summary.allUnlocks.length > 1 && (
+                <div className="text-xs text-muted-foreground">
+                  +{summary.allUnlocks.length - 1} more
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
                 <div className="text-sm font-semibold">
                   {formatNumber(summary.nextUnlock.shares, 2)} shares
                 </div>
@@ -72,18 +79,6 @@ export function ValueCard({ summary, ppsSeries }: ValueCardProps) {
                   {formatRelativeTime(summary.nextUnlock.date)}
                 </div>
               </div>
-              {summary.allUnlocks && summary.allUnlocks.length > 1 && (
-                <div className="flex items-center gap-1">
-                  {summary.allUnlocks.slice(0, 3).map((unlock, i) => (
-                    <div
-                      key={i}
-                      className="w-2 h-8 bg-primary/30 rounded-full"
-                      style={{ opacity: 1 - i * 0.25 }}
-                      title={`${formatNumber(unlock.shares, 2)} shares on ${new Date(unlock.date).toLocaleDateString()}`}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         )}

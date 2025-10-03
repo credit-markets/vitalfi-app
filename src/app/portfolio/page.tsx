@@ -3,7 +3,6 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Accent3D } from "@/components/vault/Accent3D";
 import { ValueCard } from "@/components/portfolio/ValueCard";
 import { EarningsCard } from "@/components/portfolio/EarningsCard";
 import { PendingWithdrawals } from "@/components/portfolio/PendingWithdrawals";
@@ -77,12 +76,7 @@ export default function PortfolioPage() {
           !isCollapsed && "lg:ml-64"
         )}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6 relative">
-          {/* Optional 3D Orb */}
-          <div className="hidden md:block absolute right-6 -top-6 z-0">
-            <Accent3D size="orb" />
-          </div>
-
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           {/* Overview Grid */}
           <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left: Holdings & Value */}
