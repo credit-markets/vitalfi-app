@@ -6,7 +6,9 @@ import dynamic from "next/dynamic";
 // Lazy load Spline component
 const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-card/20 animate-pulse rounded-2xl" />,
+  loading: () => (
+    <div className="w-full h-full bg-card/20 animate-pulse rounded-2xl" />
+  ),
 });
 
 interface Accent3DProps {
@@ -31,7 +33,8 @@ export function Accent3D({ size = "banner" }: Accent3DProps) {
     };
 
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
   // Pause when offscreen
@@ -56,7 +59,8 @@ export function Accent3D({ size = "banner" }: Accent3DProps) {
   }, []);
 
   // Solana-themed Spline scene
-  const splineSceneUrl = "https://prod.spline.design/w0ue5vlfRkKvRHrD/scene.splinecode";
+  const splineSceneUrl =
+    "https://prod.spline.design/9P5wSjpmwgZ4Dh0I/scene.splinecode";
 
   if (size === "orb") {
     return (
@@ -66,10 +70,7 @@ export function Accent3D({ size = "banner" }: Accent3DProps) {
         aria-hidden="true"
       >
         {isVisible && (
-          <Spline
-            scene={splineSceneUrl}
-            className="w-full h-full opacity-60"
-          />
+          <Spline scene={splineSceneUrl} className="w-full h-full opacity-60" />
         )}
       </div>
     );
@@ -83,10 +84,7 @@ export function Accent3D({ size = "banner" }: Accent3DProps) {
       aria-hidden="true"
     >
       {isVisible && (
-        <Spline
-          scene={splineSceneUrl}
-          className="w-full h-full opacity-50"
-        />
+        <Spline scene={splineSceneUrl} className="w-full h-full opacity-50" />
       )}
     </div>
   );
