@@ -618,7 +618,8 @@ export const getMockPortfolioSummary = (wallet: string) => {
   };
 };
 
-export const getMockPortfolioEvents = (wallet: string) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const getMockPortfolioEvents = (_wallet: string) => {
   const baseUrl = "https://explorer.solana.com/tx";
   const cluster = "devnet";
 

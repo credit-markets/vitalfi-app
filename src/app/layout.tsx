@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SolanaWalletProvider } from "@/contexts/WalletProvider";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { MobileNav } from "@/components/layout/MobileNav";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -22,10 +23,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased pb-16 lg:pb-0`} suppressHydrationWarning>
         <SolanaWalletProvider>
           <SidebarProvider>
             {children}
+            <MobileNav />
             <Toaster position="bottom-right" theme="dark" />
           </SidebarProvider>
         </SolanaWalletProvider>

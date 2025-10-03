@@ -39,30 +39,30 @@ export function VaultInfoCard() {
   ];
 
   return (
-    <Card className="p-6 bg-card border border-border space-y-6">
+    <Card className="p-4 sm:p-6 bg-card border border-border space-y-4 sm:space-y-6">
       <div className="flex items-center gap-2">
-        <Info className="w-4 h-4 text-primary" />
-        <h3 className="text-lg font-semibold">Vault Info</h3>
+        <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+        <h3 className="text-base sm:text-lg font-semibold">Vault Info</h3>
       </div>
 
       {/* Addresses Section */}
-      <div className="space-y-3">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <div className="space-y-2 sm:space-y-3">
+        <div className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Addresses
         </div>
         {addresses.map((addr) => (
           <div key={addr.label} className="space-y-1">
-            <div className="text-xs text-muted-foreground">{addr.label}</div>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs bg-muted/30 px-2 py-1.5 rounded border border-border font-mono">
+            <div className="text-[10px] sm:text-xs text-muted-foreground">{addr.label}</div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <code className="flex-1 text-[10px] sm:text-xs bg-muted/30 px-1.5 sm:px-2 py-1 sm:py-1.5 rounded border border-border font-mono">
                 {shortenAddress(addr.value, 6)}
               </code>
               <button
                 onClick={() => copyToClipboard(addr.value, addr.label)}
-                className="p-1.5 hover:bg-muted rounded transition-colors"
+                className="p-1.5 hover:bg-muted active:bg-muted rounded transition-colors touch-manipulation"
                 aria-label={`Copy ${addr.label}`}
               >
-                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
               </button>
               <a
                 href={`${SOLSCAN_BASE_URL}/account/${addr.value}${
@@ -70,10 +70,10 @@ export function VaultInfoCard() {
                 }`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 hover:bg-muted rounded transition-colors"
+                className="p-1.5 hover:bg-muted active:bg-muted rounded transition-colors touch-manipulation"
                 aria-label={`View ${addr.label} on Solscan`}
               >
-                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
               </a>
             </div>
           </div>
@@ -81,13 +81,13 @@ export function VaultInfoCard() {
       </div>
 
       {/* Stats Section */}
-      <div className="pt-4 border-t border-border space-y-3">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <div className="pt-3 sm:pt-4 border-t border-border space-y-2 sm:space-y-3">
+        <div className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Statistics
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5 sm:space-y-2">
           {vaultStats.map((stat) => (
-            <div key={stat.label} className="flex items-center justify-between text-sm">
+            <div key={stat.label} className="flex items-center justify-between text-xs sm:text-sm">
               <span className="text-muted-foreground">{stat.label}</span>
               <span className="font-semibold">{stat.value}</span>
             </div>
@@ -96,11 +96,11 @@ export function VaultInfoCard() {
       </div>
 
       {/* Risk Parameters */}
-      <div className="pt-4 border-t border-border space-y-2">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <div className="pt-3 sm:pt-4 border-t border-border space-y-2">
+        <div className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Risk Parameters
         </div>
-        <div className="space-y-2 text-sm">
+        <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Withdrawal Delay</span>
             <span className="font-semibold">{WITHDRAWAL_DELAY_DAYS} days</span>

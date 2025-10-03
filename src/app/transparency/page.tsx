@@ -34,21 +34,22 @@ export default function TransparencyPage() {
 
       <main
         className={cn(
-          "pt-32 pb-16 transition-all duration-300",
+          "pt-24 pb-20 lg:pb-16 transition-all duration-300",
           "lg:ml-16",
           !isCollapsed && "lg:ml-64"
         )}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
           <HeaderFacts stats={stats} snapshot={snapshot} lastUpdated={lastUpdated} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <section className="lg:col-span-7 space-y-6">
+          {/* Mobile-first stacked layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+            <section className="lg:col-span-7 space-y-4 sm:space-y-6">
               <CollateralOverview snapshot={snapshot} tvl={stats.tvl} />
               <DerivationsCharts derived={derived} onViewEvents={handleViewEvents} />
             </section>
 
-            <aside className="lg:col-span-5 space-y-6">
+            <aside className="lg:col-span-5 space-y-4 sm:space-y-6">
               <ParametersPanel stats={stats} paramChanges={paramChanges} />
               <ReconciliationCard reconciliation={reconciliation} />
               <AccountsCard addresses={stats.addresses} />

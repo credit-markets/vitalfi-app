@@ -33,22 +33,22 @@ export function Visuals() {
   }));
 
   return (
-    <Card className="p-6 bg-card border border-border">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Vault Metrics</h3>
+    <Card className="p-4 sm:p-6 bg-card border border-border">
+      <div className="flex items-center justify-between mb-3 sm:mb-4 flex-wrap gap-2 sm:gap-0">
+        <h3 className="text-base sm:text-lg font-semibold">Vault Metrics</h3>
         <Tabs value={activeWidget} onValueChange={(v) => setActiveWidget(v as "pps" | "repayments" | "queue")}>
-          <TabsList className="h-8">
-            <TabsTrigger value="pps" className="text-xs px-3">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              PPS
+          <TabsList className="h-8 sm:h-8">
+            <TabsTrigger value="pps" className="text-[11px] sm:text-xs px-2 sm:px-3 touch-manipulation">
+              <TrendingUp className="w-3 h-3 sm:mr-1" />
+              <span className="hidden sm:inline">PPS</span>
             </TabsTrigger>
-            <TabsTrigger value="repayments" className="text-xs px-3">
-              <Calendar className="w-3 h-3 mr-1" />
-              Repayments
+            <TabsTrigger value="repayments" className="text-[11px] sm:text-xs px-2 sm:px-3 touch-manipulation">
+              <Calendar className="w-3 h-3 sm:mr-1" />
+              <span className="hidden sm:inline">Repayments</span>
             </TabsTrigger>
-            <TabsTrigger value="queue" className="text-xs px-3">
-              <Clock className="w-3 h-3 mr-1" />
-              Queue
+            <TabsTrigger value="queue" className="text-[11px] sm:text-xs px-2 sm:px-3 touch-manipulation">
+              <Clock className="w-3 h-3 sm:mr-1" />
+              <span className="hidden sm:inline">Queue</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -56,21 +56,21 @@ export function Visuals() {
 
       {/* PPS Sparkline */}
       {activeWidget === "pps" && (
-        <div className="space-y-3">
-          <div className="flex items-baseline justify-between">
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-baseline justify-between gap-2">
             <div>
-              <div className="text-xs text-muted-foreground">Price per Share (30D)</div>
-              <div className="text-3xl font-bold">{formatPricePerShare(currentPPS)}</div>
+              <div className="text-[11px] sm:text-xs text-muted-foreground">Price per Share (30D)</div>
+              <div className="text-2xl sm:text-3xl font-bold">{formatPricePerShare(currentPPS)}</div>
             </div>
             <div
-              className={`text-sm font-semibold ${
+              className={`text-sm sm:text-base font-semibold ${
                 ppsChange >= 0 ? "text-green-500" : "text-red-500"
               }`}
             >
               {formatDelta(ppsChange)}
             </div>
           </div>
-          <div className="h-16">
+          <div className="h-14 sm:h-16">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={sparklineData}>
                 <RechartsTooltip
@@ -78,7 +78,7 @@ export function Visuals() {
                     backgroundColor: "hsl(var(--popover))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "0.5rem",
-                    fontSize: "12px",
+                    fontSize: "11px",
                   }}
                   formatter={(value: number) => formatPricePerShare(value)}
                 />
@@ -97,11 +97,11 @@ export function Visuals() {
 
       {/* Repayments Timeline */}
       {activeWidget === "repayments" && (
-        <div className="space-y-3">
-          <div className="text-xs text-muted-foreground">
+        <div className="space-y-2 sm:space-y-3">
+          <div className="text-[11px] sm:text-xs text-muted-foreground">
             Recent Repayments (Last 30 Days)
           </div>
-          <div className="flex items-end gap-1 h-20">
+          <div className="flex items-end gap-0.5 sm:gap-1 h-16 sm:h-20">
             {events.slice(0, 15).map((event) => {
               const maxAmount = Math.max(...events.slice(0, 15).map((e) => e.amountSol || 0));
               const height = ((event.amountSol || 0) / maxAmount) * 100;
@@ -110,11 +110,11 @@ export function Visuals() {
               return (
                 <div
                   key={event.id}
-                  className="flex-1 bg-gradient-to-t from-accent to-primary/60 rounded-t hover:opacity-80 transition-opacity cursor-pointer group relative"
+                  className="flex-1 bg-gradient-to-t from-accent to-primary/60 rounded-t active:opacity-80 transition-opacity touch-manipulation group relative"
                   style={{ height: `${Math.max(height, 10)}%` }}
                   title={`${date.toLocaleDateString()}: ${formatCompactCurrency(event.amountSol || 0)}`}
                 >
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-popover border border-border rounded px-2 py-1 text-xs whitespace-nowrap z-10 pointer-events-none">
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-popover border border-border rounded px-2 py-1 text-[10px] sm:text-xs whitespace-nowrap z-10 pointer-events-none">
                     <div>{date.toLocaleDateString()}</div>
                     <div className="font-semibold">{formatCompactCurrency(event.amountSol || 0)}</div>
                   </div>
@@ -122,7 +122,7 @@ export function Visuals() {
               );
             })}
           </div>
-          <div className="text-xs text-muted-foreground text-center">
+          <div className="text-[10px] sm:text-xs text-muted-foreground text-center">
             {events.length} repayments • Avg {formatCompactCurrency(
               events.reduce((sum, e) => sum + (e.amountSol || 0), 0) / events.length
             )} per event
@@ -132,26 +132,26 @@ export function Visuals() {
 
       {/* Queue Timeline */}
       {activeWidget === "queue" && (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {queue.pending ? (
             <>
-              <div className="text-xs text-muted-foreground">Your Withdrawal Request</div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
+              <div className="text-[11px] sm:text-xs text-muted-foreground">Your Withdrawal Request</div>
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
                   <span className="text-muted-foreground">Amount</span>
-                  <span className="font-semibold">
+                  <span className="font-semibold text-right">
                     {queue.pending.amountShares.toFixed(2)} shares → {queue.pending.estSol.toFixed(2)} SOL
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
                   <span className="text-muted-foreground">Status</span>
                   <span className={`font-semibold ${queue.canClaim ? "text-green-500" : "text-accent"}`}>
                     {queue.countdown}
                   </span>
                 </div>
                 {/* Progress bar */}
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <div className="mt-2 sm:mt-3">
+                  <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground mb-1">
                     <span>Requested</span>
                     <span>Claimable</span>
                   </div>
@@ -176,10 +176,10 @@ export function Visuals() {
               </div>
             </>
           ) : (
-            <div className="py-8 text-center">
-              <Clock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <div className="text-sm text-muted-foreground">No pending withdrawals</div>
-              <div className="text-xs text-muted-foreground mt-1">
+            <div className="py-6 sm:py-8 text-center">
+              <Clock className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/30 mx-auto mb-2 sm:mb-3" />
+              <div className="text-xs sm:text-sm text-muted-foreground">No pending withdrawals</div>
+              <div className="text-[11px] sm:text-xs text-muted-foreground mt-1">
                 Average claim time: 2 days
               </div>
             </div>

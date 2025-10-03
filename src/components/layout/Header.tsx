@@ -26,30 +26,30 @@ export function Header() {
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center space-x-3 group">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/" className="flex items-center space-x-2 sm:space-x-3 group">
               <div className="relative">
                 <Image
                   src="/logo.png"
                   alt="VitalFi Logo"
-                  width={40}
-                  height={40}
-                  className="transition-transform group-hover:scale-110"
+                  width={32}
+                  height={32}
+                  className="transition-transform group-hover:scale-110 sm:w-10 sm:h-10"
                 />
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </Link>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Larger touch target */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-primary/10 transition-colors"
+              className="lg:hidden p-3 rounded-lg hover:bg-primary/10 active:bg-primary/20 transition-colors touch-manipulation"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
-                <X className="w-5 h-5 text-primary" />
+                <X className="w-6 h-6 text-primary" />
               ) : (
-                <Menu className="w-5 h-5 text-primary" />
+                <Menu className="w-6 h-6 text-primary" />
               )}
             </button>
           </div>
@@ -58,10 +58,10 @@ export function Header() {
           <WalletButton />
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation - Improved touch targets */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden absolute left-0 right-0 top-20 bg-background/95 backdrop-blur-xl border-b border-primary/20">
-            <div className="container mx-auto px-4 py-4 space-y-2">
+          <div className="lg:hidden absolute left-0 right-0 top-20 bg-background/95 backdrop-blur-xl border-b border-primary/20 shadow-lg">
+            <div className="container mx-auto px-4 py-4 space-y-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 const isActive = pathname === link.href;
@@ -72,14 +72,14 @@ export function Header() {
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+                      "flex items-center gap-4 px-4 py-4 rounded-lg transition-all touch-manipulation",
                       isActive
                         ? "text-primary bg-primary/10"
-                        : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                        : "text-muted-foreground hover:text-primary active:bg-primary/5"
                     )}
                   >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm font-medium">{link.name}</span>
+                    <Icon className="w-6 h-6 flex-shrink-0" />
+                    <span className="text-base font-medium">{link.name}</span>
                   </Link>
                 );
               })}

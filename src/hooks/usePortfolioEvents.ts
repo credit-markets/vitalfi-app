@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { getMockPortfolioEvents } from "@/lib/solana/mock-data";
-import type { PortfolioEvent, PortfolioEventTag } from "@/types/vault";
+import type { PortfolioEventTag } from "@/types/vault";
 
 export interface PortfolioEventsFilters {
   tag?: PortfolioEventTag | "All";

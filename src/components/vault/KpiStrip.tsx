@@ -50,31 +50,31 @@ export function KpiStrip() {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
       {kpis.map((kpi) => {
         const Icon = kpi.icon;
         return (
           <Tooltip key={kpi.label} content={<p className="text-sm">{kpi.tooltip}</p>}>
-            <Card className="p-4 bg-card border border-border hover:border-primary/30 transition-colors cursor-default">
-              <div className="flex items-start justify-between mb-2">
-                <span className="text-xs text-muted-foreground">{kpi.label}</span>
-                <div className="flex items-center gap-1">
-                  <Icon className="w-3.5 h-3.5 text-primary/60" />
+            <Card className="p-3 sm:p-4 bg-card border border-border hover:border-primary/30 transition-colors cursor-default">
+              <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+                <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight">{kpi.label}</span>
+                <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary/60" />
                   {kpi.link && (
                     <a
                       href={kpi.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                      className="text-muted-foreground hover:text-primary active:text-primary transition-colors touch-manipulation p-1"
                       aria-label={`View ${kpi.label} on Solscan`}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     </a>
                   )}
                 </div>
               </div>
-              <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
+              <div className="text-lg sm:text-2xl font-bold text-foreground truncate">{kpi.value}</div>
             </Card>
           </Tooltip>
         );

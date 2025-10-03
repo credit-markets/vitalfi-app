@@ -7,7 +7,8 @@ import type { PpsPoint } from "@/types/vault";
  * Hook to fetch PPS time series for sparkline
  * Returns array of {t, pps} points
  */
-export function usePpsSeries(days: number = 30): PpsPoint[] {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function usePpsSeries(_days: number = 30): PpsPoint[] {
   const stats = getMockVaultStats();
 
   // Extract PPS from shareHistory

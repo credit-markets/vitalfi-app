@@ -56,27 +56,27 @@ export function ActionPanel() {
 
   return (
     <div className="lg:sticky lg:top-24 space-y-4">
-      <Card className="p-6 bg-card border border-primary/20">
+      <Card className="p-4 sm:p-6 bg-card border border-primary/20">
         <Tabs value={mainTab} onValueChange={setMainTab}>
-          <TabsList className="w-full grid grid-cols-2">
-            <TabsTrigger value="deposit">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Deposit
+          <TabsList className="w-full grid grid-cols-2 h-11 sm:h-10">
+            <TabsTrigger value="deposit" className="text-sm sm:text-base touch-manipulation">
+              <TrendingUp className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Deposit</span>
             </TabsTrigger>
-            <TabsTrigger value="withdraw">
-              <TrendingDown className="w-4 h-4 mr-2" />
-              Withdraw
+            <TabsTrigger value="withdraw" className="text-sm sm:text-base touch-manipulation">
+              <TrendingDown className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Withdraw</span>
             </TabsTrigger>
           </TabsList>
 
           {/* DEPOSIT TAB */}
-          <TabsContent value="deposit" className="space-y-4 mt-4">
+          <TabsContent value="deposit" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium">Amount (SOL)</label>
                 {connected && (
                   <button
-                    className="text-xs text-accent hover:underline"
+                    className="text-xs text-accent hover:underline active:underline touch-manipulation p-1"
                     onClick={() => setDepositAmount("100")}
                   >
                     Max: 100 SOL
@@ -89,7 +89,7 @@ export function ActionPanel() {
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
                 disabled={!connected}
-                className="text-base h-12"
+                className="text-base h-12 sm:h-12"
               />
             </div>
 
@@ -124,7 +124,7 @@ export function ActionPanel() {
             )}
 
             <Button
-              className="w-full h-11"
+              className="w-full h-12 text-base touch-manipulation"
               size="lg"
               disabled={!depositValid}
               onClick={handleDeposit}
@@ -134,22 +134,22 @@ export function ActionPanel() {
           </TabsContent>
 
           {/* WITHDRAW TAB */}
-          <TabsContent value="withdraw" className="space-y-4 mt-4">
+          <TabsContent value="withdraw" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
             {/* Pending Withdrawal Card (if exists) */}
             {queue.pending && (
-              <Card className="p-4 bg-accent/10 border-accent/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <Clock className="w-4 h-4 text-accent" />
+              <Card className="p-3 sm:p-4 bg-accent/10 border-accent/30">
+                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                  <Clock className="w-4 h-4 text-accent flex-shrink-0" />
                   <div className="text-sm font-semibold">Pending Withdrawal</div>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
+                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                  <div className="flex justify-between gap-2">
                     <span className="text-muted-foreground">Amount</span>
-                    <span className="font-medium">
+                    <span className="font-medium text-right">
                       {queue.pending.amountShares.toFixed(2)} shares → {queue.pending.estSol.toFixed(2)} SOL
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-2">
                     <span className="text-muted-foreground">Status</span>
                     <span
                       className={`font-semibold ${
@@ -160,16 +160,16 @@ export function ActionPanel() {
                     </span>
                   </div>
                   {!queue.canClaim && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-2">
                       <span className="text-muted-foreground">Claim at</span>
-                      <span className="font-medium text-xs">
+                      <span className="font-medium text-[10px] sm:text-xs text-right">
                         {new Date(queue.pending.claimAt).toLocaleString()}
                       </span>
                     </div>
                   )}
                 </div>
                 <Button
-                  className="w-full mt-3"
+                  className="w-full mt-3 h-10 text-sm touch-manipulation"
                   size="sm"
                   disabled={!queue.canClaim}
                   onClick={handleClaim}
@@ -184,7 +184,7 @@ export function ActionPanel() {
                 <label className="text-sm font-medium">Amount (Shares)</label>
                 {connected && (
                   <button
-                    className="text-xs text-accent hover:underline"
+                    className="text-xs text-accent hover:underline active:underline touch-manipulation p-1"
                     onClick={() => setWithdrawAmount(userData.shareBalance.toString())}
                   >
                     Available: {formatNumber(userData.shareBalance)} shares
@@ -197,7 +197,7 @@ export function ActionPanel() {
                 value={withdrawAmount}
                 onChange={(e) => setWithdrawAmount(e.target.value)}
                 disabled={!connected}
-                className="text-base h-12"
+                className="text-base h-12 sm:h-12"
               />
             </div>
 
@@ -232,7 +232,7 @@ export function ActionPanel() {
             )}
 
             <Button
-              className="w-full h-11"
+              className="w-full h-12 text-base touch-manipulation"
               size="lg"
               disabled={!withdrawValid || !!queue.pending}
               onClick={handleRequestWithdrawal}
@@ -245,7 +245,7 @@ export function ActionPanel() {
             </Button>
 
             {/* Help text */}
-            <div className="text-xs text-muted-foreground text-center">
+            <div className="text-[11px] sm:text-xs text-muted-foreground text-center">
               Withdrawals require a {WITHDRAWAL_DELAY_DAYS}-day delay before claiming
             </div>
           </TabsContent>

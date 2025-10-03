@@ -23,28 +23,28 @@ export default function Home() {
 
       <main
         className={cn(
-          "pt-32 pb-16 transition-all duration-300",
+          "pt-24 pb-20 lg:pb-16 transition-all duration-300",
           "lg:ml-16", // Default collapsed state
           !isCollapsed && "lg:ml-64" // Expanded state
         )}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 3D Accent (optional) */}
-          {SHOW_3D_ACCENT && <Accent3D size={ACCENT_3D_MODE} />}
+          {/* 3D Accent (optional) - Hidden on mobile for performance */}
+          {SHOW_3D_ACCENT && <div className="hidden lg:block"><Accent3D size={ACCENT_3D_MODE} /></div>}
 
           {/* KPI Strip */}
           <KpiStrip />
 
-          {/* Two-column layout: 60% left, 40% right */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Mobile-first stacked layout, desktop two-column */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
             {/* Left column: Visuals + Transactions */}
-            <section className="lg:col-span-7 space-y-6">
+            <section className="lg:col-span-7 space-y-4 sm:space-y-6">
               {SHOW_SLIM_CHART ? <SlimChart /> : <Visuals />}
               <TransactionsTable />
             </section>
 
             {/* Right column: Action Panel + Vault Info */}
-            <aside className="lg:col-span-5 space-y-6">
+            <aside className="lg:col-span-5 space-y-4 sm:space-y-6">
               <ActionPanel />
               <VaultInfoCard />
             </aside>
