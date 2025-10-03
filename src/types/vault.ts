@@ -1,3 +1,80 @@
+// Core Lot type
+export interface Lot {
+  id: string;
+  amount: number;
+  unlockAt: string;
+  status: "locked" | "unlocked";
+}
+
+// Pending withdrawal request
+export interface PendingWithdrawal {
+  id: string;
+  amount: number;
+  createdAt: string;
+  claimAt: string;
+  estSolOut: number;
+}
+
+// Complete vault statistics
+export interface VaultStats {
+  tvl: number;
+  supply: number;
+  pricePerShare: number;
+  apy: number;
+  cap: number;
+  capRemaining: number;
+  paused: boolean;
+  principalRedemption: number; // e.g., 1.02x
+  yieldAPR: number; // e.g., 8.5
+  liquidityBuffer: number;
+  lastRepaymentAt: string;
+  nextRepaymentEta?: string;
+  queueDepth: number;
+  avgClaimTimeDays: number;
+  shareHistory: Array<{
+    t: string;
+    tvl: number;
+    shareValue: number;
+    apy: number;
+  }>;
+  addresses: {
+    programId: string;
+    vaultPda: string;
+    authorityPda: string;
+    tokenMint: string;
+    vaultTokenAccount: string;
+  };
+}
+
+// User state with wallet info
+export interface UserState {
+  wallet: string | null;
+  sol: number;
+  shareLots: Lot[];
+  pendingWithdrawals: PendingWithdrawal[];
+}
+
+// Event tag types for activity feed
+export type EventTag =
+  | "Deposit"
+  | "WithdrawRequest"
+  | "Claim"
+  | "Repayment"
+  | "Params";
+
+// Vault event for activity feed
+export interface VaultEvent {
+  id: string;
+  tag: EventTag;
+  ts: string;
+  wallet: string;
+  amountSol?: number;
+  shares?: number;
+  txUrl: string;
+  note?: string;
+}
+
+// Legacy types for compatibility
 export interface VaultState {
   tvl: number;
   cap: number;
@@ -12,7 +89,7 @@ export interface VaultState {
   nextRepaymentETA?: Date;
 }
 
-export interface VPTLot {
+export interface ShareLot {
   id: string;
   amount: number;
   unlockAt: Date;
@@ -20,30 +97,20 @@ export interface VPTLot {
   depositedAt: Date;
 }
 
-export interface PendingWithdrawal {
-  id: string;
-  createdAt: Date;
-  claimAt: Date;
-  amount: number;
-  estSOL: number;
-  status: "pending" | "claimable";
-}
-
 export interface UserVaultData {
-  vPTBalance: number;
-  vYTBalance: number;
-  lots: VPTLot[];
+  shareBalance: number;
+  lots: ShareLot[];
   pendingWithdrawals: PendingWithdrawal[];
   totalLocked: number;
   totalUnlocked: number;
   nextUnlockDate?: Date;
 }
 
+
 export type ActivityType =
   | "deposit"
   | "withdraw_request"
   | "claim"
-  | "yield_sell"
   | "repayment"
   | "params";
 
@@ -55,6 +122,11 @@ export interface Activity {
   timestamp: Date;
   txSignature: string;
   status?: "success" | "failed" | "pending";
+  solAmount?: number;
+  user?: string;
+  signature?: string;
+  paramName?: string;
+  newValue?: string;
 }
 
 export interface ChartDataPoint {
@@ -64,29 +136,21 @@ export interface ChartDataPoint {
 
 export interface VaultChartData {
   tvl: ChartDataPoint[];
-  vPTValue: ChartDataPoint[];
+  shareValue: ChartDataPoint[];
   yieldAPY: ChartDataPoint[];
 }
 
 export interface DepositPreview {
   solAmount: number;
-  vPTMinted: number;
-  vYTMinted: number;
+  sharesMinted: number;
   unlockDate: Date;
   impliedAPY: number;
   fee: number;
 }
 
 export interface WithdrawPreview {
-  vPTAmount: number;
+  sharesAmount: number;
   estSOL: number;
   availableAt: Date;
   queuePosition?: number;
-}
-
-export interface YieldSellPreview {
-  vYTAmount: number;
-  solOut: number;
-  pricePerVYT: number;
-  slippage: number;
 }

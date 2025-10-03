@@ -5,10 +5,12 @@ A Next.js application for depositing SOL into a transparent DeFi vault that fina
 ## 🚀 Features
 
 - **Solana Wallet Integration** - Connect with Phantom, Solflare, and other Solana wallets
-- **Real-time Vault Metrics** - View TVL, APY, and vault performance
-- **Deposit/Withdraw** - Seamless SOL deposits and withdrawals
-- **Beautiful UI** - Dark theme with purple/cyan gradient design system matching the landing page
-- **Responsive Design** - Works on desktop, tablet, and mobile
+- **Real-time Vault Metrics** - View TVL, APY, share redemption value, and vault performance
+- **Deposit/Withdraw** - Seamless SOL deposits and share redemption with 90-day lockup
+- **Portfolio Tracking** - View your share balance, locked/unlocked lots, and transaction history
+- **Transparency Dashboard** - Full on-chain verification with event-driven derivations
+- **Beautiful UI** - Dark theme with purple/cyan gradient design system
+- **Responsive Design** - Works on desktop, tablet, and mobile with collapsible sidebar
 
 ## 🛠️ Tech Stack
 
@@ -30,23 +32,27 @@ vitalfi-app/
 ├── src/
 │   ├── app/                      # Next.js App Router
 │   │   ├── layout.tsx           # Root layout with providers
-│   │   ├── page.tsx             # Dashboard home
-│   │   ├── deposit/             # Deposit flow (TODO)
-│   │   ├── withdraw/            # Withdraw flow (TODO)
-│   │   └── vault/               # Vault analytics (TODO)
+│   │   ├── page.tsx             # Vault dashboard (main page)
+│   │   ├── portfolio/           # Portfolio page with user positions
+│   │   └── transparency/        # Transparency page with on-chain verification
 │   ├── components/
-│   │   ├── ui/                  # UI components (Button, Card)
-│   │   ├── wallet/              # Wallet components
-│   │   ├── vault/               # Vault components (TODO)
-│   │   └── layout/              # Layout components (Header)
+│   │   ├── ui/                  # UI primitives (Button, Card, Input, etc.)
+│   │   ├── wallet/              # Wallet connection components
+│   │   ├── vault/               # Vault components (Header, Analytics, ActionCard, ActivityFeed)
+│   │   ├── transparency/        # Transparency components (Accounts, Charts, Events, etc.)
+│   │   └── layout/              # Layout components (Header, Sidebar)
 │   ├── lib/
-│   │   ├── solana/              # Solana integration
-│   │   │   └── connection.ts    # RPC connection setup
-│   │   ├── hooks/               # Custom hooks (TODO)
+│   │   ├── solana/              # Solana integration and mock data
+│   │   ├── derive.ts            # Event-driven derivation logic (PPS, APY)
 │   │   └── utils.ts             # Utility functions
 │   ├── contexts/
-│   │   └── WalletProvider.tsx   # Solana wallet context
-│   └── types/                   # TypeScript types (TODO)
+│   │   ├── WalletProvider.tsx   # Solana wallet context
+│   │   └── SidebarContext.tsx   # Sidebar state management
+│   ├── hooks/                   # Custom React hooks
+│   │   ├── useVaultTx.ts        # Vault transaction functions
+│   │   └── useTransparency.ts   # Transparency data hook
+│   └── types/
+│       └── vault.ts             # Vault type definitions
 ├── public/
 │   └── logo.png                 # VitalFi logo
 └── .env.local                   # Environment variables
@@ -127,43 +133,32 @@ Currently integrated wallets:
 - Phantom
 - Solflare
 
-## 📝 TODO
+## 🏗️ Architecture
 
-### Pages to Build
-- [x] Dashboard/Home page
-- [ ] Deposit page with form and transaction flow
-- [ ] Withdraw page with balance display
-- [ ] Vault analytics page with charts
-- [ ] Transaction history
+### Single-Token Vault Model
 
-### Components to Build
-- [x] Button, Card (UI primitives)
-- [x] WalletButton
-- [x] Header with navigation
-- [ ] Input components (for amounts)
-- [ ] Transaction status modal
-- [ ] Vault stats cards
-- [ ] Charts (TVL over time, APY history)
-- [ ] Transaction history list
+The vault operates on a single share token model with the following mechanics:
 
-### Features to Implement
-- [ ] Solana program integration (vault program)
-- [ ] Deposit SOL transaction
-- [ ] Withdraw vault tokens transaction
-- [ ] Real-time balance fetching
-- [ ] Transaction history from blockchain
-- [ ] Error handling and user feedback
-- [ ] Loading states
-- [ ] Form validation
-- [ ] Mobile responsive menu
+- **Deposits**: Users deposit SOL and receive vault shares (90-day lockup period)
+- **Redemption**: Users redeem unlocked shares for SOL at current share price (1.02x principal)
+- **Yield**: Vault generates ~8.5% APY from medical receivables financing
+- **Withdrawal Queue**: Locked shares can be queued for early withdrawal (2-day processing)
 
-### Future Enhancements
-- [ ] React Query for data fetching/caching
-- [ ] Wallet balance auto-refresh
-- [ ] Transaction notifications
-- [ ] Dark/light mode toggle
-- [ ] Multi-language support
-- [ ] Analytics integration
+### Event-Driven Derivations
+
+All vault metrics (Price Per Share, APY) are computed from an immutable event stream:
+
+- **Deposit Events**: Add assets and shares
+- **Claim Events**: Remove assets and shares
+- **Repayment Events**: Add assets only (increases PPS)
+
+The `/transparency` page provides full on-chain verification with reproducible calculations.
+
+### Pages
+
+1. **Vault Dashboard** (`/`) - Main page with vault overview, analytics, and deposit/withdraw actions
+2. **Portfolio** (`/portfolio`) - User-specific positions, locked/unlocked lots, and transaction history
+3. **Transparency** (`/transparency`) - On-chain accounts, parameters, event inspector, and verification tools
 
 ## 🧪 Development
 
@@ -176,28 +171,19 @@ npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
 
-### Adding New Components
+### Key Development Notes
 
-Follow the shadcn/ui pattern:
-
-```bash
-# Create component in src/components/ui/
-# Example: src/components/ui/input.tsx
-```
+- **Mock Data**: Currently using mock data in `src/lib/solana/mock-data.ts` for development
+- **Devnet First**: Always test on Solana devnet before mainnet deployment
+- **Event-Driven**: All vault metrics derive from the event stream (see `src/lib/derive.ts`)
+- **Type Safety**: Comprehensive TypeScript types in `src/types/vault.ts`
 
 ### Solana Development
 
-Test on devnet first:
+Test on devnet:
 1. Get devnet SOL from [solfaucet.com](https://solfaucet.com)
 2. Configure wallet to use devnet
-3. Test all transactions before mainnet
-
-## 🤝 Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Test thoroughly on devnet
-4. Submit a pull request
+3. Test all transactions before mainnet deployment
 
 ## 📄 License
 

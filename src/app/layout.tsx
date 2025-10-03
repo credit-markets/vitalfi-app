@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SolanaWalletProvider } from "@/contexts/WalletProvider";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -23,8 +24,10 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
         <SolanaWalletProvider>
-          {children}
-          <Toaster position="bottom-right" theme="dark" />
+          <SidebarProvider>
+            {children}
+            <Toaster position="bottom-right" theme="dark" />
+          </SidebarProvider>
         </SolanaWalletProvider>
       </body>
     </html>

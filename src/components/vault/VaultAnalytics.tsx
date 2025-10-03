@@ -66,8 +66,8 @@ export function VaultAnalytics({ vaultState }: VaultAnalyticsProps) {
   const getMetricLabel = (m: ChartMetric) => {
     switch (m) {
       case "tvl": return "Total Value Locked";
-      case "redemption": return "vPT Redemption Value";
-      case "yield": return "vYT APY";
+      case "redemption": return "Share Redemption Value";
+      case "yield": return "Yield APY";
     }
   };
 
@@ -92,8 +92,8 @@ export function VaultAnalytics({ vaultState }: VaultAnalyticsProps) {
               <Tabs value={metric} onValueChange={(v) => setMetric(v as ChartMetric)}>
                 <TabsList>
                   <TabsTrigger value="tvl">TVL</TabsTrigger>
-                  <TabsTrigger value="redemption">vPT</TabsTrigger>
-                  <TabsTrigger value="yield">vYT</TabsTrigger>
+                  <TabsTrigger value="redemption">Shares</TabsTrigger>
+                  <TabsTrigger value="yield">Yield</TabsTrigger>
                 </TabsList>
               </Tabs>
               {/* Period Toggle */}

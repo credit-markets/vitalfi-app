@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Header } from "@/components/layout/Header";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { useSidebar } from "@/contexts/SidebarContext";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,10 +16,11 @@ import { formatCurrency, formatNumber, formatPercentage, shortenAddress } from "
 import { Wallet as WalletIcon, TrendingUp, Lock, Clock, Download, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
-type ActivityFilter = "all" | "deposit" | "withdraw" | "yield_sell";
+type ActivityFilter = "all" | "deposit" | "withdraw";
 
 export default function PortfolioPage() {
   const { connected } = useWallet();
+  const { isCollapsed } = useSidebar();
   const [filter, setFilter] = useState<ActivityFilter>("all");
 
   const userData = connected ? getMockUserData(true) : getMockUserData(false);
@@ -27,7 +31,6 @@ export default function PortfolioPage() {
     ? allActivity
     : allActivity.filter(a => {
         if (filter === "withdraw") return a.type === "withdraw_request" || a.type === "claim";
-        if (filter === "yield_sell") return a.type === "yield_sell";
         return a.type === filter;
       });
 
@@ -62,121 +65,73 @@ export default function PortfolioPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <Sidebar />
 
-      <main className="pt-32 pb-16">
-        <div className="container mx-auto px-4 space-y-12">
+      <main
+        className={cn(
+          "pt-32 pb-16 transition-all duration-300",
+          "lg:ml-16",
+          !isCollapsed && "lg:ml-64"
+        )}
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-8 md:space-y-12">
           {/* Page Header */}
           <div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
               My Portfolio
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">
               Your positions and activity in Healthy Yield
             </p>
           </div>
 
-          {/* Balance Cards */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* vPT Balance Card */}
-            <Card className="p-8 bg-gradient-card border-primary/20">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-primary/20 rounded-lg">
-                    <Lock className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">vPT Balance</h3>
-                    <p className="text-sm text-muted-foreground">Principal Token</p>
-                  </div>
+          {/* Balance Card */}
+          <Card className="p-4 sm:p-6 md:p-8 bg-gradient-card border-primary/20">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 sm:p-3 bg-primary/20 rounded-lg">
+                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-              </div>
-
-              <div className="space-y-6">
                 <div>
-                  <div className="text-4xl font-bold text-primary mb-2">
-                    {formatNumber(userData.vPTBalance)} vPT
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    ≈ {formatCurrency(userData.vPTBalance * 1.02)}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-background/50 rounded-lg border border-border/50">
-                    <div className="text-sm text-muted-foreground mb-1">Unlocked</div>
-                    <div className="text-xl font-semibold text-accent">{formatNumber(userData.totalUnlocked)}</div>
-                  </div>
-                  <div className="p-4 bg-background/50 rounded-lg border border-border/50">
-                    <div className="text-sm text-muted-foreground mb-1">Locked</div>
-                    <div className="text-xl font-semibold text-impact">{formatNumber(userData.totalLocked)}</div>
-                  </div>
-                </div>
-
-                {userData.nextUnlockDate && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Next unlock: </span>
-                    <span className="font-medium">{userData.nextUnlockDate.toLocaleDateString()}</span>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* vYT Balance Card */}
-            <Card className="p-8 bg-gradient-card border-accent/20">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-accent/20 rounded-lg">
-                    <TrendingUp className="w-6 h-6 text-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">vYT Balance</h3>
-                    <p className="text-sm text-muted-foreground">Yield Token</p>
-                  </div>
+                  <h3 className="text-sm sm:text-base font-semibold">Your Balance</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Healthy Yield Vault</p>
                 </div>
               </div>
+            </div>
 
-              <div className="space-y-6">
-                <div>
-                  <div className="text-4xl font-bold text-accent mb-2">
-                    {formatNumber(userData.vYTBalance)} vYT
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Liquid & Transferable
-                  </div>
-                </div>
-
-                <div className="p-4 bg-background/50 rounded-lg border border-border/50">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-muted-foreground">Current APR</span>
-                    <Badge variant="outline" className="text-accent">
-                      {formatPercentage(8.5)}
-                    </Badge>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Est. Annual Yield: </span>
-                    <span className="font-medium">{formatCurrency(userData.vYTBalance * 0.085)}</span>
-                  </div>
-                </div>
-
-                <div className="text-sm text-muted-foreground">
-                  💡 Sell your vYT anytime on the vault page
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              <div>
+                <div className="text-xs sm:text-sm text-muted-foreground mb-2">Deposited</div>
+                <div className="text-2xl sm:text-3xl font-bold text-primary">
+                  {formatCurrency(userData.shareBalance)}
                 </div>
               </div>
-            </Card>
-          </div>
+              <div>
+                <div className="text-xs sm:text-sm text-muted-foreground mb-2">Current Value</div>
+                <div className="text-2xl sm:text-3xl font-bold text-accent">
+                  {formatCurrency(userData.shareBalance * 1.02)}
+                </div>
+                <div className="text-xs text-green-500 mt-1">+{formatPercentage(2)} gain</div>
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm text-muted-foreground mb-2">APY Earning</div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-500">
+                  {formatPercentage(8.5)}
+                </div>
+              </div>
+            </div>
+          </Card>
 
           {/* Activity Feed */}
-          <Card className="p-8 bg-gradient-card border-border/50">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold">Your Activity</h3>
-              <div className="flex items-center gap-4">
+          <Card className="p-4 sm:p-6 md:p-8 bg-gradient-card border-border/50">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <h3 className="text-xl sm:text-2xl font-bold">Your Activity</h3>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <Tabs value={filter} onValueChange={(v) => setFilter(v as ActivityFilter)}>
                   <TabsList>
                     <TabsTrigger value="all">All</TabsTrigger>
                     <TabsTrigger value="deposit">Deposits</TabsTrigger>
                     <TabsTrigger value="withdraw">Withdrawals</TabsTrigger>
-                    <TabsTrigger value="yield_sell">Yield Sales</TabsTrigger>
                   </TabsList>
                 </Tabs>
                 <Button variant="outline" size="sm" onClick={exportCSV}>
@@ -215,9 +170,7 @@ export default function PortfolioPage() {
                         <TableCell className="font-medium">
                           {activity.type === "deposit" && formatCurrency(activity.solAmount!)}
                           {(activity.type === "withdraw_request" || activity.type === "claim") &&
-                            `${formatNumber(activity.vPTAmount!)} vPT`}
-                          {activity.type === "yield_sell" &&
-                            `${formatNumber(activity.vYTAmount!)} vYT`}
+                            formatCurrency(activity.solAmount!)}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {activity.timestamp.toLocaleDateString()}

@@ -11,6 +11,19 @@ interface VaultHeaderProps {
 }
 
 export function VaultHeader({ vaultState }: VaultHeaderProps) {
+  // Calculate status badges
+  const capUtilization = (vaultState.tvl / vaultState.cap) * 100;
+  const liquidityRatio = (vaultState.liquidityBuffer / vaultState.tvl) * 100;
+
+  const getVaultStatus = () => {
+    if (vaultState.paused) return { label: "Paused", variant: "destructive" as const };
+    if (capUtilization > 90) return { label: "Reaching Cap", variant: "secondary" as const };
+    if (liquidityRatio < 5) return { label: "Low Liquidity", variant: "secondary" as const };
+    return { label: "Active", variant: "default" as const };
+  };
+
+  const status = getVaultStatus();
+
   const kpis = [
     {
       label: "TVL",
@@ -53,34 +66,41 @@ export function VaultHeader({ vaultState }: VaultHeaderProps) {
   return (
     <div className="space-y-6">
       {/* Title and Status */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
             Healthy Yield
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Medical Receivables Vault • 90-day Principal Lock
           </p>
         </div>
-        <Badge variant={vaultState.paused ? "warning" : "success"} className="text-sm px-4 py-2">
-          {vaultState.paused ? "Paused" : "Active"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={status.variant} className="text-sm px-4 py-2">
+            {status.label}
+          </Badge>
+          {vaultState.nextRepaymentETA && (
+            <Badge variant="outline" className="text-sm px-4 py-2">
+              Next Repayment: {vaultState.nextRepaymentETA.toLocaleDateString()}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
             <Card
               key={kpi.label}
-              className="p-6 bg-gradient-card border-border/50 hover:scale-105 transition-all"
+              className="p-4 sm:p-6 bg-gradient-card border-border/50 hover:scale-105 transition-all"
             >
               <div className="flex items-start justify-between mb-2">
-                <span className="text-sm text-muted-foreground">{kpi.label}</span>
-                <Icon className={`w-4 h-4 ${kpi.color}`} />
+                <span className="text-xs sm:text-sm text-muted-foreground">{kpi.label}</span>
+                <Icon className={`w-3 h-3 sm:w-4 sm:h-4 ${kpi.color}`} />
               </div>
-              <div className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</div>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${kpi.color}`}>{kpi.value}</div>
             </Card>
           );
         })}
