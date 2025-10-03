@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getMockUserData, getMockActivity } from "@/lib/solana/mock-data";
-import { formatCurrency, formatNumber, formatPercentage, shortenAddress } from "@/lib/utils";
-import { Wallet as WalletIcon, TrendingUp, Lock, Clock, Download, Copy, ExternalLink } from "lucide-react";
+import { formatCurrency, formatPercentage, shortenAddress } from "@/lib/utils";
+import { Wallet as WalletIcon, TrendingUp, Download, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 type ActivityFilter = "all" | "deposit" | "withdraw";
@@ -178,9 +178,9 @@ export default function PortfolioPage() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <code className="text-xs bg-background/50 px-2 py-1 rounded">
-                              {shortenAddress(activity.signature, 3)}
+                              {shortenAddress(activity.signature || "", 3)}
                             </code>
-                            <button onClick={() => copyTx(activity.signature)}>
+                            <button onClick={() => copyTx(activity.signature || "")}>
                               <Copy className="w-3 h-3 text-muted-foreground hover:text-foreground" />
                             </button>
                             <a

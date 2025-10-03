@@ -88,7 +88,7 @@ export function useVaultTx() {
 
     const claimableAt = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
     const requestIds = lotIds.map(
-      (id) => `req-${Math.random().toString(36).substring(2, 10)}`
+      () => `req-${Math.random().toString(36).substring(2, 10)}`
     );
     const txSignature = `8M${Math.random().toString(36).substring(2, 15)}JKL`;
 
@@ -104,7 +104,7 @@ export function useVaultTx() {
   /**
    * Claim processed withdrawal request
    */
-  const claimWithdrawal = async (requestId: string): Promise<ClaimResult> => {
+  const claimWithdrawal = async (): Promise<ClaimResult> => {
     // Simulate transaction
     await new Promise((resolve) => setTimeout(resolve, 1800));
 

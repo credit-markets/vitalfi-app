@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { calculateDepositPreview, getMockUserData } from "@/lib/solana/mock-data";
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Info, Wallet as WalletIcon, AlertCircle } from "lucide-react";
@@ -84,7 +83,7 @@ export function ActionCard({ vaultState }: ActionCardProps) {
               <Card className="p-6 bg-background/50 border-accent/20">
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">You'll Receive</span>
+                    <span className="text-muted-foreground">You&apos;ll Receive</span>
                     <span className="font-bold text-lg text-accent">{formatNumber(depositPreview.sharesMinted)} Shares</span>
                   </div>
                   <div className="flex justify-between">
@@ -145,7 +144,7 @@ export function ActionCard({ vaultState }: ActionCardProps) {
               <Card className="p-6 bg-background/50 border-primary/20">
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">You'll Receive</span>
+                    <span className="text-muted-foreground">You&apos;ll Receive</span>
                     <span className="font-bold text-lg text-primary">
                       {formatCurrency(parseFloat(withdrawAmount) * vaultState.principalRedemptionValue)}
                     </span>

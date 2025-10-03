@@ -7,14 +7,8 @@ import type {
   WithdrawPreview,
   ShareLot,
   VaultStats,
-  UserState,
-  Lot,
-  PendingWithdrawal as NewPendingWithdrawal,
   VaultEvent,
 } from "@/types/vault";
-
-// Fixed base date to avoid hydration errors
-const BASE_DATE = new Date("2025-10-01T00:00:00Z");
 
 // Mock Vault Contract Addresses
 export const MOCK_ADDRESSES = {

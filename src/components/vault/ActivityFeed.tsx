@@ -6,13 +6,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getMockActivity } from "@/lib/solana/mock-data";
-import { formatCurrency, formatNumber, shortenAddress } from "@/lib/utils";
-import { Copy, ExternalLink, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { formatCurrency, shortenAddress } from "@/lib/utils";
+import { Copy, ExternalLink, TrendingUp, TrendingDown, DollarSign, LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 type ActivityFilter = "all" | "deposits" | "withdrawals" | "repayments";
 
-const activityIcons: Record<string, any> = {
+const activityIcons: Record<string, LucideIcon> = {
   deposit: TrendingUp,
   withdraw_request: TrendingDown,
   claim: DollarSign,
@@ -100,9 +100,9 @@ export function ActivityFeed() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <code className="text-xs bg-background/50 px-2 py-1 rounded">
-                          {shortenAddress(activity.user)}
+                          {shortenAddress(activity.user || "")}
                         </code>
-                        <button onClick={() => copyAddress(activity.user)}>
+                        <button onClick={() => copyAddress(activity.user || "")}>
                           <Copy className="w-3 h-3 text-muted-foreground hover:text-foreground" />
                         </button>
                       </div>
