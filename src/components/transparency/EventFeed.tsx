@@ -76,9 +76,9 @@ export function EventFeed({ events, defaultFilters = ["Repayment", "Claim"] }: E
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-border">
         {/* Tag filter */}
-        <div className="space-y-2">
+        <div className="space-y-2 md:col-span-2">
           <label className="text-xs font-medium text-muted-foreground">Tags</label>
           <div className="flex flex-wrap gap-1.5">
             {allTags.map((tag) => (
@@ -129,9 +129,9 @@ export function EventFeed({ events, defaultFilters = ["Repayment", "Claim"] }: E
         </div>
 
         {/* Amount range */}
-        <div className="space-y-2">
+        <div className="space-y-2 md:col-span-2">
           <label className="text-xs font-medium text-muted-foreground">Amount (SOL)</label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 max-w-md">
             <input
               type="number"
               value={amountRange.min}
