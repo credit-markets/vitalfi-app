@@ -1,3 +1,36 @@
+// ============================================================================
+// FUNDING VAULT MODEL - Fixed-Yield Crowdfunding
+// ============================================================================
+
+export type VaultStage = 'Funding' | 'Funded' | 'Matured' | 'Closed';
+
+export interface VaultFundingInfo {
+  stage: VaultStage;
+  expectedApyPct: number;           // e.g., 12.0
+  tvlSol: number;                   // equals raisedSol for clarity
+  capSol: number;
+  minInvestmentSol: number;
+  raisedSol: number;
+  subordinationSol?: number;        // optional
+  fundingStartAt: string;           // ISO
+  fundingEndAt: string;             // ISO
+  maturityAt: string;               // ISO
+  originator: string;               // short label only
+  guarantees: 'Collateral';
+  addresses: {
+    programId: string;
+    vaultPda: string;
+    authorityPda: string;
+    tokenMint: string;
+    vaultTokenAccount: string;
+  };
+}
+
+// ============================================================================
+// LEGACY TYPES - Kept for backward compatibility with other pages
+// TODO: Remove once portfolio and transparency pages are updated
+// ============================================================================
+
 // Core Lot type
 export interface Lot {
   id: string;
@@ -16,7 +49,7 @@ export interface PendingWithdrawal {
   txUrl?: string;
 }
 
-// Complete vault statistics
+// Complete vault statistics (LEGACY - for transparency/portfolio pages)
 export interface VaultStats {
   tvl: number;
   supply: number;
@@ -47,7 +80,7 @@ export interface VaultStats {
   };
 }
 
-// User state with wallet info
+// User state with wallet info (LEGACY)
 export interface UserState {
   wallet: string | null;
   sol: number;
@@ -55,18 +88,30 @@ export interface UserState {
   pendingWithdrawals: PendingWithdrawal[];
 }
 
-// Event tag types for activity feed
+// Event tag types for activity feed (SIMPLIFIED for funding model)
 export type EventTag =
   | "Deposit"
-  | "WithdrawRequest"
   | "Claim"
-  | "Repayment"
   | "Params";
 
-// Vault event for activity feed
+// Vault event for activity feed (SIMPLIFIED - funding model only)
 export interface VaultEvent {
   id: string;
   tag: EventTag;
+  ts: string;
+  wallet: string;
+  amountSol: number;
+  txUrl: string;
+  note?: string;
+}
+
+// Legacy event tag types (for transparency page)
+export type LegacyEventTag = EventTag | "WithdrawRequest" | "Repayment";
+
+// Legacy vault event (for transparency page)
+export interface LegacyVaultEvent {
+  id: string;
+  tag: LegacyEventTag;
   ts: string;
   wallet: string;
   amountSol?: number;

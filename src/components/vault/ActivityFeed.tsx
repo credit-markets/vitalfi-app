@@ -5,37 +5,39 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getMockActivity } from "@/lib/solana/mock-data";
+import { useFundingVault } from "@/hooks/useFundingVault";
 import { formatCurrency, shortenAddress } from "@/lib/utils";
-import { Copy, ExternalLink, TrendingUp, TrendingDown, DollarSign, LucideIcon } from "lucide-react";
+import { Copy, ExternalLink, TrendingUp, DollarSign, LucideIcon } from "lucide-react";
 import { toast } from "sonner";
+import type { EventTag } from "@/types/vault";
 
-type ActivityFilter = "all" | "deposits" | "withdrawals" | "repayments";
+type ActivityFilter = "all" | "deposits" | "claims";
 
-const activityIcons: Record<string, LucideIcon> = {
-  deposit: TrendingUp,
-  withdraw_request: TrendingDown,
-  claim: DollarSign,
-  repayment: DollarSign,
+const activityIcons: Record<EventTag, LucideIcon> = {
+  Deposit: TrendingUp,
+  Claim: DollarSign,
+  Params: DollarSign,
 };
 
-const activityColors: Record<string, string> = {
-  deposit: "text-accent",
-  withdraw_request: "text-impact",
-  claim: "text-primary",
-  repayment: "text-green-500",
+const activityColors: Record<EventTag, string> = {
+  Deposit: "text-accent",
+  Claim: "text-primary",
+  Params: "text-muted-foreground",
 };
 
+/**
+ * Funding Transactions table
+ * Shows deposits and claims only (no PPS, shares, queue columns)
+ */
 export function ActivityFeed() {
   const [filter, setFilter] = useState<ActivityFilter>("all");
-  const allActivity = getMockActivity();
+  const { events, info } = useFundingVault();
 
   const filteredActivity = filter === "all"
-    ? allActivity
-    : allActivity.filter(a => {
-        if (filter === "deposits") return a.type === "deposit";
-        if (filter === "withdrawals") return a.type === "withdraw_request" || a.type === "claim";
-        if (filter === "repayments") return a.type === "repayment";
+    ? events
+    : events.filter(e => {
+        if (filter === "deposits") return e.tag === "Deposit";
+        if (filter === "claims") return e.tag === "Claim";
         return true;
       });
 
@@ -45,90 +47,96 @@ export function ActivityFeed() {
   };
 
   return (
-    <Card className="p-8 bg-gradient-card border-border/50">
+    <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <h3 className="text-2xl font-bold">Recent Activity</h3>
+        <h3 className="text-xl sm:text-2xl font-bold">Funding Transactions</h3>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as ActivityFilter)}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="deposits">Deposits</TabsTrigger>
-            <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-            <TabsTrigger value="repayments">Repayments</TabsTrigger>
+            <TabsTrigger value="claims" disabled={info.stage !== 'Matured'}>
+              Claims
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       <div className="border border-border/50 rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Transaction</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredActivity.length === 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  No activity found
-                </TableCell>
+                <TableHead className="min-w-[100px]">Time</TableHead>
+                <TableHead className="min-w-[80px]">Type</TableHead>
+                <TableHead className="min-w-[120px] text-right">Amount (SOL)</TableHead>
+                <TableHead className="min-w-[120px]">Wallet</TableHead>
+                <TableHead className="min-w-[80px]">Tx</TableHead>
               </TableRow>
-            ) : (
-              filteredActivity.map((activity) => {
-                const Icon = activityIcons[activity.type] || DollarSign;
-                const color = activityColors[activity.type] || "text-foreground";
+            </TableHeader>
+            <TableBody>
+              {filteredActivity.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No funding transactions yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredActivity.map((event) => {
+                  const Icon = activityIcons[event.tag];
+                  const color = activityColors[event.tag];
+                  const timestamp = new Date(event.ts);
 
-                return (
-                  <TableRow key={activity.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Icon className={`w-4 h-4 ${color}`} />
-                        <Badge variant="outline" className="capitalize">
-                          {activity.type.replace("_", " ")}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {activity.type === "deposit" && formatCurrency(activity.solAmount!)}
-                      {(activity.type === "withdraw_request" || activity.type === "claim") &&
-                        formatCurrency(activity.solAmount! * 1.02)}
-                      {activity.type === "repayment" && formatCurrency(activity.solAmount!)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <code className="text-xs bg-background/50 px-2 py-1 rounded">
-                          {shortenAddress(activity.user || "")}
-                        </code>
-                        <button onClick={() => copyAddress(activity.user || "")}>
-                          <Copy className="w-3 h-3 text-muted-foreground hover:text-foreground" />
-                        </button>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {activity.timestamp.toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <a
-                        href={`https://explorer.solana.com/tx/${activity.signature}?cluster=devnet`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 hover:text-accent transition-colors"
-                      >
-                        <code className="text-xs bg-background/50 px-2 py-1 rounded">
-                          View
-                        </code>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
+                  return (
+                    <TableRow key={event.id}>
+                      <TableCell className="text-xs sm:text-sm text-muted-foreground">
+                        <div>{timestamp.toLocaleDateString()}</div>
+                        <div className="text-[10px] sm:text-xs">{timestamp.toLocaleTimeString()}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Icon className={`w-4 h-4 ${color} flex-shrink-0`} />
+                          <Badge variant="outline" className="capitalize text-xs">
+                            {event.tag}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium text-right">
+                        {formatCurrency(event.amountSol)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <code className="text-[10px] sm:text-xs bg-background/50 px-2 py-1 rounded font-mono">
+                            {shortenAddress(event.wallet, 4)}
+                          </code>
+                          <button
+                            onClick={() => copyAddress(event.wallet)}
+                            className="p-1 hover:bg-muted active:bg-muted rounded transition-colors touch-manipulation"
+                            aria-label="Copy address"
+                          >
+                            <Copy className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+                          </button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <a
+                          href={event.txUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 hover:text-accent transition-colors"
+                        >
+                          <code className="text-[10px] sm:text-xs bg-background/50 px-2 py-1 rounded">
+                            View
+                          </code>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </Card>
   );

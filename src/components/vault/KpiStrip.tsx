@@ -2,83 +2,63 @@
 
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useVaultStats } from "@/hooks/useVaultStats";
-import { formatCompactCurrency, formatPricePerShare } from "@/lib/formatters";
-import { formatPercentage } from "@/lib/utils";
-import { DollarSign, TrendingUp, Coins, Users, Clock, ExternalLink } from "lucide-react";
-import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/constants";
+import { useFundingVault } from "@/hooks/useFundingVault";
+import { formatCompactCurrency } from "@/lib/formatters";
+import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 
 /**
- * Compact KPI strip showing key vault metrics
- * Replaces the old hero header with clean, scannable stats
+ * Compact KPI strip for funding vault
+ * Shows 4 cards only: TVL, Expected APY, Cap Remaining, Days to Maturity
  */
 export function KpiStrip() {
-  const stats = useVaultStats();
+  const { info, computed } = useFundingVault();
 
   const kpis = [
     {
       label: "TVL",
-      value: formatCompactCurrency(stats.tvl),
-      tooltip: `Total Value Locked: ${formatCompactCurrency(stats.tvl)}`,
+      value: formatCompactCurrency(info.tvlSol),
+      tooltip: `Total Value Locked: ${formatCompactCurrency(info.tvlSol)} SOL`,
       icon: DollarSign,
-      link: `${SOLSCAN_BASE_URL}/account/${stats.addresses.vaultTokenAccount}${CLUSTER !== "mainnet-beta" ? `?cluster=${CLUSTER}` : ""}`,
     },
     {
-      label: "Current APY",
-      value: formatPercentage(stats.apy),
-      tooltip: `Annual Percentage Yield: ${formatPercentage(stats.apy)}`,
+      label: "Expected APY",
+      value: `${info.expectedApyPct.toFixed(1)}% p.y.`,
+      tooltip: `Expected Annual Percentage Yield: ${info.expectedApyPct}%`,
       icon: TrendingUp,
     },
     {
-      label: "Price per Share",
-      value: formatPricePerShare(stats.pricePerShare),
-      tooltip: `Current redemption value per share: ${formatPricePerShare(stats.pricePerShare)} SOL`,
-      icon: Coins,
-    },
-    {
       label: "Cap Remaining",
-      value: formatCompactCurrency(stats.capRemaining),
-      tooltip: `Available vault capacity: ${formatCompactCurrency(stats.capRemaining)} of ${formatCompactCurrency(stats.cap)} total`,
+      value: formatCompactCurrency(computed.capRemainingSol),
+      tooltip: `Available capacity: ${formatCompactCurrency(computed.capRemainingSol)} of ${formatCompactCurrency(info.capSol)} total`,
       icon: Users,
     },
     {
-      label: "Queue / Avg Claim",
-      value: `${stats.queueDepth} / ${stats.avgClaimTimeDays}d`,
-      tooltip: `${stats.queueDepth} pending withdrawals, average claim time ${stats.avgClaimTimeDays} days`,
-      icon: Clock,
+      label: "Days to Maturity",
+      value: computed.daysToMaturity,
+      tooltip: `Days until principal and yield are distributed`,
+      icon: Calendar,
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
-      {kpis.map((kpi) => {
-        const Icon = kpi.icon;
-        return (
-          <Tooltip key={kpi.label} content={<p className="text-sm">{kpi.tooltip}</p>}>
-            <Card className="p-3 sm:p-4 bg-card border border-border hover:border-primary/30 transition-colors cursor-default">
-              <div className="flex items-start justify-between mb-1.5 sm:mb-2">
-                <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight">{kpi.label}</span>
-                <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
-                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary/60" />
-                  {kpi.link && (
-                    <a
-                      href={kpi.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary active:text-primary transition-colors touch-manipulation p-1"
-                      aria-label={`View ${kpi.label} on Solscan`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    </a>
-                  )}
+    <div className="mb-4 sm:mb-6">
+      {/* KPI Grid - 4 cards only */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <Tooltip key={kpi.label} content={<p className="text-sm">{kpi.tooltip}</p>}>
+              <Card className="p-3 sm:p-4 bg-card border border-border hover:border-primary/30 transition-colors cursor-default">
+                <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+                  <span className="text-[10px] sm:text-xs text-muted-foreground/80 leading-tight">{kpi.label}</span>
+                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary/50 flex-shrink-0" />
                 </div>
-              </div>
-              <div className="text-lg sm:text-2xl font-bold text-foreground truncate">{kpi.value}</div>
-            </Card>
-          </Tooltip>
-        );
-      })}
+                <div className="text-lg sm:text-2xl font-bold text-foreground truncate">{kpi.value}</div>
+              </Card>
+            </Tooltip>
+          );
+        })}
+      </div>
     </div>
   );
 }

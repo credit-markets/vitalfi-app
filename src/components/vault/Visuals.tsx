@@ -19,7 +19,7 @@ import { useState } from "react";
 export function Visuals() {
   const [activeWidget, setActiveWidget] = useState<"pps" | "repayments" | "queue">("pps");
   const { pps30d } = useSeries();
-  const { events } = useVaultEvents({ tag: "Repayment" });
+  const { events } = useVaultEvents({ tag: "Repayment" as any });
   const queue = useUserQueue();
 
   // Calculate PPS change

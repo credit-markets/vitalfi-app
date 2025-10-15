@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { getMockVaultEvents } from "@/lib/solana/mock-data";
-import type { EventTag } from "@/types/vault";
+import type { LegacyEventTag } from "@/types/vault";
 
 export interface VaultEventsParams {
-  tag?: EventTag | "All";
+  tag?: LegacyEventTag | "All";
   limit?: number;
 }
 

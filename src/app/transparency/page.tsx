@@ -14,13 +14,13 @@ import { Disclosures } from "@/components/transparency/Disclosures";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useTransparency } from "@/hooks/useTransparency";
 import { cn } from "@/lib/utils";
-import type { EventTag } from "@/types/vault";
+import type { LegacyEventTag } from "@/types/vault";
 
 export default function TransparencyPage() {
   const { isCollapsed } = useSidebar();
   const { stats, snapshot, events, paramChanges, derived, reconciliation, lastUpdated } = useTransparency();
   const eventFeedRef = useRef<HTMLDivElement>(null);
-  const [eventFilters, setEventFilters] = useState<EventTag[]>(["Repayment", "Claim"]);
+  const [eventFilters, setEventFilters] = useState<LegacyEventTag[]>(["Repayment", "Claim"]);
 
   const handleViewEvents = () => {
     setEventFilters(["Repayment"]);

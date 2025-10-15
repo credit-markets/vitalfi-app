@@ -8,6 +8,7 @@ import type {
   ShareLot,
   VaultStats,
   VaultEvent,
+  LegacyVaultEvent,
   CollateralSnapshot,
   CollateralItem,
   ParamChange,
@@ -260,7 +261,7 @@ export const calculateWithdrawPreview = (sharesAmount: number): WithdrawPreview 
 };
 
 // Extended vault events for transparency page
-export const getMockVaultEvents = (): VaultEvent[] => {
+export const getMockVaultEvents = (): LegacyVaultEvent[] => {
   const baseUrl = "https://explorer.solana.com/tx";
   const cluster = "devnet";
 

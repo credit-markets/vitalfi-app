@@ -4,21 +4,21 @@ import { useState, useMemo } from "react";
 import { Copy, ExternalLink, ChevronDown, ChevronRight, Check } from "lucide-react";
 import { formatSOL, formatRelativeTime } from "@/lib/formatters";
 import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/constants";
-import type { VaultEvent, EventTag } from "@/types/vault";
+import type { LegacyVaultEvent, LegacyEventTag } from "@/types/vault";
 
 interface EventFeedProps {
-  events: VaultEvent[];
-  defaultFilters?: EventTag[];
+  events: LegacyVaultEvent[];
+  defaultFilters?: LegacyEventTag[];
 }
 
 export function EventFeed({ events, defaultFilters = ["Repayment", "Claim"] }: EventFeedProps) {
-  const [selectedTags, setSelectedTags] = useState<Set<EventTag>>(new Set(defaultFilters));
+  const [selectedTags, setSelectedTags] = useState<Set<LegacyEventTag>>(new Set(defaultFilters));
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: "", end: "" });
   const [walletFilter, setWalletFilter] = useState("");
   const [amountRange, setAmountRange] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
-  const allTags: EventTag[] = ["Deposit", "WithdrawRequest", "Claim", "Repayment", "Params"];
+  const allTags: LegacyEventTag[] = ["Deposit", "WithdrawRequest", "Claim", "Repayment", "Params"];
 
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
@@ -32,7 +32,7 @@ export function EventFeed({ events, defaultFilters = ["Repayment", "Claim"] }: E
     });
   }, [events, selectedTags, walletFilter, dateRange, amountRange]);
 
-  const toggleTag = (tag: EventTag) => {
+  const toggleTag = (tag: LegacyEventTag) => {
     const newSet = new Set(selectedTags);
     if (newSet.has(tag)) {
       newSet.delete(tag);
@@ -188,7 +188,7 @@ export function EventFeed({ events, defaultFilters = ["Repayment", "Claim"] }: E
   );
 }
 
-function EventRow({ event, isExpanded, onToggle }: { event: VaultEvent; isExpanded: boolean; onToggle: () => void }) {
+function EventRow({ event, isExpanded, onToggle }: { event: LegacyVaultEvent; isExpanded: boolean; onToggle: () => void }) {
   const [copied, setCopied] = useState(false);
 
   const copyTxUrl = async () => {
@@ -202,7 +202,7 @@ function EventRow({ event, isExpanded, onToggle }: { event: VaultEvent; isExpand
     return `${wallet.slice(0, 8)}...${wallet.slice(-6)}`;
   };
 
-  const tagColors: Record<EventTag, string> = {
+  const tagColors: Record<LegacyEventTag, string> = {
     Deposit: "bg-green-500/10 text-green-500",
     WithdrawRequest: "bg-amber-500/10 text-amber-500",
     Claim: "bg-violet-500/10 text-violet-500",

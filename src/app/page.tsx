@@ -4,14 +4,13 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Accent3D } from "@/components/vault/Accent3D";
 import { KpiStrip } from "@/components/vault/KpiStrip";
-import { Visuals } from "@/components/vault/Visuals";
-import { SlimChart } from "@/components/vault/SlimChart";
-import { TransactionsTable } from "@/components/vault/TransactionsTable";
+import { VaultOverview } from "@/components/vault/VaultOverview";
+import { ActivityFeed } from "@/components/vault/ActivityFeed";
 import { ActionPanel } from "@/components/vault/ActionPanel";
 import { VaultInfoCard } from "@/components/vault/VaultInfoCard";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { cn } from "@/lib/utils";
-import { SHOW_3D_ACCENT, SHOW_SLIM_CHART, ACCENT_3D_MODE } from "@/lib/constants";
+import { SHOW_3D_ACCENT, ACCENT_3D_MODE } from "@/lib/constants";
 
 export default function Home() {
   const { isCollapsed } = useSidebar();
@@ -37,13 +36,13 @@ export default function Home() {
 
           {/* Mobile-first stacked layout, desktop two-column */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-            {/* Left column: Visuals + Transactions */}
+            {/* Left column: Vault Overview + Funding Transactions */}
             <section className="lg:col-span-7 space-y-4 sm:space-y-6">
-              {SHOW_SLIM_CHART ? <SlimChart /> : <Visuals />}
-              <TransactionsTable />
+              <VaultOverview />
+              <ActivityFeed />
             </section>
 
-            {/* Right column: Action Panel + Vault Info */}
+            {/* Right column: Action Panel (Participate) + Vault Info */}
             <aside className="lg:col-span-5 space-y-4 sm:space-y-6">
               <ActionPanel />
               <VaultInfoCard />

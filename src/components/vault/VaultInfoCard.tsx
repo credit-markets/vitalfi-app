@@ -1,19 +1,19 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { useVaultStats } from "@/hooks/useVaultStats";
-import { formatCompactCurrency, formatPricePerShare } from "@/lib/formatters";
-import { formatPercentage, shortenAddress } from "@/lib/utils";
-import { SOLSCAN_BASE_URL, CLUSTER, WITHDRAWAL_DELAY_DAYS } from "@/lib/constants";
+import { useFundingVault } from "@/hooks/useFundingVault";
+import { formatCompactCurrency } from "@/lib/formatters";
+import { shortenAddress } from "@/lib/utils";
+import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/constants";
 import { Copy, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
 
 /**
- * Vault info card with addresses and stats
- * Includes copy buttons and Solscan links
+ * Vault info card with addresses and facts
+ * Shows: Guarantees, Originator, Cap, Min Investment
  */
 export function VaultInfoCard() {
-  const stats = useVaultStats();
+  const { info } = useFundingVault();
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -21,21 +21,18 @@ export function VaultInfoCard() {
   };
 
   const addresses = [
-    { label: "Program ID", value: stats.addresses.programId },
-    { label: "Vault PDA", value: stats.addresses.vaultPda },
-    { label: "Authority PDA", value: stats.addresses.authorityPda },
-    { label: "Token Mint", value: stats.addresses.tokenMint },
-    { label: "Asset Account", value: stats.addresses.vaultTokenAccount },
+    { label: "Program ID", value: info.addresses.programId },
+    { label: "Vault PDA", value: info.addresses.vaultPda },
+    { label: "Authority PDA", value: info.addresses.authorityPda },
+    { label: "Token Mint", value: info.addresses.tokenMint },
+    { label: "Asset Account", value: info.addresses.vaultTokenAccount },
   ];
 
-  const vaultStats = [
-    { label: "TVL", value: formatCompactCurrency(stats.tvl) },
-    { label: "APY", value: formatPercentage(stats.apy) },
-    { label: "Price per Share", value: formatPricePerShare(stats.pricePerShare) },
-    { label: "Cap Remaining", value: formatCompactCurrency(stats.capRemaining) },
-    { label: "Liquidity Buffer", value: formatCompactCurrency(stats.liquidityBuffer) },
-    { label: "Queue Depth", value: `${stats.queueDepth} requests` },
-    { label: "Avg Claim Time", value: `${stats.avgClaimTimeDays} days` },
+  const facts = [
+    { label: "Guarantees", value: info.guarantees },
+    { label: "Originator", value: info.originator },
+    { label: "Cap", value: formatCompactCurrency(info.capSol) },
+    { label: "Min Investment", value: formatCompactCurrency(info.minInvestmentSol) },
   ];
 
   return (
@@ -80,35 +77,18 @@ export function VaultInfoCard() {
         ))}
       </div>
 
-      {/* Stats Section */}
+      {/* Facts Section */}
       <div className="pt-3 sm:pt-4 border-t border-border space-y-2 sm:space-y-3">
         <div className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Statistics
+          Facts
         </div>
         <div className="space-y-1.5 sm:space-y-2">
-          {vaultStats.map((stat) => (
-            <div key={stat.label} className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-muted-foreground">{stat.label}</span>
-              <span className="font-semibold">{stat.value}</span>
+          {facts.map((fact) => (
+            <div key={fact.label} className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-muted-foreground">{fact.label}</span>
+              <span className="font-semibold">{fact.value}</span>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Risk Parameters */}
-      <div className="pt-3 sm:pt-4 border-t border-border space-y-2">
-        <div className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Risk Parameters
-        </div>
-        <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Withdrawal Delay</span>
-            <span className="font-semibold">{WITHDRAWAL_DELAY_DAYS} days</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Principal Lockup</span>
-            <span className="font-semibold">90 days</span>
-          </div>
         </div>
       </div>
     </Card>

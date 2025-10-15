@@ -1,7 +1,7 @@
 import { getMockVaultStats, getMockVaultEvents, getMockCollateralSnapshot, getMockParamChanges } from "@/lib/solana/mock-data";
-import type { VaultStats, VaultEvent, CollateralSnapshot, ParamChange, DerivedMetrics, ReconciliationData } from "@/types/vault";
+import type { VaultStats, LegacyVaultEvent, CollateralSnapshot, ParamChange, DerivedMetrics, ReconciliationData } from "@/types/vault";
 
-export function deriveFromEvents(events: VaultEvent[]): DerivedMetrics {
+export function deriveFromEvents(events: LegacyVaultEvent[]): DerivedMetrics {
   const sorted = [...events].sort((a, b) => +new Date(a.ts) - +new Date(b.ts));
   let assets = 0;
   let supply = 0;
@@ -42,7 +42,7 @@ export function deriveFromEvents(events: VaultEvent[]): DerivedMetrics {
 export function useTransparency() {
   const stats: VaultStats = getMockVaultStats();
   const snapshot: CollateralSnapshot = getMockCollateralSnapshot();
-  const events: VaultEvent[] = getMockVaultEvents();
+  const events: LegacyVaultEvent[] = getMockVaultEvents();
   const paramChanges: ParamChange[] = getMockParamChanges();
 
   const derived = deriveFromEvents(events);

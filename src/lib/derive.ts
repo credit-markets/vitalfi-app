@@ -1,4 +1,4 @@
-import type { VaultEvent } from "@/types/vault";
+import type { LegacyVaultEvent } from "@/types/vault";
 
 export type Point = { t: string; pps: number };
 export type ApyPoint = { t: string; apy: number };
@@ -11,7 +11,7 @@ export type ApyPoint = { t: string; apy: number };
  * - Repayments add assets (increasing PPS)
  * - WithdrawRequests don't affect balances (queue only)
  */
-export function deriveFromEvents(events: VaultEvent[]) {
+export function deriveFromEvents(events: LegacyVaultEvent[]) {
   const sorted = [...events].sort(
     (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime()
   );

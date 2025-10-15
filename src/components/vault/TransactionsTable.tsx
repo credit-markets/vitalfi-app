@@ -18,9 +18,9 @@ import { shortenAddress } from "@/lib/utils";
 import { Copy, ExternalLink, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { EventTag } from "@/types/vault";
+import type { LegacyEventTag } from "@/types/vault";
 
-type FilterTab = "All" | EventTag;
+type FilterTab = "All" | LegacyEventTag;
 
 /**
  * Transactions table with filtering, sticky header, and Solscan links
@@ -36,7 +36,7 @@ export function TransactionsTable() {
     toast.success("Address copied to clipboard");
   };
 
-  const getEventIcon = (tag: EventTag) => {
+  const getEventIcon = (tag: LegacyEventTag) => {
     switch (tag) {
       case "Deposit":
         return TrendingUp;
@@ -50,7 +50,7 @@ export function TransactionsTable() {
     }
   };
 
-  const getEventColor = (tag: EventTag) => {
+  const getEventColor = (tag: LegacyEventTag) => {
     switch (tag) {
       case "Deposit":
         return "text-green-500";

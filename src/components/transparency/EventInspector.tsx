@@ -15,19 +15,19 @@ import {
 import { Copy, ExternalLink, ChevronDown, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 import { shortenAddress, formatNumber } from "@/lib/utils";
-import type { VaultEvent, EventTag } from "@/types/vault";
+import type { LegacyVaultEvent, LegacyEventTag } from "@/types/vault";
 
 interface EventInspectorProps {
-  events: VaultEvent[];
+  events: LegacyVaultEvent[];
   onDownload: () => void;
 }
 
 export function EventInspector({ events, onDownload }: EventInspectorProps) {
-  const [selectedTags, setSelectedTags] = useState<Set<EventTag>>(new Set());
+  const [selectedTags, setSelectedTags] = useState<Set<LegacyEventTag>>(new Set());
   const [walletFilter, setWalletFilter] = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  const allTags: EventTag[] = ["Deposit", "WithdrawRequest", "Claim", "Repayment", "Params"];
+  const allTags: LegacyEventTag[] = ["Deposit", "WithdrawRequest", "Claim", "Repayment", "Params"];
 
   // Filter events
   const filteredEvents = useMemo(() => {
@@ -41,7 +41,7 @@ export function EventInspector({ events, onDownload }: EventInspectorProps) {
     });
   }, [events, selectedTags, walletFilter]);
 
-  const toggleTag = (tag: EventTag) => {
+  const toggleTag = (tag: LegacyEventTag) => {
     const newSet = new Set(selectedTags);
     if (newSet.has(tag)) {
       newSet.delete(tag);
@@ -56,7 +56,7 @@ export function EventInspector({ events, onDownload }: EventInspectorProps) {
     toast.success(`Copied ${label}`);
   };
 
-  const getTagColor = (tag: EventTag) => {
+  const getTagColor = (tag: LegacyEventTag) => {
     switch (tag) {
       case "Deposit":
         return "default";
