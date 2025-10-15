@@ -1,44 +1,70 @@
 "use client";
 
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { ValueCard } from "@/components/portfolio/ValueCard";
-import { EarningsCard } from "@/components/portfolio/EarningsCard";
-import { PendingWithdrawals } from "@/components/portfolio/PendingWithdrawals";
+import { PortfolioHeader } from "@/components/portfolio/PortfolioHeader";
+import { PositionCard } from "@/components/portfolio/PositionCard";
 import { ActivityTable } from "@/components/portfolio/ActivityTable";
-import { usePortfolioSummary } from "@/hooks/usePortfolioSummary";
-import { usePpsSeries } from "@/hooks/usePpsSeries";
-import { usePortfolioEvents } from "@/hooks/usePortfolioEvents";
-import { useUserQueue } from "@/hooks/useUserQueue";
-import { useClaimWithdrawal } from "@/hooks/useClaimWithdrawal";
+import { Timeline } from "@/components/portfolio/Timeline";
+import { usePortfolio } from "@/hooks/usePortfolio";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Wallet as WalletIcon } from "lucide-react";
+import { toast } from "sonner";
+import type { PortfolioPosition } from "@/hooks/usePortfolio";
+
+type StageFilter = "all" | "Funding" | "Funded" | "Matured";
 
 export default function PortfolioPage() {
-  const { connected } = useWallet();
   const { isCollapsed } = useSidebar();
+  const { summary, positions, activity, connected } = usePortfolio();
+  const [stageFilter, setStageFilter] = useState<StageFilter>("all");
+  const [highlightedVault, setHighlightedVault] = useState<string | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const summary = usePortfolioSummary();
-  const ppsSeries = usePpsSeries(30);
-  const { events } = usePortfolioEvents();
-  const queue = useUserQueue();
-  const { claim } = useClaimWithdrawal();
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
-  // Convert queue to pending withdrawals array
-  const pendingWithdrawals = queue.pending
-    ? [{
-        id: "pending-1",
-        amount: queue.pending.amountShares,
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-        claimAt: queue.pending.claimAt,
-        estSolOut: queue.pending.estSol,
-      }]
-    : [];
+  const handleClaim = async (vaultId: string) => {
+    // TODO: Implement actual claim transaction
+    toast.success(`Claim initiated for vault ${vaultId}`);
+  };
 
-  if (!connected || !summary) {
+  const scrollToVault = (vaultId: string) => {
+    const cardElement = cardRefs.current[vaultId];
+    if (cardElement) {
+      cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Brief highlight effect using React state
+      setHighlightedVault(vaultId);
+
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Set new timeout
+      timeoutRef.current = setTimeout(() => {
+        setHighlightedVault(null);
+        timeoutRef.current = null;
+      }, 2000);
+    }
+  };
+
+  const filteredPositions: PortfolioPosition[] =
+    stageFilter === "all"
+      ? positions
+      : positions.filter((p) => p.stage === stageFilter);
+
+  if (!connected) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -77,24 +103,65 @@ export default function PortfolioPage() {
         )}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-4 sm:space-y-6">
-          {/* Overview Grid - Mobile stacked, Desktop two-column */}
-          <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-            {/* Left: Holdings & Value */}
-            <div className="lg:col-span-8">
-              <ValueCard summary={summary} ppsSeries={ppsSeries} />
+          {/* Page Title */}
+          <h1 className="text-3xl sm:text-4xl font-bold">My Portfolio</h1>
+
+          {/* Summary KPIs */}
+          <PortfolioHeader summary={summary} positions={positions} />
+
+          {/* Timeline */}
+          <Timeline positions={positions} onEventClick={scrollToVault} />
+
+          {/* Filter Pills (if multiple positions) */}
+          {positions.length > 1 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground mr-2">Filter by stage:</span>
+              {(["all", "Funding", "Funded", "Matured"] as StageFilter[]).map((stage) => (
+                <button
+                  key={stage}
+                  onClick={() => setStageFilter(stage)}
+                  className={`px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-all touch-manipulation ${
+                    stageFilter === stage
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card border-border hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  {stage === "all" ? "All" : stage}
+                </button>
+              ))}
             </div>
+          )}
 
-            {/* Right: Earnings + Pending Withdrawals */}
-            <aside className="lg:col-span-4 space-y-4 sm:space-y-6">
-              <EarningsCard summary={summary} />
-              <PendingWithdrawals items={pendingWithdrawals} onClaim={claim} />
-            </aside>
-          </section>
+          {/* Positions Grid */}
+          {filteredPositions.length === 0 ? (
+            <Card className="p-8 sm:p-12 bg-card border-border text-center">
+              <div className="text-muted-foreground mb-4">
+                {stageFilter === "all"
+                  ? "No positions found. Start investing to see your portfolio here."
+                  : `No ${stageFilter.toLowerCase()} positions.`}
+              </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {filteredPositions.map((position) => (
+                <div
+                  key={position.vaultId}
+                  ref={(el) => {
+                    cardRefs.current[position.vaultId] = el;
+                  }}
+                  className={cn(
+                    "transition-all duration-300 rounded-lg",
+                    highlightedVault === position.vaultId && "ring-2 ring-primary/50"
+                  )}
+                >
+                  <PositionCard position={position} onClaim={handleClaim} />
+                </div>
+              ))}
+            </div>
+          )}
 
-          {/* Your Activity */}
-          <section>
-            <ActivityTable events={events} />
-          </section>
+          {/* Activity Table */}
+          <ActivityTable activity={activity} />
         </div>
       </main>
     </div>
