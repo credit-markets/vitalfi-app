@@ -50,3 +50,24 @@ export function formatDate(iso: string): string {
 export function pluralize(n: number, unit: string): string {
   return `${n} ${unit}${n === 1 ? '' : 's'}`;
 }
+
+/**
+ * Calculate days until a future date
+ * @returns Number of days until the date (minimum 0)
+ */
+export function daysUntil(iso: string): number {
+  const d = Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  return d;
+}
+
+/**
+ * Calculate expected yield based on principal, APY, and maturity date
+ * @param principalSol Principal amount in SOL
+ * @param apyPct Annual percentage yield
+ * @param maturityIso Maturity date in ISO format
+ * @returns Expected yield in SOL
+ */
+export function expectedYieldSol(principalSol: number, apyPct: number, maturityIso: string): number {
+  const days = daysUntil(maturityIso);
+  return principalSol * (apyPct / 100) * (days / 365);
+}
