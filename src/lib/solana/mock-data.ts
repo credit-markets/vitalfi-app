@@ -7,7 +7,6 @@ import type {
   WithdrawPreview,
   ShareLot,
   VaultStats,
-  VaultEvent,
   LegacyVaultEvent,
   CollateralSnapshot,
   CollateralItem,

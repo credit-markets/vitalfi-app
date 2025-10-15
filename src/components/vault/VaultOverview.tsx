@@ -1,11 +1,9 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useFundingVault } from "@/hooks/useFundingVault";
 import { formatCompactCurrency } from "@/lib/formatters";
 import { formatDate, pluralize } from "@/lib/utils";
-import type { VaultStage } from "@/types/vault";
 
 /**
  * Vault Overview with single gradient progress bar and 4-item info row
@@ -13,19 +11,6 @@ import type { VaultStage } from "@/types/vault";
  */
 export function VaultOverview() {
   const { info, computed } = useFundingVault();
-
-  const getStageColor = (stage: VaultStage): "default" | "secondary" | "outline" => {
-    switch (stage) {
-      case 'Funding':
-        return 'default'; // violet
-      case 'Funded':
-        return 'secondary'; // slate
-      case 'Matured':
-        return 'outline'; // teal accent
-      default:
-        return 'secondary';
-    }
-  };
 
   return (
     <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
