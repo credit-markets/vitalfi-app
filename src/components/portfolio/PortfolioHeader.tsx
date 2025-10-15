@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
+import { Tooltip } from "@/components/ui/tooltip";
 import { formatCompactCurrency } from "@/lib/formatters";
 import { DollarSign, TrendingUp, Target, Calendar } from "lucide-react";
 import type { PortfolioSummary, PortfolioPosition } from "@/hooks/usePortfolio";
@@ -45,38 +46,33 @@ export function PortfolioHeader({ summary, positions }: PortfolioHeaderProps) {
       value: nextMaturity
         ? `${pluralize(nextMaturity.daysAway, 'day')}`
         : "—",
-      subtitle: nextMaturity?.vaultName,
       icon: Calendar,
-      tooltip: "Nearest upcoming maturity date",
+      tooltip: nextMaturity
+        ? `Nearest upcoming maturity: ${nextMaturity.vaultName}`
+        : "No active positions with upcoming maturity",
     },
   ], [summary, nextMaturity]);
 
   return (
     <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
       {/* 4 KPIs Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <Card
-              key={kpi.label}
-              className="p-4 sm:p-5 bg-card border border-border hover:border-primary/30 transition-colors"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <span className="text-xs sm:text-sm text-muted-foreground/80 leading-tight">
-                  {kpi.label}
-                </span>
-                <Icon className="w-4 h-4 text-primary/50 flex-shrink-0" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">
-                {kpi.value}
-              </div>
-              {kpi.subtitle && (
-                <div className="text-xs text-muted-foreground mt-1 truncate">
-                  {kpi.subtitle}
+            <Tooltip key={kpi.label} content={<p className="text-sm">{kpi.tooltip}</p>}>
+              <Card className="p-3 sm:p-4 bg-card border border-border hover:border-primary/30 transition-colors cursor-default">
+                <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+                  <span className="text-[10px] sm:text-xs text-muted-foreground/80 leading-tight">
+                    {kpi.label}
+                  </span>
+                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary/50 flex-shrink-0" />
                 </div>
-              )}
-            </Card>
+                <div className="text-lg sm:text-2xl font-bold text-foreground truncate">
+                  {kpi.value}
+                </div>
+              </Card>
+            </Tooltip>
           );
         })}
       </div>
