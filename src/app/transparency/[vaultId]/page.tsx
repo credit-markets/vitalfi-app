@@ -15,6 +15,7 @@ import { getVaultTransparency, exportReceivablesCsv } from "@/lib/transparency/a
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import type { VaultTransparencyData, Receivable } from "@/types/vault";
 
 export default function VaultTransparencyDetail() {
@@ -45,22 +46,20 @@ export default function VaultTransparencyDetail() {
   }, [vaultId]);
 
   const handleExportCsv = async (receivables: Receivable[]) => {
-    let url: string | null = null;
     try {
       const blob = await exportReceivablesCsv(vaultId, receivables);
-      url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `${vaultId}-receivables-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      // Revoke immediately after click - no need for finally block
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('CSV export failed:', err);
-    } finally {
-      if (url) {
-        window.URL.revokeObjectURL(url);
-      }
+      toast.error('Failed to export CSV');
     }
   };
 

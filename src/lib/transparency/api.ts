@@ -66,11 +66,21 @@ export function filterReceivables(
   if (filters.dateRange) {
     if (filters.dateRange.start) {
       const startDate = new Date(filters.dateRange.start);
-      filtered = filtered.filter(r => new Date(r.maturityDate) >= startDate);
+      if (!isNaN(startDate.getTime())) {
+        filtered = filtered.filter(r => {
+          const maturityDate = new Date(r.maturityDate);
+          return !isNaN(maturityDate.getTime()) && maturityDate >= startDate;
+        });
+      }
     }
     if (filters.dateRange.end) {
       const endDate = new Date(filters.dateRange.end);
-      filtered = filtered.filter(r => new Date(r.maturityDate) <= endDate);
+      if (!isNaN(endDate.getTime())) {
+        filtered = filtered.filter(r => {
+          const maturityDate = new Date(r.maturityDate);
+          return !isNaN(maturityDate.getTime()) && maturityDate <= endDate;
+        });
+      }
     }
   }
 

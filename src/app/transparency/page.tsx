@@ -13,14 +13,18 @@ export default function TransparencyHub() {
   const { isCollapsed } = useSidebar();
   const [vaults, setVaults] = useState<VaultSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadVaults() {
       try {
+        setLoading(true);
+        setError(null);
         const data = await listTransparencyVaults();
         setVaults(data);
-      } catch (error) {
-        console.error("Failed to load transparency vaults:", error);
+      } catch (err) {
+        console.error("Failed to load transparency vaults:", err);
+        setError(err instanceof Error ? err.message : "Failed to load transparency data");
       } finally {
         setLoading(false);
       }
@@ -61,6 +65,17 @@ export default function TransparencyHub() {
                   className="h-80 bg-card border border-border rounded-lg animate-pulse"
                 />
               ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <p className="text-red-400 text-lg mb-2">Failed to load transparency data</p>
+              <p className="text-muted-foreground text-sm">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+              >
+                Retry
+              </button>
             </div>
           ) : vaults.length === 0 ? (
             <div className="text-center py-16">

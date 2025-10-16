@@ -1,6 +1,3 @@
-// ============================================================================
-// FUNDING VAULT MODEL - Fixed-Yield Crowdfunding
-// ============================================================================
 
 export type VaultStage = 'Funding' | 'Funded' | 'Matured' | 'Closed';
 
@@ -26,10 +23,6 @@ export interface VaultFundingInfo {
   };
 }
 
-// ============================================================================
-// VAULT EVENT TYPES - Used by active vault page components
-// ============================================================================
-
 // Event tag types for activity feed (SIMPLIFIED for funding model)
 export type EventTag =
   | "Deposit"
@@ -46,11 +39,6 @@ export interface VaultEvent {
   txUrl: string;
   note?: string;
 }
-
-
-// ============================================================================
-// NEW TRANSPARENCY TYPES - Receivables-based model (Funded/Matured only)
-// ============================================================================
 
 export interface OriginatorInfo {
   id: string;

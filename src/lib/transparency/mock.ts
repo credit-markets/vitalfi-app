@@ -326,9 +326,19 @@ export async function exportReceivablesCsv(
     r.links?.txUrl || '',
   ]);
 
+  // Sanitize cells to prevent CSV injection
+  const sanitizeCell = (value: string | number): string => {
+    const str = String(value);
+    // If cell starts with formula characters, prefix with single quote
+    if (str.match(/^[=+\-@]/)) {
+      return `'${str}`;
+    }
+    return str;
+  };
+
   const csvContent = [
     headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+    ...rows.map(row => row.map(cell => `"${sanitizeCell(cell)}"`).join(',')),
   ].join('\n');
 
   return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

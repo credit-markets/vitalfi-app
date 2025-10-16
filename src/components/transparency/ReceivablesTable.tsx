@@ -20,7 +20,7 @@ import {
   X,
 } from "lucide-react";
 import type { Receivable, ReceivableStatus, ReceivableFilters } from "@/types/vault";
-import { filterReceivables, getFilterOptions } from "@/lib/transparency/api";
+import { filterReceivables } from "@/lib/transparency/api";
 
 interface ReceivablesTableProps {
   receivables: Receivable[];
@@ -32,12 +32,8 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Get filter options (available for future filter UI enhancements)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { originators, payers } = useMemo(
-    () => getFilterOptions(receivables),
-    [receivables]
-  );
+  // TODO: Implement filter UI with originators and payers dropdowns
+  // For now, only search is active
 
   // Apply filters and search
   const filteredReceivables = useMemo(() => {

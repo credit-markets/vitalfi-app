@@ -5,10 +5,10 @@ A Next.js application for depositing SOL into a transparent DeFi vault that fina
 ## 🚀 Features
 
 - **Solana Wallet Integration** - Connect with Phantom, Solflare, and other Solana wallets
-- **Real-time Vault Metrics** - View TVL, APY, share redemption value, and vault performance
-- **Deposit/Withdraw** - Seamless SOL deposits and share redemption with 90-day lockup
-- **Portfolio Tracking** - View your share balance, locked/unlocked lots, and transaction history
-- **Transparency Dashboard** - Full on-chain verification with event-driven derivations
+- **Fixed-Yield Funding Vaults** - Deposit SOL during funding phase with locked capital until maturity
+- **Real-time Vault Metrics** - View TVL, expected APY, funding progress, and timeline
+- **Portfolio Tracking** - Monitor positions across multiple vaults with expected returns
+- **Transparency Dashboard** - Full receivables transparency with collateral analytics, hedge positions, and documents
 - **Beautiful UI** - Dark theme with purple/cyan gradient design system
 - **Responsive Design** - Works on desktop, tablet, and mobile with collapsible sidebar
 
@@ -43,14 +43,14 @@ vitalfi-app/
 │   │   └── layout/              # Layout components (Header, Sidebar)
 │   ├── lib/
 │   │   ├── solana/              # Solana integration and mock data
-│   │   ├── derive.ts            # Event-driven derivation logic (PPS, APY)
+│   │   ├── transparency/        # Transparency API and mock data
 │   │   └── utils.ts             # Utility functions
 │   ├── contexts/
 │   │   ├── WalletProvider.tsx   # Solana wallet context
 │   │   └── SidebarContext.tsx   # Sidebar state management
 │   ├── hooks/                   # Custom React hooks
-│   │   ├── useVaultTx.ts        # Vault transaction functions
-│   │   └── useTransparency.ts   # Transparency data hook
+│   │   ├── useFundingVault.ts   # Funding vault data hook
+│   │   └── usePortfolio.ts      # Portfolio data hook
 │   └── types/
 │       └── vault.ts             # Vault type definitions
 ├── public/
@@ -135,30 +135,31 @@ Currently integrated wallets:
 
 ## 🏗️ Architecture
 
-### Single-Token Vault Model
+### Fixed-Yield Funding Model
 
-The vault operates on a single share token model with the following mechanics:
+The vault operates on a **fixed-yield funding model** with the following mechanics:
 
-- **Deposits**: Users deposit SOL and receive vault shares (90-day lockup period)
-- **Redemption**: Users redeem unlocked shares for SOL at current share price (1.02x principal)
-- **Yield**: Vault generates ~8.5% APY from medical receivables financing
-- **Withdrawal Queue**: Locked shares can be queued for early withdrawal (2-day processing)
+- **Funding Phase**: Users deposit SOL during the funding period (limited capacity)
+- **Locked Capital**: All deposits are locked until vault maturity date
+- **Fixed APY**: Expected annual percentage yield (e.g., 12% APY) set at funding
+- **Maturity**: At maturity, users claim principal + accrued yield
+- **Collateral**: Vault finances medical receivables in Brazil with full transparency
 
-### Event-Driven Derivations
+### Transparency & Reporting
 
-All vault metrics (Price Per Share, APY) are computed from an immutable event stream:
+The `/transparency` page provides comprehensive vault reporting:
 
-- **Deposit Events**: Add assets and shares
-- **Claim Events**: Remove assets and shares
-- **Repayment Events**: Add assets only (increases PPS)
-
-The `/transparency` page provides full on-chain verification with reproducible calculations.
+- **Vault Facts**: Key metrics, stage, timeline, and originator information
+- **Collateral Analytics**: Receivables table with face value, advance rates, maturity dates
+- **Hedge Positions**: Currency hedging details (NDF, forwards, etc.)
+- **Documents**: Access to legal docs, audit reports, and receivable assignments
 
 ### Pages
 
-1. **Vault Dashboard** (`/`) - Main page with vault overview, analytics, and deposit/withdraw actions
-2. **Portfolio** (`/portfolio`) - User-specific positions, locked/unlocked lots, and transaction history
-3. **Transparency** (`/transparency`) - On-chain accounts, parameters, event inspector, and verification tools
+1. **Vault Dashboard** (`/`) - Main funding vault page with KPIs, overview, and participation panel
+2. **Portfolio** (`/portfolio`) - User positions across all vaults with expected returns and timeline
+3. **Transparency** (`/transparency`) - Vault selection hub
+4. **Transparency Detail** (`/transparency/[vaultId]`) - Full receivables transparency for specific vault
 
 ## 🧪 Development
 
@@ -173,10 +174,10 @@ npm run lint     # Run ESLint
 
 ### Key Development Notes
 
-- **Mock Data**: Currently using mock data in `src/lib/solana/mock-data.ts` for development
+- **Mock Data**: Currently using mock data in `src/lib/solana/mock-data.ts` and `src/lib/transparency/mock.ts` for development
 - **Devnet First**: Always test on Solana devnet before mainnet deployment
-- **Event-Driven**: All vault metrics derive from the event stream (see `src/lib/derive.ts`)
 - **Type Safety**: Comprehensive TypeScript types in `src/types/vault.ts`
+- **Funding Model**: Fixed-yield vaults with locked capital until maturity (no early withdrawals)
 
 ### Solana Development
 
