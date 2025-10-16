@@ -1,9 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCompactCurrency } from "@/lib/formatters";
-import { formatDate, daysUntil, expectedYieldSol } from "@/lib/utils";
+import { getStageColors } from "@/lib/vault-colors";
+import { formatDate, daysUntil, expectedYieldSol, cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 import type { PortfolioPosition } from "@/hooks/usePortfolio";
 
@@ -47,26 +49,18 @@ export function PositionCard({ position, onClaim }: PositionCardProps) {
   const expectedYield = expectedYieldSol(depositedSol, expectedApyPct, maturityAt);
   const expectedTotal = depositedSol + expectedYield;
 
-  const getStageColor = () => {
-    switch (stage) {
-      case 'Funding':
-        return 'bg-violet-500/20 text-violet-300 border-violet-500/30';
-      case 'Funded':
-        return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
-      case 'Matured':
-        return 'bg-green-500/20 text-green-300 border-green-500/30';
-    }
-  };
-
   return (
     <Card className="p-5 sm:p-6 bg-gradient-card border-border/50">
       <div className="space-y-5">
         {/* Header: Vault name + Stage */}
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-lg sm:text-xl font-bold leading-tight">{vaultName}</h3>
-          <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStageColor()}`}>
+          <Badge
+            variant="outline"
+            className={cn("flex-shrink-0", getStageColors(stage))}
+          >
             {stage}
-          </div>
+          </Badge>
         </div>
 
         {/* Investment Summary - Hide for Matured */}

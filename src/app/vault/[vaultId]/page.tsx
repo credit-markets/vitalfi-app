@@ -74,16 +74,30 @@ export default function VaultPage() {
 
           {/* Mobile-first stacked layout, desktop two-column */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-            {/* Left column: Vault Overview + Funding Transactions */}
+            {/* Left column: Vault Overview + Activity Feed */}
             <section className="lg:col-span-7 space-y-4 sm:space-y-6">
               <VaultOverview />
-              <ActivityFeed />
+
+              {/* Activity Feed - hidden on mobile, shown on desktop */}
+              <div className="hidden lg:block">
+                <ActivityFeed />
+              </div>
             </section>
 
-            {/* Right column: Action Panel (Participate) + Vault Info */}
+            {/* Right column: Action Panel + Vault Info (desktop) */}
             <aside className="lg:col-span-5 space-y-4 sm:space-y-6">
               <ActionPanel />
-              <VaultInfoCard />
+
+              {/* Vault Info - shown on desktop */}
+              <div className="hidden lg:block">
+                <VaultInfoCard />
+              </div>
+
+              {/* Mobile-only sections (shown below ActionPanel) */}
+              <div className="lg:hidden space-y-4 sm:space-y-6">
+                <VaultInfoCard />
+                <ActivityFeed />
+              </div>
             </aside>
           </div>
         </div>

@@ -23,7 +23,7 @@ export function MobileNav() {
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent pointer-events-none" />
 
-      <div className="relative grid grid-cols-3 gap-1 px-2 py-2 pb-safe">
+      <div className="relative grid grid-cols-2 gap-1 px-2 py-2 pb-safe">
         {navLinks.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href;

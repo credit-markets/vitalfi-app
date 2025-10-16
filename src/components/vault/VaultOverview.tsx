@@ -1,9 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useFundingVault } from "@/hooks/useFundingVault";
 import { formatCompactCurrency } from "@/lib/formatters";
-import { formatDate, pluralize } from "@/lib/utils";
+import { getStageColors } from "@/lib/vault-colors";
+import { formatDate, pluralize, cn } from "@/lib/utils";
 
 /**
  * Vault Overview with single gradient progress bar and 4-item info row
@@ -21,11 +23,14 @@ export function VaultOverview() {
     <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
       <div className="space-y-6">
         {/* Header: Title + Stage Pill */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl sm:text-2xl font-bold">{info.name}</h3>
-          <div className="px-4 py-1.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 text-sm font-medium">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-xl sm:text-2xl font-bold flex-1 min-w-0">{info.name}</h3>
+          <Badge
+            variant="outline"
+            className={cn("flex-shrink-0", getStageColors(info.stage))}
+          >
             {info.stage}
-          </div>
+          </Badge>
         </div>
 
         {/* Stacked Progress Bar */}

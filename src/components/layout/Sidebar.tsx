@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { BarChart3, User, ChevronLeft, ChevronRight, ExternalLink, FileText, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/contexts/SidebarContext";
 
@@ -13,6 +13,12 @@ export function Sidebar() {
   const navLinks = [
     { name: "Vaults", href: "/", icon: BarChart3 },
     { name: "Portfolio", href: "/portfolio", icon: User },
+  ];
+
+  const externalLinks = [
+    { name: "Privacy Policy", href: "https://vitalfi.io/privacy", icon: Shield },
+    { name: "Terms of Service", href: "https://vitalfi.io/terms", icon: FileText },
+    { name: "Docs", href: "https://docs.vitalfi.io", icon: FileText },
   ];
 
   return (
@@ -66,6 +72,26 @@ export function Sidebar() {
             );
           })}
         </nav>
+
+        {/* External Links */}
+        {!isCollapsed && (
+          <div className="p-4 space-y-2 border-t border-border/30">
+            <div className="text-center space-y-1.5">
+              {externalLinks.map((link) => (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground/70 hover:text-foreground transition-colors"
+                >
+                  <span>{link.name}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );
