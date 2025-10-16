@@ -1,0 +1,171 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Header } from "@/components/layout/Header";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { VaultFacts } from "@/components/transparency/VaultFacts";
+import { CollateralSection } from "@/components/transparency/CollateralSection";
+import { HedgeCard } from "@/components/transparency/HedgeCard";
+import { DocumentsList } from "@/components/transparency/DocumentsList";
+import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { useSidebar } from "@/contexts/SidebarContext";
+import { getVaultTransparency, exportReceivablesCsv } from "@/lib/transparency/api";
+import { trackError } from "@/lib/error-tracking";
+import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import type { VaultTransparencyData, Receivable } from "@/types/vault";
+
+// Safari requires a delay before revoking blob URLs to ensure download starts
+const SAFARI_DOWNLOAD_DELAY_MS = 100;
+
+export default function VaultTransparencyDetail() {
+  const params = useParams();
+  const router = useRouter();
+  const { isCollapsed } = useSidebar();
+  const vaultId = params.vaultId as string;
+
+  const [data, setData] = useState<VaultTransparencyData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Validate vaultId before making API call
+        if (!vaultId || typeof vaultId !== 'string' || vaultId.trim() === '') {
+          if (!cancelled) {
+            setError('Invalid vault ID');
+            setLoading(false);
+          }
+          return;
+        }
+
+        const transparencyData = await getVaultTransparency(vaultId);
+        if (!cancelled) {
+          setData(transparencyData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const error = err instanceof Error ? err : new Error('Failed to load vault data');
+          trackError(error, { vaultId, context: 'loadVaultTransparency' });
+          setError(error.message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, [vaultId]);
+
+  const handleExportCsv = async (receivables: Receivable[]) => {
+    try {
+      // Early validation for empty receivables
+      if (!receivables || receivables.length === 0) {
+        toast.error('No receivables to export');
+        return;
+      }
+
+      const blob = await exportReceivablesCsv(vaultId, receivables);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${vaultId}-receivables-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(url), SAFARI_DOWNLOAD_DELAY_MS);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to export CSV');
+      trackError(error, { vaultId, receivablesCount: receivables.length, context: 'exportCsv' });
+      toast.error(error.message, {
+        description: 'Please try again or contact support if the issue persists.',
+      });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <Sidebar />
+
+      <main
+        className={cn(
+          "pt-24 pb-20 lg:pb-16 transition-all duration-300",
+          "lg:ml-16",
+          !isCollapsed && "lg:ml-64"
+        )}
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          <div className="mb-4">
+            <Link href="/transparency">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Transparency
+              </Button>
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="space-y-6">
+              <div className="h-40 bg-card border border-border rounded-lg animate-pulse" />
+              <div className="h-96 bg-card border border-border rounded-lg animate-pulse" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <p className="text-red-400 text-lg mb-2">Error loading vault data</p>
+              <p className="text-muted-foreground text-sm">{error}</p>
+              <Button className="mt-4" onClick={() => router.push('/transparency')}>
+                Return to Transparency Hub
+              </Button>
+            </div>
+          ) : data ? (
+            <ErrorBoundary>
+              <div className="space-y-6">
+                {/* 1. Vault Facts */}
+                <VaultFacts summary={data.summary} lastUpdated={data.lastUpdated} />
+
+                {/* 2. Collateral Overview + Receivables Table */}
+                <CollateralSection
+                  analytics={data.collateral.analytics}
+                  receivables={data.collateral.items}
+                  onExportCsv={handleExportCsv}
+                />
+
+                {/* 3 & 4: Hedge + Documents - Side by side on desktop */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* 3. Hedge Position */}
+                  {data.hedge && (
+                    <div>
+                      <HedgeCard hedge={data.hedge} />
+                    </div>
+                  )}
+
+                  {/* 4. Documents */}
+                  <div className={!data.hedge ? "lg:col-span-2" : ""}>
+                    <DocumentsList documents={data.documents} />
+                  </div>
+                </div>
+              </div>
+            </ErrorBoundary>
+          ) : null}
+        </div>
+      </main>
+    </div>
+  );
+}
