@@ -17,9 +17,20 @@ interface StageFilterProps {
   className?: string;
 }
 
+// Type guard to validate StageFilterValue at runtime
+function isStageFilterValue(value: string): value is StageFilterValue {
+  return value === 'all' || value === 'Funding' || value === 'Funded' || value === 'Matured';
+}
+
 export function StageFilter({ value, onValueChange, counts, className }: StageFilterProps) {
+  const handleValueChange = (v: string) => {
+    if (isStageFilterValue(v)) {
+      onValueChange(v);
+    }
+  };
+
   return (
-    <Tabs value={value} onValueChange={(v) => onValueChange(v as StageFilterValue)} className={className}>
+    <Tabs value={value} onValueChange={handleValueChange} className={className}>
       <TabsList role="tablist" aria-label="Filter vaults by stage">
         <TabsTrigger value="all">
           All

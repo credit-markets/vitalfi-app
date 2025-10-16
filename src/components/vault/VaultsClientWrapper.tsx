@@ -4,7 +4,10 @@ import { useState, useMemo } from "react";
 import { VaultCard } from "@/components/transparency/VaultCard";
 import { StatsFilterBar } from "./StatsFilterBar";
 import type { StageFilterValue } from "./StageFilter";
-import type { VaultSummary } from "@/types/vault";
+import type { VaultSummary, VaultStage } from "@/types/vault";
+
+// Stages that are tracked in the filter (excludes 'Closed')
+const TRACKED_STAGES: VaultStage[] = ['Funding', 'Funded', 'Matured'] as const;
 
 interface VaultsClientWrapperProps {
   vaults: VaultSummary[];
@@ -15,24 +18,35 @@ interface VaultsClientWrapperProps {
 export function VaultsClientWrapper({ vaults, totalTvl, activeCount }: VaultsClientWrapperProps) {
   const [stage, setStage] = useState<StageFilterValue>('all');
 
+  // Validate and filter out malformed vaults
+  const validVaults = useMemo(() => {
+    return vaults.filter(v =>
+      v &&
+      typeof v.id === 'string' &&
+      typeof v.stage === 'string' &&
+      typeof v.targetApy === 'number' &&
+      !isNaN(v.targetApy)
+    );
+  }, [vaults]);
+
   // Filter vaults based on selected stage
   const filteredVaults = useMemo(() => {
-    if (stage === 'all') return vaults;
-    return vaults.filter(v => v.stage === stage);
-  }, [vaults, stage]);
+    if (stage === 'all') return validVaults;
+    return validVaults.filter(v => v.stage === stage);
+  }, [validVaults, stage]);
 
   // Calculate counts for each stage using a single pass
   const counts = useMemo(() => {
     const result = { all: 0, Funding: 0, Funded: 0, Matured: 0 };
-    vaults.forEach(v => {
+    validVaults.forEach(v => {
       result.all++;
       // Only count stages that are tracked in the filter
-      if (v.stage === 'Funding' || v.stage === 'Funded' || v.stage === 'Matured') {
-        result[v.stage]++;
+      if (TRACKED_STAGES.includes(v.stage)) {
+        result[v.stage as keyof typeof result]++;
       }
     });
     return result;
-  }, [vaults]);
+  }, [validVaults]);
 
   // Calculate average APY for filtered vaults
   // Note: targetApy is stored as decimal (e.g., 0.12 for 12%)
