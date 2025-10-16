@@ -358,26 +358,17 @@ export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
     throw new Error(`Vault ${vaultId} not found`);
   }
 
-  // Calculate funding dates based on vault stage and maturity
-  const now = new Date();
+  // Calculate funding dates relative to maturity
+  // Timeline: funding start -> funding end (45 days later) -> maturity (150 days after funding end)
   const maturityDate = new Date(vault.maturityDate);
 
-  let fundingEndAt: Date;
-  let fundingStartAt: Date;
+  // Calculate funding end date (150 days before maturity)
+  const fundingEndAt = new Date(maturityDate);
+  fundingEndAt.setDate(fundingEndAt.getDate() - 150);
 
-  if (vault.stage === 'Matured') {
-    // For matured vaults, funding ended well before maturity (which is also in the past)
-    fundingEndAt = new Date(maturityDate);
-    fundingEndAt.setDate(fundingEndAt.getDate() - 150); // Funding ended 150 days before maturity
-    fundingStartAt = new Date(fundingEndAt);
-    fundingStartAt.setDate(fundingStartAt.getDate() - 45); // 45 day funding period
-  } else {
-    // For funded vaults, maturity is in future, funding ended in the past
-    fundingEndAt = new Date(maturityDate);
-    fundingEndAt.setDate(fundingEndAt.getDate() - 150); // Funding ends 150 days before maturity
-    fundingStartAt = new Date(fundingEndAt);
-    fundingStartAt.setDate(fundingStartAt.getDate() - 45); // 45 day funding period
-  }
+  // Calculate funding start date (45 days before funding end)
+  const fundingStartAt = new Date(fundingEndAt);
+  fundingStartAt.setDate(fundingStartAt.getDate() - 45);
 
   return {
     stage: vault.stage, // Stage is computed dynamically by the hook

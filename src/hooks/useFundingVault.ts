@@ -5,6 +5,24 @@ import { useParams } from 'next/navigation';
 import { VaultEvent, VaultFundingInfo } from '@/types/vault';
 import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
 
+// Computed values derived from vault info
+interface ComputedVaultData {
+  capRemainingSol: number;
+  progressPct: number;
+  stage: VaultFundingInfo['stage'];
+  daysToMaturity: number;
+  daysToFundingEnd: number;
+  canDeposit: boolean;
+}
+
+// Hook return type with explicit error states
+interface UseFundingVaultReturn {
+  info: VaultFundingInfo | null;
+  events: VaultEvent[];
+  computed: ComputedVaultData | null;
+  error: string | null;
+}
+
 /**
  * Hook for funding vault data and computed values
  *
@@ -12,9 +30,10 @@ import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
  * - On-chain vault account data
  * - Event indexer/API for transaction history
  *
- * For now, provides mock data for development
+ * Returns null for info/computed when vault is not found or on error.
+ * Components should check the error field first, then info/computed nullability.
  */
-export function useFundingVault() {
+export function useFundingVault(): UseFundingVaultReturn {
   const params = useParams();
   const vaultId = params.vaultId as string;
   const [error, setError] = useState<string | null>(null);
