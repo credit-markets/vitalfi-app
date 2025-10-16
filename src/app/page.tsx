@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { VaultCard } from "@/components/transparency/VaultCard";
+import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { listTransparencyVaults } from "@/lib/transparency/api";
 import { cn } from "@/lib/utils";
@@ -15,22 +16,23 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadVaults() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await listTransparencyVaults();
-        setVaults(data);
-      } catch (err) {
-        console.error("Failed to load transparency vaults:", err);
-        setError(err instanceof Error ? err.message : "Failed to load transparency data");
-      } finally {
-        setLoading(false);
-      }
+  const loadVaults = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await listTransparencyVaults();
+      setVaults(data);
+    } catch (err) {
+      console.error("Failed to load transparency vaults:", err);
+      setError(err instanceof Error ? err.message : "Failed to load transparency data");
+    } finally {
+      setLoading(false);
     }
-    loadVaults();
   }, []);
+
+  useEffect(() => {
+    loadVaults();
+  }, [loadVaults]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,13 +70,10 @@ export default function Home() {
           ) : error ? (
             <div className="text-center py-16">
               <p className="text-red-400 text-lg mb-2">Failed to load transparency data</p>
-              <p className="text-muted-foreground text-sm">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-              >
+              <p className="text-muted-foreground text-sm mb-4">{error}</p>
+              <Button onClick={loadVaults}>
                 Retry
-              </button>
+              </Button>
             </div>
           ) : vaults.length === 0 ? (
             <div className="text-center py-16">

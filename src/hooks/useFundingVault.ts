@@ -41,6 +41,8 @@ export function useFundingVault(): UseFundingVaultReturn {
 
   // Load vault info
   useEffect(() => {
+    let cancelled = false;
+
     if (!vaultId) {
       setError('Vault ID is required');
       return;
@@ -48,12 +50,20 @@ export function useFundingVault(): UseFundingVaultReturn {
 
     try {
       const vaultInfo = getMockFundingVaultInfo(vaultId);
-      setInfo(vaultInfo);
-      setError(null);
+      if (!cancelled) {
+        setInfo(vaultInfo);
+        setError(null);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load vault data');
-      setInfo(null);
+      if (!cancelled) {
+        setError(err instanceof Error ? err.message : 'Failed to load vault data');
+        setInfo(null);
+      }
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [vaultId]);
 
   // Mock events - TODO: fetch from indexer/API
