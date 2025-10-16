@@ -85,7 +85,7 @@ export function VaultInfoCard() {
       {vaultId && (
         <div className="pt-3 sm:pt-4 border-t border-border">
           <Link href={`/vault/${vaultId}/transparency`} className="block">
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full border-foreground/30 hover:border-primary/50 hover:bg-primary/5">
               <Eye className="w-4 h-4 mr-2" />
               View Transparency
             </Button>

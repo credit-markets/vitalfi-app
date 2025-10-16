@@ -85,3 +85,26 @@ export function formatCountdown(targetDate: Date | string): string {
   }
   return "< 1m";
 }
+
+/**
+ * Format currency with K/M notation
+ */
+export function formatCurrency(n: number, currency: string = 'USD'): string {
+  const prefix = currency === 'USD' ? '$' : currency === 'SOL' ? '' : `${currency} `;
+  const suffix = currency === 'SOL' ? ' SOL' : '';
+
+  if (n >= 1_000_000) {
+    return `${prefix}${(n / 1_000_000).toFixed(1)}M${suffix}`;
+  }
+  if (n >= 1_000) {
+    return `${prefix}${(n / 1_000).toFixed(1)}K${suffix}`;
+  }
+  return `${prefix}${n.toFixed(0)}${suffix}`;
+}
+
+/**
+ * Format percentage per year (e.g., 0.12 -> "12.0% p.y.")
+ */
+export function formatPercentPY(p: number): string {
+  return `${(p * 100).toFixed(1)}% p.y.`;
+}

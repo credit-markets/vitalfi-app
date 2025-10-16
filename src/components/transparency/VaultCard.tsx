@@ -4,8 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCompactCurrency } from "@/lib/formatters";
+import { getStageColors } from "@/lib/vault-colors";
 import { ArrowRight, Calendar, Target, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import type { VaultSummary } from "@/types/vault";
 
 interface VaultCardProps {
@@ -18,14 +20,14 @@ export function VaultCard({ vault }: VaultCardProps) {
   const daysToMaturity = Math.floor((maturityDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
   return (
-    <Card className="p-5 sm:p-6 bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg flex flex-col h-full">
+    <Card className="p-4 sm:p-5 lg:p-6 bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-foreground mb-1 truncate">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1 line-clamp-2">
             {vault.title}
           </h3>
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
             {vault.originator.name}
             {vault.originator.country && (
               <span className="ml-1">• {vault.originator.country}</span>
@@ -33,12 +35,8 @@ export function VaultCard({ vault }: VaultCardProps) {
           </p>
         </div>
         <Badge
-          variant={vault.stage === 'Funded' ? 'default' : 'secondary'}
-          className={
-            vault.stage === 'Funded'
-              ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-              : 'bg-green-500/10 text-green-400 border-green-500/20'
-          }
+          variant="outline"
+          className={cn("flex-shrink-0", getStageColors(vault.stage))}
         >
           {vault.stage}
         </Badge>
@@ -99,7 +97,7 @@ export function VaultCard({ vault }: VaultCardProps) {
         <Link href={`/vault/${vault.id}`}>
           <Button
             variant="outline"
-            className="w-full group hover:border-primary/50 hover:bg-primary/5"
+            className="w-full group border-foreground/30 hover:border-primary/50 hover:bg-primary/5"
           >
             View Vault
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />

@@ -97,7 +97,7 @@ export function ActionPanel() {
               <label className="text-sm font-medium">Amount (SOL)</label>
               {connected && computed.canDeposit && (
                 <button
-                  className="text-xs text-accent hover:underline active:underline touch-manipulation p-1"
+                  className="text-xs text-foreground hover:underline active:underline touch-manipulation p-1"
                   onClick={() => {
                     // Mock max balance - in production would use actual wallet balance
                     const maxDeposit = Math.min(100, computed.capRemainingSol);
@@ -140,11 +140,11 @@ export function ActionPanel() {
 
           {/* Preview Info */}
           {amountNum >= info.minInvestmentSol && !isAboveCap && (
-            <Card className="p-4 bg-muted/20 border-accent/20">
+            <Card className="p-4 bg-muted/20 border-border">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">You Invest</span>
-                  <span className="font-bold text-accent">
+                  <span className="font-bold text-foreground">
                     {formatCurrency(amountNum)} SOL
                   </span>
                 </div>
