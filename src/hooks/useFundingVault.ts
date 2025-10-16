@@ -1,8 +1,27 @@
 "use client";
 
-import { useMemo } from 'react';
-import { VaultFundingInfo, VaultEvent } from '@/types/vault';
-import { MOCK_ADDRESSES } from '@/lib/solana/mock-data';
+import { useMemo, useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { VaultEvent, VaultFundingInfo } from '@/types/vault';
+import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
+
+// Computed values derived from vault info
+interface ComputedVaultData {
+  capRemainingSol: number;
+  progressPct: number;
+  stage: VaultFundingInfo['stage'];
+  daysToMaturity: number;
+  daysToFundingEnd: number;
+  canDeposit: boolean;
+}
+
+// Hook return type with explicit error states
+interface UseFundingVaultReturn {
+  info: VaultFundingInfo | null;
+  events: VaultEvent[];
+  computed: ComputedVaultData | null;
+  error: string | null;
+}
 
 /**
  * Hook for funding vault data and computed values
@@ -11,26 +30,41 @@ import { MOCK_ADDRESSES } from '@/lib/solana/mock-data';
  * - On-chain vault account data
  * - Event indexer/API for transaction history
  *
- * For now, provides mock data for development
+ * Returns null for info/computed when vault is not found or on error.
+ * Components should check the error field first, then info/computed nullability.
  */
-export function useFundingVault() {
-  // TODO: Replace with actual API/on-chain calls
-  const info: VaultFundingInfo = useMemo(() => {
-    return {
-      stage: 'Funding' as const, // Will be computed below
-      expectedApyPct: 12.0,
-      tvlSol: 1850000,
-      capSol: 5000000,
-      minInvestmentSol: 100,
-      raisedSol: 1850000,
-      fundingStartAt: new Date('2025-10-01T00:00:00Z').toISOString(),
-      fundingEndAt: new Date('2025-11-15T23:59:59Z').toISOString(),
-      maturityAt: new Date('2026-04-15T00:00:00Z').toISOString(),
-      originator: 'MedReceivables Brazil',
-      guarantees: 'Collateral',
-      addresses: MOCK_ADDRESSES,
+export function useFundingVault(): UseFundingVaultReturn {
+  const params = useParams();
+  const vaultId = params.vaultId as string;
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<VaultFundingInfo | null>(null);
+
+  // Load vault info
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!vaultId) {
+      setError('Vault ID is required');
+      return;
+    }
+
+    try {
+      const vaultInfo = getMockFundingVaultInfo(vaultId);
+      if (!cancelled) {
+        setInfo(vaultInfo);
+        setError(null);
+      }
+    } catch (err) {
+      if (!cancelled) {
+        setError(err instanceof Error ? err.message : 'Failed to load vault data');
+        setInfo(null);
+      }
+    }
+
+    return () => {
+      cancelled = true;
     };
-  }, []);
+  }, [vaultId]);
 
   // Mock events - TODO: fetch from indexer/API
   const events: VaultEvent[] = useMemo(() => {
@@ -88,6 +122,10 @@ export function useFundingVault() {
 
   // Compute derived values
   const computed = useMemo(() => {
+    if (!info) {
+      return null;
+    }
+
     const capRemainingSol = Math.max(0, info.capSol - info.raisedSol);
     const progressPct = info.capSol > 0 ? (info.raisedSol / info.capSol) * 100 : 0;
 
@@ -120,8 +158,9 @@ export function useFundingVault() {
   }, [info]);
 
   return {
-    info: { ...info, stage: computed.stage },
+    info: info && computed ? { ...info, stage: computed.stage } : null,
     events,
     computed,
+    error,
   };
 }

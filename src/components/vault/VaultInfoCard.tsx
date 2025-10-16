@@ -1,19 +1,28 @@
 "use client";
 
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useFundingVault } from "@/hooks/useFundingVault";
-import { formatCompactCurrency } from "@/lib/formatters";
 import { shortenAddress } from "@/lib/utils";
 import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/constants";
-import { Copy, ExternalLink, Info } from "lucide-react";
+import { Copy, ExternalLink, Info, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 /**
  * Vault info card with addresses and facts
- * Shows: Guarantees, Originator, Cap, Min Investment
+ * Shows: Originator, Cap, Min Investment
  */
 export function VaultInfoCard() {
   const { info } = useFundingVault();
+  const params = useParams();
+  const vaultId = params.vaultId as string;
+
+  // Early return if data not loaded (error state handled by parent)
+  if (!info) {
+    return null;
+  }
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -26,13 +35,6 @@ export function VaultInfoCard() {
     { label: "Authority PDA", value: info.addresses.authorityPda },
     { label: "Token Mint", value: info.addresses.tokenMint },
     { label: "Asset Account", value: info.addresses.vaultTokenAccount },
-  ];
-
-  const facts = [
-    { label: "Guarantees", value: info.guarantees },
-    { label: "Originator", value: info.originator },
-    { label: "Cap", value: formatCompactCurrency(info.capSol) },
-    { label: "Min Investment", value: formatCompactCurrency(info.minInvestmentSol) },
   ];
 
   return (
@@ -49,7 +51,9 @@ export function VaultInfoCard() {
         </div>
         {addresses.map((addr) => (
           <div key={addr.label} className="space-y-1">
-            <div className="text-[10px] sm:text-xs text-muted-foreground">{addr.label}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">
+              {addr.label}
+            </div>
             <div className="flex items-center gap-1 sm:gap-2">
               <code className="flex-1 text-[10px] sm:text-xs bg-muted/30 px-1.5 sm:px-2 py-1 sm:py-1.5 rounded border border-border font-mono">
                 {shortenAddress(addr.value, 6)}
@@ -77,20 +81,17 @@ export function VaultInfoCard() {
         ))}
       </div>
 
-      {/* Facts Section */}
-      <div className="pt-3 sm:pt-4 border-t border-border space-y-2 sm:space-y-3">
-        <div className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Facts
+      {/* Transparency Link */}
+      {vaultId && (
+        <div className="pt-3 sm:pt-4 border-t border-border">
+          <Link href={`/vault/${vaultId}/transparency`} className="block">
+            <Button variant="outline" className="w-full">
+              <Eye className="w-4 h-4 mr-2" />
+              View Transparency
+            </Button>
+          </Link>
         </div>
-        <div className="space-y-1.5 sm:space-y-2">
-          {facts.map((fact) => (
-            <div key={fact.label} className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-muted-foreground">{fact.label}</span>
-              <span className="font-semibold">{fact.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
     </Card>
   );
 }

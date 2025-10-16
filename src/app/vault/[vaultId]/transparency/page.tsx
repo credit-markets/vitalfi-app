@@ -113,10 +113,10 @@ export default function VaultTransparencyDetail() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
           <div className="mb-4">
-            <Link href="/transparency">
+            <Link href={`/vault/${vaultId}`}>
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Transparency
+                Back to Vault
               </Button>
             </Link>
           </div>
@@ -130,8 +130,8 @@ export default function VaultTransparencyDetail() {
             <div className="text-center py-16">
               <p className="text-red-400 text-lg mb-2">Error loading vault data</p>
               <p className="text-muted-foreground text-sm">{error}</p>
-              <Button className="mt-4" onClick={() => router.push('/transparency')}>
-                Return to Transparency Hub
+              <Button className="mt-4" onClick={() => router.push(`/vault/${vaultId}`)}>
+                Return to Vault
               </Button>
             </div>
           ) : data ? (

@@ -6,8 +6,10 @@ import type {
   CollateralAnalytics,
   HedgePosition,
   OriginatorInfo,
+  VaultFundingInfo,
 } from "@/types/vault";
 import { trackWarning } from "@/lib/error-tracking";
+import { MOCK_ADDRESSES } from "@/lib/solana/mock-data";
 
 // Mock originators
 const originators: Record<string, OriginatorInfo> = {
@@ -153,7 +155,7 @@ export function getMockTransparencyVaults(): VaultSummary[] {
   return [
     {
       id: "vault-001",
-      title: "Medical Receivables Pool #1",
+      title: "Medical Receivables Brazil Q4 2025",
       stage: "Funded",
       raised: 450000,
       cap: 500000,
@@ -345,4 +347,41 @@ export async function exportReceivablesCsv(
   ].join('\n');
 
   return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+}
+
+// Get mock funding vault info (for vault detail page)
+export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
+  const vaults = getMockTransparencyVaults();
+  const vault = vaults.find(v => v.id === vaultId);
+
+  if (!vault) {
+    throw new Error(`Vault ${vaultId} not found`);
+  }
+
+  // Calculate funding dates relative to maturity
+  // Timeline: funding start -> funding end (45 days later) -> maturity (150 days after funding end)
+  const maturityDate = new Date(vault.maturityDate);
+
+  // Calculate funding end date (150 days before maturity)
+  const fundingEndAt = new Date(maturityDate);
+  fundingEndAt.setDate(fundingEndAt.getDate() - 150);
+
+  // Calculate funding start date (45 days before funding end)
+  const fundingStartAt = new Date(fundingEndAt);
+  fundingStartAt.setDate(fundingStartAt.getDate() - 45);
+
+  return {
+    stage: vault.stage, // Stage is computed dynamically by the hook
+    name: vault.title,
+    expectedApyPct: vault.targetApy * 100, // Convert decimal to percentage
+    tvlSol: vault.raised,
+    capSol: vault.cap,
+    minInvestmentSol: 100,
+    raisedSol: vault.raised,
+    fundingStartAt: fundingStartAt.toISOString(),
+    fundingEndAt: fundingEndAt.toISOString(),
+    maturityAt: vault.maturityDate,
+    originator: vault.originator.name,
+    addresses: MOCK_ADDRESSES,
+  };
 }

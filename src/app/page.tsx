@@ -1,19 +1,38 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Accent3D } from "@/components/vault/Accent3D";
-import { KpiStrip } from "@/components/vault/KpiStrip";
-import { VaultOverview } from "@/components/vault/VaultOverview";
-import { ActivityFeed } from "@/components/vault/ActivityFeed";
-import { ActionPanel } from "@/components/vault/ActionPanel";
-import { VaultInfoCard } from "@/components/vault/VaultInfoCard";
+import { VaultCard } from "@/components/transparency/VaultCard";
+import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { listTransparencyVaults } from "@/lib/transparency/api";
 import { cn } from "@/lib/utils";
-import { SHOW_3D_ACCENT, ACCENT_3D_MODE } from "@/lib/constants";
+import type { VaultSummary } from "@/types/vault";
 
 export default function Home() {
   const { isCollapsed } = useSidebar();
+  const [vaults, setVaults] = useState<VaultSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadVaults = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await listTransparencyVaults();
+      setVaults(data);
+    } catch (err) {
+      console.error("Failed to load transparency vaults:", err);
+      setError(err instanceof Error ? err.message : "Failed to load transparency data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadVaults();
+  }, [loadVaults]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,31 +42,55 @@ export default function Home() {
       <main
         className={cn(
           "pt-24 pb-20 lg:pb-16 transition-all duration-300",
-          "lg:ml-16", // Default collapsed state
-          !isCollapsed && "lg:ml-64" // Expanded state
+          "lg:ml-16",
+          !isCollapsed && "lg:ml-64"
         )}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 3D Accent (optional) - Hidden on mobile for performance */}
-          {SHOW_3D_ACCENT && <div className="hidden lg:block"><Accent3D size={ACCENT_3D_MODE} /></div>}
-
-          {/* KPI Strip */}
-          <KpiStrip />
-
-          {/* Mobile-first stacked layout, desktop two-column */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-            {/* Left column: Vault Overview + Funding Transactions */}
-            <section className="lg:col-span-7 space-y-4 sm:space-y-6">
-              <VaultOverview />
-              <ActivityFeed />
-            </section>
-
-            {/* Right column: Action Panel (Participate) + Vault Info */}
-            <aside className="lg:col-span-5 space-y-4 sm:space-y-6">
-              <ActionPanel />
-              <VaultInfoCard />
-            </aside>
+          {/* Page Header */}
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+              Vaults
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Explore available vaults and their transparency reports
+            </p>
           </div>
+
+          {/* Vault Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-80 bg-card border border-border rounded-lg animate-pulse"
+                />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <p className="text-red-400 text-lg mb-2">Failed to load transparency data</p>
+              <p className="text-muted-foreground text-sm mb-4">{error}</p>
+              <Button onClick={loadVaults}>
+                Retry
+              </Button>
+            </div>
+          ) : vaults.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground text-lg">
+                No transparency data available yet
+              </p>
+              <p className="text-muted-foreground/60 text-sm mt-2">
+                Transparency reports are published for funded and matured vaults
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {vaults.map((vault) => (
+                <VaultCard key={vault.id} vault={vault} />
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

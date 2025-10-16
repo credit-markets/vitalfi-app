@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, User, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { BarChart3, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/contexts/SidebarContext";
 
@@ -11,9 +11,8 @@ export function Sidebar() {
   const pathname = usePathname();
 
   const navLinks = [
-    { name: "Vault", href: "/", icon: BarChart3 },
+    { name: "Vaults", href: "/", icon: BarChart3 },
     { name: "Portfolio", href: "/portfolio", icon: User },
-    { name: "Transparency", href: "/transparency", icon: Eye },
   ];
 
   return (

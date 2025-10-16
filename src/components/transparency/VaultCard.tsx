@@ -96,12 +96,12 @@ export function VaultCard({ vault }: VaultCardProps) {
 
       {/* CTA */}
       <div className="mt-auto">
-        <Link href={`/transparency/${vault.id}`}>
+        <Link href={`/vault/${vault.id}`}>
           <Button
             variant="outline"
             className="w-full group hover:border-primary/50 hover:bg-primary/5"
           >
-            View Transparency
+            View Vault
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
         </Link>
