@@ -21,19 +21,26 @@ export function VaultsClientWrapper({ vaults, totalTvl, activeCount }: VaultsCli
     return vaults.filter(v => v.stage === stage);
   }, [vaults, stage]);
 
-  // Calculate counts for each stage
-  const counts = useMemo(() => ({
-    all: vaults.length,
-    Funding: vaults.filter(v => v.stage === 'Funding').length,
-    Funded: vaults.filter(v => v.stage === 'Funded').length,
-    Matured: vaults.filter(v => v.stage === 'Matured').length,
-  }), [vaults]);
+  // Calculate counts for each stage using a single pass
+  const counts = useMemo(() => {
+    const result = { all: 0, Funding: 0, Funded: 0, Matured: 0 };
+    vaults.forEach(v => {
+      result.all++;
+      // Only count stages that are tracked in the filter
+      if (v.stage === 'Funding' || v.stage === 'Funded' || v.stage === 'Matured') {
+        result[v.stage]++;
+      }
+    });
+    return result;
+  }, [vaults]);
 
   // Calculate average APY for filtered vaults
+  // Note: targetApy is stored as decimal (e.g., 0.12 for 12%)
   const avgApy = useMemo(() => {
     if (filteredVaults.length === 0) return 0;
     const sum = filteredVaults.reduce((acc, v) => acc + v.targetApy, 0);
-    return (sum / filteredVaults.length) * 100;
+    const DECIMAL_TO_PERCENTAGE = 100;
+    return (sum / filteredVaults.length) * DECIMAL_TO_PERCENTAGE;
   }, [filteredVaults]);
 
   return (

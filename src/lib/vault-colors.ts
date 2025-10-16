@@ -35,8 +35,9 @@ export const STAGE_COLORS: Record<VaultStage, { bg: string; text: string; border
 
 /**
  * Get combined className string for a stage badge
+ * Falls back to 'Closed' colors if an invalid stage is provided
  */
 export function getStageColors(stage: VaultStage): string {
-  const colors = STAGE_COLORS[stage];
+  const colors = STAGE_COLORS[stage] ?? STAGE_COLORS.Closed;
   return `${colors.bg} ${colors.text} ${colors.border}`;
 }
