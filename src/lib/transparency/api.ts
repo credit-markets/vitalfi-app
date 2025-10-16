@@ -20,6 +20,11 @@ export async function listTransparencyVaults(): Promise<VaultSummary[]> {
  * Get full transparency data for a specific vault
  */
 export async function getVaultTransparency(vaultId: string): Promise<VaultTransparencyData> {
+  // Validate vaultId parameter
+  if (!vaultId || typeof vaultId !== 'string' || vaultId.trim() === '') {
+    throw new Error('Invalid vault ID provided');
+  }
+
   // In production, this would fetch from API/chain
   const data = await getMockVaultTransparency(vaultId);
   if (!data) {

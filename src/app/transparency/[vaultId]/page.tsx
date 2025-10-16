@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { getVaultTransparency, exportReceivablesCsv } from "@/lib/transparency/api";
+import { trackError } from "@/lib/error-tracking";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -32,6 +33,8 @@ export default function VaultTransparencyDetail() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadData() {
       try {
         setLoading(true);
@@ -39,21 +42,34 @@ export default function VaultTransparencyDetail() {
 
         // Validate vaultId before making API call
         if (!vaultId || typeof vaultId !== 'string' || vaultId.trim() === '') {
-          setError('Invalid vault ID');
-          setLoading(false);
+          if (!cancelled) {
+            setError('Invalid vault ID');
+            setLoading(false);
+          }
           return;
         }
 
         const transparencyData = await getVaultTransparency(vaultId);
-        setData(transparencyData);
+        if (!cancelled) {
+          setData(transparencyData);
+        }
       } catch (err) {
-        console.error('Failed to load vault transparency:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load vault data');
+        if (!cancelled) {
+          const error = err instanceof Error ? err : new Error('Failed to load vault data');
+          trackError(error, { vaultId, context: 'loadVaultTransparency' });
+          setError(error.message);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
+
     loadData();
+    return () => {
+      cancelled = true;
+    };
   }, [vaultId]);
 
   const handleExportCsv = async (receivables: Receivable[]) => {
@@ -74,9 +90,9 @@ export default function VaultTransparencyDetail() {
       document.body.removeChild(link);
       setTimeout(() => window.URL.revokeObjectURL(url), SAFARI_DOWNLOAD_DELAY_MS);
     } catch (err) {
-      console.error('CSV export failed:', err);
-      const message = err instanceof Error ? err.message : 'Failed to export CSV';
-      toast.error(message, {
+      const error = err instanceof Error ? err : new Error('Failed to export CSV');
+      trackError(error, { vaultId, receivablesCount: receivables.length, context: 'exportCsv' });
+      toast.error(error.message, {
         description: 'Please try again or contact support if the issue persists.',
       });
     }

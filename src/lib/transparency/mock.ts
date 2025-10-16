@@ -7,6 +7,7 @@ import type {
   HedgePosition,
   OriginatorInfo,
 } from "@/types/vault";
+import { trackWarning } from "@/lib/error-tracking";
 
 // Mock originators
 const originators: Record<string, OriginatorInfo> = {
@@ -33,13 +34,7 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
 
   // Validate date
   if (isNaN(maturity.getTime())) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(`[DEV] Invalid maturity date: ${maturityDate}`);
-    } else {
-      // Log to error tracking in production
-      console.error(`Invalid maturity date detected: ${maturityDate}`);
-      // TODO: Send to error tracking service (e.g., Sentry)
-    }
+    trackWarning('Invalid maturity date detected', { maturityDate });
     return {}; // Return empty object if invalid date
   }
 
