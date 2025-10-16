@@ -23,14 +23,6 @@ export function formatCompactCurrency(value: number): string {
 }
 
 /**
- * Format percentage with optional + sign for positive changes
- */
-export function formatDelta(value: number, decimals: number = 2, showSign: boolean = true): string {
-  const sign = showSign && value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(decimals)}%`;
-}
-
-/**
  * Format SOL amount with proper decimals
  */
 export function formatSOL(value: number, decimals: number = 2): string {

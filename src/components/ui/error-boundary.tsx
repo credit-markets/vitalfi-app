@@ -12,15 +12,16 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  retryCount: number;
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, retryCount: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
@@ -29,11 +30,30 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     this.props.onError?.(error, errorInfo);
   }
 
+  handleRetry = () => {
+    const { retryCount } = this.state;
+
+    // Try to recover without reload first (up to 2 attempts)
+    if (retryCount < 2) {
+      this.setState({
+        hasError: false,
+        error: null,
+        retryCount: retryCount + 1
+      });
+    } else {
+      // Full reload as last resort after 2 failed retries
+      window.location.reload();
+    }
+  };
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
       }
+
+      const { retryCount } = this.state;
+      const willReload = retryCount >= 2;
 
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
@@ -42,14 +62,16 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             <p className="text-muted-foreground">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
-            <Button
-              onClick={() => {
-                this.setState({ hasError: false, error: null });
-                window.location.reload();
-              }}
-            >
-              Reload Page
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={this.handleRetry}>
+                {willReload ? 'Reload Page' : 'Try Again'}
+              </Button>
+              {retryCount > 0 && retryCount < 2 && (
+                <p className="text-xs text-muted-foreground">
+                  Retry attempt {retryCount}/2
+                </p>
+              )}
+            </div>
           </div>
         </div>
       );

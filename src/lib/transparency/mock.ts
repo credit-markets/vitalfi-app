@@ -33,6 +33,9 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
 
   // Validate date
   if (isNaN(maturity.getTime())) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Invalid maturity date: ${maturityDate}`);
+    }
     return {}; // Return empty object if invalid date
   }
 
@@ -329,8 +332,9 @@ export async function exportReceivablesCsv(
   // Sanitize cells to prevent CSV injection
   const sanitizeCell = (value: string | number): string => {
     const str = String(value);
-    // If cell starts with formula characters, prefix with single quote
-    if (str.match(/^[=+\-@]/)) {
+    // If cell starts with formula characters or tab, prefix with single quote
+    // Protects against =cmd, +cmd, -cmd, @cmd, and tab injection attacks
+    if (str.match(/^[=+\-@\t]/)) {
       return `'${str}`;
     }
     return str;

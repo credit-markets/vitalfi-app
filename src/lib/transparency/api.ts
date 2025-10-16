@@ -32,7 +32,7 @@ export async function exportReceivablesCsv(
   receivables: Receivable[]
 ): Promise<Blob> {
   if (!receivables || receivables.length === 0) {
-    throw new Error('No receivables to export');
+    throw new Error('No receivables available to export. Please adjust your filters or search criteria.');
   }
   // In production, this might call a backend endpoint for server-side CSV generation
   return mockExportCsv(vaultId, receivables);
@@ -87,15 +87,3 @@ export function filterReceivables(
   return filtered;
 }
 
-/**
- * Get unique values for filter dropdowns
- */
-export function getFilterOptions(receivables: Receivable[]): {
-  originators: string[];
-  payers: string[];
-} {
-  const originators = Array.from(new Set(receivables.map(r => r.originator))).sort();
-  const payers = Array.from(new Set(receivables.map(r => r.payer))).sort();
-
-  return { originators, payers };
-}
