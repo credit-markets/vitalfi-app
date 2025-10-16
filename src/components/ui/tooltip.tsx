@@ -14,10 +14,7 @@ export function Tooltip({ children, content, className }: TooltipProps) {
   const tooltipId = React.useId();
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      setIsVisible(!isVisible);
-    } else if (e.key === 'Escape' && isVisible) {
+    if (e.key === 'Escape' && isVisible) {
       setIsVisible(false);
     }
   };
@@ -34,8 +31,6 @@ export function Tooltip({ children, content, className }: TooltipProps) {
       <div
         tabIndex={0}
         aria-describedby={isVisible ? tooltipId : undefined}
-        role="button"
-        className="inline-block"
       >
         {children}
       </div>

@@ -34,7 +34,11 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
   // Validate date
   if (isNaN(maturity.getTime())) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn(`Invalid maturity date: ${maturityDate}`);
+      console.warn(`[DEV] Invalid maturity date: ${maturityDate}`);
+    } else {
+      // Log to error tracking in production
+      console.error(`Invalid maturity date detected: ${maturityDate}`);
+      // TODO: Send to error tracking service (e.g., Sentry)
     }
     return {}; // Return empty object if invalid date
   }

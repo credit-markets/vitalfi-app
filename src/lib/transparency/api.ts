@@ -43,6 +43,18 @@ export async function exportReceivablesCsv(
 }
 
 /**
+ * Helper function to filter items by field with type-safe array checking
+ */
+function filterByField<T, K extends keyof T>(
+  items: T[],
+  field: K,
+  values: T[K][] | undefined
+): T[] {
+  if (!values || values.length === 0) return items;
+  return items.filter(item => values.includes(item[field]));
+}
+
+/**
  * Apply filters to receivables list (client-side)
  */
 export function filterReceivables(
@@ -51,23 +63,10 @@ export function filterReceivables(
 ): Receivable[] {
   let filtered = [...receivables];
 
-  // Status filter
-  if (filters.status && filters.status.length > 0) {
-    const statusFilter = filters.status;
-    filtered = filtered.filter(r => statusFilter.includes(r.status));
-  }
-
-  // Originator filter
-  if (filters.originator && filters.originator.length > 0) {
-    const originatorFilter = filters.originator;
-    filtered = filtered.filter(r => originatorFilter.includes(r.originator));
-  }
-
-  // Payer filter
-  if (filters.payer && filters.payer.length > 0) {
-    const payerFilter = filters.payer;
-    filtered = filtered.filter(r => payerFilter.includes(r.payer));
-  }
+  // Apply field-based filters
+  filtered = filterByField(filtered, 'status', filters.status);
+  filtered = filterByField(filtered, 'originator', filters.originator);
+  filtered = filterByField(filtered, 'payer', filters.payer);
 
   // Date range filter (by maturity date)
   if (filters.dateRange) {

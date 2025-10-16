@@ -18,6 +18,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 import type { VaultTransparencyData, Receivable } from "@/types/vault";
 
+// Safari requires a delay before revoking blob URLs to ensure download starts
+const SAFARI_DOWNLOAD_DELAY_MS = 100;
+
 export default function VaultTransparencyDetail() {
   const params = useParams();
   const router = useRouter();
@@ -33,6 +36,14 @@ export default function VaultTransparencyDetail() {
       try {
         setLoading(true);
         setError(null);
+
+        // Validate vaultId before making API call
+        if (!vaultId || typeof vaultId !== 'string' || vaultId.trim() === '') {
+          setError('Invalid vault ID');
+          setLoading(false);
+          return;
+        }
+
         const transparencyData = await getVaultTransparency(vaultId);
         setData(transparencyData);
       } catch (err) {
@@ -47,6 +58,12 @@ export default function VaultTransparencyDetail() {
 
   const handleExportCsv = async (receivables: Receivable[]) => {
     try {
+      // Early validation for empty receivables
+      if (!receivables || receivables.length === 0) {
+        toast.error('No receivables to export');
+        return;
+      }
+
       const blob = await exportReceivablesCsv(vaultId, receivables);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -55,11 +72,13 @@ export default function VaultTransparencyDetail() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      // Delay revoke for Safari compatibility - download may not start immediately
-      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      setTimeout(() => window.URL.revokeObjectURL(url), SAFARI_DOWNLOAD_DELAY_MS);
     } catch (err) {
       console.error('CSV export failed:', err);
-      toast.error('Failed to export CSV');
+      const message = err instanceof Error ? err.message : 'Failed to export CSV';
+      toast.error(message, {
+        description: 'Please try again or contact support if the issue persists.',
+      });
     }
   };
 
