@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { VaultEvent } from '@/types/vault';
 import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
 
@@ -14,11 +15,18 @@ import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
  * For now, provides mock data for development
  */
 export function useFundingVault() {
+  const params = useParams();
+  const vaultId = params.vaultId as string;
+
+  if (!vaultId) {
+    throw new Error('useFundingVault must be used within a vault route with vaultId parameter');
+  }
+
   // TODO: Replace with actual API/on-chain calls
   const info = useMemo(() => {
     // Use centralized mock data
-    return getMockFundingVaultInfo('vault-001');
-  }, []);
+    return getMockFundingVaultInfo(vaultId);
+  }, [vaultId]);
 
   // Mock events - TODO: fetch from indexer/API
   const events: VaultEvent[] = useMemo(() => {

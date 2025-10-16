@@ -358,16 +358,29 @@ export function getMockFundingVaultInfo(vaultId: string = "vault-001"): VaultFun
     throw new Error(`Vault ${vaultId} not found`);
   }
 
-  // Calculate funding dates based on maturity
+  // Calculate funding dates based on vault stage and maturity
+  const now = new Date();
   const maturityDate = new Date(vault.maturityDate);
-  const fundingEndAt = new Date(maturityDate);
-  fundingEndAt.setDate(fundingEndAt.getDate() - 150); // Funding ends 150 days before maturity
 
-  const fundingStartAt = new Date(fundingEndAt);
-  fundingStartAt.setDate(fundingStartAt.getDate() - 45); // 45 day funding period
+  let fundingEndAt: Date;
+  let fundingStartAt: Date;
+
+  if (vault.stage === 'Matured') {
+    // For matured vaults, funding ended well before maturity (which is also in the past)
+    fundingEndAt = new Date(maturityDate);
+    fundingEndAt.setDate(fundingEndAt.getDate() - 150); // Funding ended 150 days before maturity
+    fundingStartAt = new Date(fundingEndAt);
+    fundingStartAt.setDate(fundingStartAt.getDate() - 45); // 45 day funding period
+  } else {
+    // For funded vaults, maturity is in future, funding ended in the past
+    fundingEndAt = new Date(maturityDate);
+    fundingEndAt.setDate(fundingEndAt.getDate() - 150); // Funding ends 150 days before maturity
+    fundingStartAt = new Date(fundingEndAt);
+    fundingStartAt.setDate(fundingStartAt.getDate() - 45); // 45 day funding period
+  }
 
   return {
-    stage: vault.stage === 'Funded' ? 'Funding' : vault.stage, // Convert for active funding
+    stage: vault.stage, // Stage is computed dynamically by the hook
     name: vault.title,
     expectedApyPct: vault.targetApy * 100, // Convert decimal to percentage
     tvlSol: vault.raised,
