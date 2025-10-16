@@ -31,6 +31,9 @@ export async function exportReceivablesCsv(
   vaultId: string,
   receivables: Receivable[]
 ): Promise<Blob> {
+  if (!receivables || receivables.length === 0) {
+    throw new Error('No receivables to export');
+  }
   // In production, this might call a backend endpoint for server-side CSV generation
   return mockExportCsv(vaultId, receivables);
 }

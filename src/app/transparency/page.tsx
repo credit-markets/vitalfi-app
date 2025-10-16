@@ -20,7 +20,7 @@ export default function TransparencyHub() {
         const data = await listTransparencyVaults();
         setVaults(data);
       } catch (error) {
-        console.error('Failed to load transparency vaults:', error);
+        console.error("Failed to load transparency vaults:", error);
       } finally {
         setLoading(false);
       }
@@ -47,14 +47,15 @@ export default function TransparencyHub() {
               Transparency
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base">
-              Full disclosure of funded and matured vault collateral, receivables, and hedge positions
+              Full disclosure of vault collateral, operations, and hedge
+              positions
             </p>
           </div>
 
           {/* Vault Grid */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <div
                   key={i}
                   className="h-80 bg-card border border-border rounded-lg animate-pulse"
@@ -72,7 +73,7 @@ export default function TransparencyHub() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {vaults.map(vault => (
+              {vaults.map((vault) => (
                 <VaultCard key={vault.id} vault={vault} />
               ))}
             </div>

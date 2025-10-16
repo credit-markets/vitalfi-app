@@ -11,18 +11,36 @@ interface TooltipProps {
 
 export function Tooltip({ children, content, className }: TooltipProps) {
   const [isVisible, setIsVisible] = React.useState(false);
+  const tooltipId = React.useId();
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && isVisible) {
+      setIsVisible(false);
+    }
+  };
 
   return (
     <div
-      className="relative"
+      className="relative inline-block"
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
       onFocus={() => setIsVisible(true)}
       onBlur={() => setIsVisible(false)}
+      onKeyDown={handleKeyDown}
     >
-      {children}
+      <div
+        tabIndex={0}
+        aria-describedby={isVisible ? tooltipId : undefined}
+        role="button"
+        className="inline-block"
+      >
+        {children}
+      </div>
       {isVisible && (
         <div
+          id={tooltipId}
+          role="tooltip"
+          aria-label={typeof content === 'string' ? content : undefined}
           className={cn(
             "absolute z-[100] px-2.5 py-1.5 text-xs leading-tight text-foreground bg-popover border border-border rounded shadow-xl",
             "left-0 bottom-full mb-2",

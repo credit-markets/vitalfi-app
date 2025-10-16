@@ -30,6 +30,12 @@ const originators: Record<string, OriginatorInfo> = {
 function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPastDue?: number } {
   const now = new Date();
   const maturity = new Date(maturityDate);
+
+  // Validate date
+  if (isNaN(maturity.getTime())) {
+    return {}; // Return empty object if invalid date
+  }
+
   const diffMs = maturity.getTime() - now.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
@@ -107,14 +113,20 @@ function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
   receivables.forEach(r => {
     originatorTotals[r.originator] = (originatorTotals[r.originator] || 0) + r.faceValue;
   });
-  const topOriginatorPct = Math.max(...Object.values(originatorTotals)) / faceValueTotal;
+  const originatorValues = Object.values(originatorTotals);
+  const topOriginatorPct = originatorValues.length > 0 && faceValueTotal > 0
+    ? Math.max(...originatorValues) / faceValueTotal
+    : 0;
 
   // Top payer concentration
   const payerTotals: Record<string, number> = {};
   receivables.forEach(r => {
     payerTotals[r.payer] = (payerTotals[r.payer] || 0) + r.faceValue;
   });
-  const topPayerPct = Math.max(...Object.values(payerTotals)) / faceValueTotal;
+  const payerValues = Object.values(payerTotals);
+  const topPayerPct = payerValues.length > 0 && faceValueTotal > 0
+    ? Math.max(...payerValues) / faceValueTotal
+    : 0;
 
   return {
     receivableCount: receivables.length,

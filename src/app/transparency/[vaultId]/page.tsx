@@ -9,6 +9,7 @@ import { CollateralSection } from "@/components/transparency/CollateralSection";
 import { HedgeCard } from "@/components/transparency/HedgeCard";
 import { DocumentsList } from "@/components/transparency/DocumentsList";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { getVaultTransparency, exportReceivablesCsv } from "@/lib/transparency/api";
 import { cn } from "@/lib/utils";
@@ -44,18 +45,22 @@ export default function VaultTransparencyDetail() {
   }, [vaultId]);
 
   const handleExportCsv = async (receivables: Receivable[]) => {
+    let url: string | null = null;
     try {
       const blob = await exportReceivablesCsv(vaultId, receivables);
-      const url = window.URL.createObjectURL(blob);
+      url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `${vaultId}-receivables-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('CSV export failed:', err);
+    } finally {
+      if (url) {
+        window.URL.revokeObjectURL(url);
+      }
     }
   };
 
@@ -96,32 +101,34 @@ export default function VaultTransparencyDetail() {
               </Button>
             </div>
           ) : data ? (
-            <div className="space-y-6">
-              {/* 1. Vault Facts */}
-              <VaultFacts summary={data.summary} lastUpdated={data.lastUpdated} />
+            <ErrorBoundary>
+              <div className="space-y-6">
+                {/* 1. Vault Facts */}
+                <VaultFacts summary={data.summary} lastUpdated={data.lastUpdated} />
 
-              {/* 2. Collateral Overview + Receivables Table */}
-              <CollateralSection
-                analytics={data.collateral.analytics}
-                receivables={data.collateral.items}
-                onExportCsv={handleExportCsv}
-              />
+                {/* 2. Collateral Overview + Receivables Table */}
+                <CollateralSection
+                  analytics={data.collateral.analytics}
+                  receivables={data.collateral.items}
+                  onExportCsv={handleExportCsv}
+                />
 
-              {/* 3 & 4: Hedge + Documents - Side by side on desktop */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 3. Hedge Position */}
-                {data.hedge && (
-                  <div>
-                    <HedgeCard hedge={data.hedge} />
+                {/* 3 & 4: Hedge + Documents - Side by side on desktop */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* 3. Hedge Position */}
+                  {data.hedge && (
+                    <div>
+                      <HedgeCard hedge={data.hedge} />
+                    </div>
+                  )}
+
+                  {/* 4. Documents */}
+                  <div className={!data.hedge ? "lg:col-span-2" : ""}>
+                    <DocumentsList documents={data.documents} />
                   </div>
-                )}
-
-                {/* 4. Documents */}
-                <div className={!data.hedge ? "lg:col-span-2" : ""}>
-                  <DocumentsList documents={data.documents} />
                 </div>
               </div>
-            </div>
+            </ErrorBoundary>
           ) : null}
         </div>
       </main>
