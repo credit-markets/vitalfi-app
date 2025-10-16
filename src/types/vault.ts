@@ -27,35 +27,8 @@ export interface VaultFundingInfo {
 }
 
 // ============================================================================
-// LEGACY TYPES - Kept for backward compatibility with other pages
-// TODO: Remove once portfolio and transparency pages are updated
+// VAULT EVENT TYPES - Used by active vault page components
 // ============================================================================
-
-// Core Lot type
-export interface Lot {
-  id: string;
-  amount: number;
-  unlockAt: string;
-  status: "locked" | "unlocked";
-}
-
-// Pending withdrawal request
-export interface PendingWithdrawal {
-  id: string;
-  amount: number;
-  createdAt: string;
-  claimAt: string;
-  estSolOut: number;
-  txUrl?: string;
-}
-
-// User state with wallet info (LEGACY)
-export interface UserState {
-  wallet: string | null;
-  sol: number;
-  shareLots: Lot[];
-  pendingWithdrawals: PendingWithdrawal[];
-}
 
 // Event tag types for activity feed (SIMPLIFIED for funding model)
 export type EventTag =
@@ -74,95 +47,6 @@ export interface VaultEvent {
   note?: string;
 }
 
-// Legacy event tag types (for transparency page)
-export type LegacyEventTag = EventTag | "WithdrawRequest" | "Repayment";
-
-// Legacy vault event (for transparency page)
-export interface LegacyVaultEvent {
-  id: string;
-  tag: LegacyEventTag;
-  ts: string;
-  wallet: string;
-  amountSol?: number;
-  shares?: number;
-  txUrl: string;
-  note?: string;
-}
-
-// Legacy types for compatibility
-export interface VaultState {
-  tvl: number;
-  cap: number;
-  capRemaining: number;
-  paused: boolean;
-  principalRedemptionValue: number;
-  yieldAPR: number;
-  currentAPY: number;
-  liquidityBuffer: number;
-  lastRepaymentAt: Date;
-  queueDepth: number;
-  nextRepaymentETA?: Date;
-}
-
-export interface ShareLot {
-  id: string;
-  amount: number;
-  unlockAt: Date;
-  status: "locked" | "unlocked";
-  depositedAt: Date;
-}
-
-export interface UserVaultData {
-  shareBalance: number;
-  lots: ShareLot[];
-  pendingWithdrawals: PendingWithdrawal[];
-  totalLocked: number;
-  totalUnlocked: number;
-  nextUnlockDate?: Date;
-}
-
-
-export interface DepositPreview {
-  solAmount: number;
-  sharesMinted: number;
-  unlockDate: Date;
-  impliedAPY: number;
-  fee: number;
-}
-
-export interface WithdrawPreview {
-  sharesAmount: number;
-  estSOL: number;
-  availableAt: Date;
-  queuePosition?: number;
-}
-
-// Portfolio types
-export type PortfolioEventTag = "Deposit" | "WithdrawRequest" | "Claim";
-
-export interface PortfolioEvent {
-  id: string;
-  tag: PortfolioEventTag;
-  ts: string;
-  amountSol?: number;
-  shares?: number;
-  txUrl: string;
-  status?: "pending" | "success";
-}
-
-export interface PortfolioSummary {
-  wallet: string;
-  sharesTotal: number;
-  sharesUnlocked: number;
-  sharesLocked: number;
-  currentValueSol: number;
-  currentValueUsd: number;
-  costBasisSol: number;
-  unrealizedSol: number;
-  realizedSol: number;
-  nextUnlock?: { date: string; shares: number };
-  allUnlocks?: Array<{ date: string; shares: number }>;
-}
 
 // ============================================================================
 // NEW TRANSPARENCY TYPES - Receivables-based model (Funded/Matured only)

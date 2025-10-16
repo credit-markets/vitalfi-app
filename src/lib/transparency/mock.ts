@@ -2,6 +2,7 @@ import type {
   VaultSummary,
   VaultTransparencyData,
   Receivable,
+  ReceivableStatus,
   CollateralAnalytics,
   HedgePosition,
   OriginatorInfo,
@@ -40,7 +41,7 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
 }
 
 // Generate realistic receivables
-function generateReceivables(count: number, baseDate: Date, status: 'Performing' | 'Matured' | 'Repaid'): Receivable[] {
+function generateReceivables(count: number, baseDate: Date, status: ReceivableStatus): Receivable[] {
   const receivables: Receivable[] = [];
   const payers = [
     "SUS - Sistema Único de Saúde",
