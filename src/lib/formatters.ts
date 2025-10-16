@@ -23,13 +23,6 @@ export function formatCompactCurrency(value: number): string {
 }
 
 /**
- * Format price per share with high precision (fixed 2-4 decimals)
- */
-export function formatPricePerShare(value: number, decimals: number = 4): string {
-  return value.toFixed(decimals);
-}
-
-/**
  * Format percentage with optional + sign for positive changes
  */
 export function formatDelta(value: number, decimals: number = 2, showSign: boolean = true): string {

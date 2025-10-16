@@ -1,16 +1,10 @@
 import type {
   VaultState,
   UserVaultData,
-  Activity,
-  VaultChartData,
   DepositPreview,
   WithdrawPreview,
   ShareLot,
-  VaultStats,
   LegacyVaultEvent,
-  CollateralSnapshot,
-  CollateralItem,
-  ParamChange,
 } from "@/types/vault";
 
 // Mock Vault Contract Addresses
@@ -20,60 +14,6 @@ export const MOCK_ADDRESSES = {
   authorityPda: "8xPZfG715bTx8DNjGmaS23yuVM1YWaqqqZa8OtrUein",
   tokenMint: "vTOK111111111111111111111111111111111111111",
   vaultTokenAccount: "So11111111111111111111111111111111111111112",
-};
-
-// Enhanced Vault Stats with new fields
-export const getMockVaultStats = (): VaultStats => {
-  const now = Date.now();
-  const lastRepayment = new Date("2025-09-29T00:00:00Z");
-  const nextRepayment = new Date("2025-10-06T00:00:00Z");
-
-  // Simulate periodic repayments that increase share redemption value
-  const daysSinceLastRepayment = Math.floor((now - lastRepayment.getTime()) / (1000 * 60 * 60 * 24));
-  const repaymentCycles = Math.floor(daysSinceLastRepayment / 7); // Weekly repayments
-  const baseRedemption = 1.00;
-  const redemptionGrowth = 0.02 + (repaymentCycles * 0.005);
-  const principalRedemption = Number((baseRedemption + redemptionGrowth).toFixed(3));
-
-  const baseYieldAPR = 8.0;
-  const yieldGrowth = 0.5 + (repaymentCycles * 0.1);
-  const yieldAPR = Number((baseYieldAPR + yieldGrowth).toFixed(2));
-
-  // Generate share history (last 30 days)
-  const shareHistory: VaultStats["shareHistory"] = [];
-  for (let i = 30; i >= 0; i--) {
-    const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-    shareHistory.push({
-      t: date.toISOString(),
-      tvl: 2_000_000 + i * 13_000 + Math.random() * 50_000,
-      shareValue: 1.00 + (30 - i) * 0.0007,
-      apy: 8.0 + Math.random() * 0.5,
-    });
-  }
-
-  const tvl = 2_400_000;
-  const supply = 2_350_000;
-  const pricePerShare = tvl / supply;
-  const apy = 8.5;
-
-  return {
-    tvl,
-    supply,
-    pricePerShare,
-    apy,
-    cap: 5_000_000,
-    capRemaining: 2_600_000,
-    paused: false,
-    principalRedemption,
-    yieldAPR,
-    liquidityBuffer: 150_000,
-    lastRepaymentAt: lastRepayment.toISOString(),
-    nextRepaymentEta: nextRepayment.toISOString(),
-    queueDepth: 3,
-    avgClaimTimeDays: 2,
-    shareHistory,
-    addresses: MOCK_ADDRESSES,
-  };
 };
 
 // Mock Vault Global State (legacy compatibility)
@@ -145,92 +85,6 @@ export const getMockUserData = (hasDeposits: boolean = true): UserVaultData => {
     totalUnlocked: 25,
     nextUnlockDate: new Date("2025-10-31T00:00:00Z"),
   };
-};
-
-// Mock Activity Feed
-export const getMockActivity = (): Activity[] => {
-  return [
-    {
-      id: "activity-1",
-      type: "deposit",
-      amount: 75,
-      wallet: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      timestamp: new Date("2025-09-01T00:00:00Z"),
-      txSignature: "5J8Y9K3mNpQrStUvWxYz1A2bCdEfGhIjKlMnOpQrStUvWxYz123456789ABC",
-      status: "success",
-      solAmount: 75,
-      user: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      signature: "5J8Y9K3mNpQrStUvWxYz1A2bCdEfGhIjKlMnOpQrStUvWxYz123456789ABC",
-    },
-    {
-      id: "activity-2",
-      type: "deposit",
-      amount: 50,
-      wallet: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      timestamp: new Date("2025-08-02T00:00:00Z"),
-      txSignature: "4G7H8I9jKlMnOpQrStUvWxYz1A2bCdEfGhIjKlMnOpQr123456789DEF",
-      status: "success",
-      solAmount: 50,
-      user: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      signature: "4G7H8I9jKlMnOpQrStUvWxYz1A2bCdEfGhIjKlMnOpQr123456789DEF",
-    },
-    {
-      id: "activity-3",
-      type: "repayment",
-      amount: 15000,
-      wallet: "VaultProgram111111111111111111111111111111111",
-      timestamp: new Date("2025-09-29T00:00:00Z"),
-      txSignature: "8K9L0M1nOpQrStUvWxYz1A2bCdEfGhIjKlMnOpQrStUv123456789GHI",
-      status: "success",
-      solAmount: 15000,
-      user: "VaultProgram111111111111111111111111111111111",
-      signature: "8K9L0M1nOpQrStUvWxYz1A2bCdEfGhIjKlMnOpQrStUv123456789GHI",
-    },
-    {
-      id: "activity-4",
-      type: "withdraw_request",
-      amount: 10,
-      wallet: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      timestamp: new Date("2025-09-30T00:00:00Z"),
-      txSignature: "2L5M6N7oPqRsTuVwXyZ1A2bCdEfGhIjKlMnOpQrStUvW123456789JKL",
-      status: "pending",
-      solAmount: 10,
-      user: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      signature: "2L5M6N7oPqRsTuVwXyZ1A2bCdEfGhIjKlMnOpQrStUvW123456789JKL",
-    },
-    {
-      id: "activity-5",
-      type: "deposit",
-      amount: 25,
-      wallet: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      timestamp: new Date("2025-06-28T00:00:00Z"),
-      txSignature: "9M3N4O5pQrStUvWxYz1A2bCdEfGhIjKlMnOpQrStUvWx123456789MNO",
-      status: "success",
-      solAmount: 25,
-      user: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      signature: "9M3N4O5pQrStUvWxYz1A2bCdEfGhIjKlMnOpQrStUvWx123456789MNO",
-    },
-  ];
-};
-
-// Mock Chart Data - fixed values to avoid hydration
-export const getMockChartData = (days: 7 | 30 = 7): VaultChartData => {
-  const points: VaultChartData = { tvl: [], shareValue: [], yieldAPY: [] };
-
-  const tvlValues7d = [2200000, 2250000, 2300000, 2280000, 2350000, 2380000, 2400000];
-  const shareValues7d = [1.00, 1.005, 1.01, 1.012, 1.015, 1.018, 1.02];
-  const yieldValues7d = [8.2, 8.3, 8.4, 8.5, 8.5, 8.6, 8.5];
-
-  if (days === 7) {
-    for (let i = 0; i < 7; i++) {
-      const timestamp = new Date(`2025-09-${25 + i}T00:00:00Z`);
-      points.tvl.push({ timestamp, value: tvlValues7d[i] });
-      points.shareValue.push({ timestamp, value: shareValues7d[i] });
-      points.yieldAPY.push({ timestamp, value: yieldValues7d[i] });
-    }
-  }
-
-  return points;
 };
 
 // Calculation Functions
@@ -630,7 +484,6 @@ export const getMockPortfolioEvents = (_wallet: string) => {
       ts: new Date("2025-09-01T10:30:00Z").toISOString(),
       amountSol: 75,
       shares: 75,
-      ppsAt: 1.00,
       txUrl: `${baseUrl}/L1L2L3L4L5L6L7L8L9LLLCLDLELFLGLHLILJLKLLMLNL?cluster=${cluster}`,
       status: "success" as const,
     },
@@ -640,7 +493,6 @@ export const getMockPortfolioEvents = (_wallet: string) => {
       ts: new Date("2025-08-02T14:20:00Z").toISOString(),
       amountSol: 50,
       shares: 50,
-      ppsAt: 1.00,
       txUrl: `${baseUrl}/B1B2B3B4B5B6B7B8B9BBBCBDBEBFBGBHBIBJBKBLBMBNB?cluster=${cluster}`,
       status: "success" as const,
     },
@@ -650,7 +502,6 @@ export const getMockPortfolioEvents = (_wallet: string) => {
       ts: new Date("2025-06-28T09:15:00Z").toISOString(),
       amountSol: 25,
       shares: 25,
-      ppsAt: 1.00,
       txUrl: `${baseUrl}/9M3N4O5pQrStUvWxYz1A2bCdEfGhIjKlMnOpQrStUvWx123456789MNO?cluster=${cluster}`,
       status: "success" as const,
     },
@@ -658,151 +509,3 @@ export const getMockPortfolioEvents = (_wallet: string) => {
 };
 
 // Transparency mock data
-export const getMockCollateralSnapshot = (): CollateralSnapshot => {
-  const items: CollateralItem[] = [
-    {
-      id: "coll-1",
-      label: "Clinic A – Batch #1029",
-      kind: "Receivable",
-      notionalSol: 450000,
-      status: "performing",
-      maturityAt: new Date("2025-11-15T00:00:00Z").toISOString(),
-      lastPaymentAt: new Date("2025-09-29T00:00:00Z").toISOString(),
-      ltv: 0.85,
-      tags: ["Healthcare", "BR"],
-    },
-    {
-      id: "coll-2",
-      label: "Clinic B – Batch #1030",
-      kind: "Invoice",
-      notionalSol: 380000,
-      status: "performing",
-      maturityAt: new Date("2025-12-01T00:00:00Z").toISOString(),
-      lastPaymentAt: new Date("2025-09-23T00:00:00Z").toISOString(),
-      ltv: 0.82,
-      tags: ["Healthcare", "BR"],
-    },
-    {
-      id: "coll-3",
-      label: "Clinic C – Batch #1027",
-      kind: "Receivable",
-      notionalSol: 520000,
-      status: "matured",
-      maturityAt: new Date("2025-10-01T00:00:00Z").toISOString(),
-      lastPaymentAt: new Date("2025-09-16T00:00:00Z").toISOString(),
-      ltv: 0.88,
-      tags: ["Healthcare", "BR"],
-    },
-    {
-      id: "coll-4",
-      label: "Clinic D – Batch #1031",
-      kind: "Receivable",
-      notionalSol: 300000,
-      status: "performing",
-      maturityAt: new Date("2025-11-30T00:00:00Z").toISOString(),
-      lastPaymentAt: new Date("2025-09-29T00:00:00Z").toISOString(),
-      ltv: 0.80,
-      tags: ["Healthcare", "BR"],
-    },
-    {
-      id: "coll-5",
-      label: "Clinic E – Batch #1026",
-      kind: "Invoice",
-      notionalSol: 400000,
-      status: "repaid",
-      maturityAt: new Date("2025-09-20T00:00:00Z").toISOString(),
-      lastPaymentAt: new Date("2025-09-20T00:00:00Z").toISOString(),
-      ltv: 0.85,
-      tags: ["Healthcare", "BR"],
-    },
-    {
-      id: "coll-6",
-      label: "Liquidity Buffer",
-      kind: "CashBuffer",
-      notionalSol: 150000,
-      status: "buffer",
-      tags: ["Buffer"],
-    },
-  ];
-
-  const deployedSol = items
-    .filter(i => i.status === "performing" || i.status === "matured")
-    .reduce((sum, i) => sum + i.notionalSol, 0);
-
-  const liquidityBufferSol = items
-    .filter(i => i.status === "buffer")
-    .reduce((sum, i) => sum + i.notionalSol, 0);
-
-  const totalNotionalSol = deployedSol + liquidityBufferSol;
-  const performingCount = items.filter(i => i.status === "performing").length;
-  const totalActiveCount = items.filter(i => i.status === "performing" || i.status === "matured").length;
-  const performingPct = totalActiveCount > 0 ? (performingCount / totalActiveCount) * 100 : 0;
-
-  const performingItems = items.filter(i => i.maturityAt && i.status === "performing");
-  const avgMaturityDays = performingItems.length > 0
-    ? Math.round(
-        performingItems.reduce((sum, i) => {
-          const days = Math.ceil((new Date(i.maturityAt!).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-          return sum + days;
-        }, 0) / performingItems.length
-      )
-    : undefined;
-
-  return {
-    deployedSol,
-    liquidityBufferSol,
-    capRemainingSol: 2600000,
-    totalNotionalSol,
-    performingPct,
-    avgMaturityDays,
-    items,
-  };
-};
-
-export const getMockParamChanges = (): ParamChange[] => {
-  const baseUrl = "https://explorer.solana.com/tx";
-  const cluster = "devnet";
-
-  return [
-    {
-      id: "param-1",
-      key: "Vault Cap",
-      oldValue: 3000000,
-      newValue: 5000000,
-      ts: new Date("2025-07-01T00:00:00Z").toISOString(),
-      txUrl: `${baseUrl}/PARAM1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
-    },
-    {
-      id: "param-2",
-      key: "Liquidity Buffer %",
-      oldValue: "5%",
-      newValue: "6.25%",
-      ts: new Date("2025-08-10T00:00:00Z").toISOString(),
-      txUrl: `${baseUrl}/PARAM2A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
-    },
-    {
-      id: "param-3",
-      key: "Principal Lockup",
-      oldValue: "60 days",
-      newValue: "90 days",
-      ts: new Date("2025-06-15T00:00:00Z").toISOString(),
-      txUrl: `${baseUrl}/PARAM3A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
-    },
-    {
-      id: "param-4",
-      key: "Withdrawal Delay",
-      oldValue: "1 day",
-      newValue: "2 days",
-      ts: new Date("2025-06-20T00:00:00Z").toISOString(),
-      txUrl: `${baseUrl}/PARAM4A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
-    },
-    {
-      id: "param-5",
-      key: "Liquidity Buffer SOL",
-      oldValue: 100000,
-      newValue: 150000,
-      ts: new Date("2025-09-01T00:00:00Z").toISOString(),
-      txUrl: `${baseUrl}/PARAM5A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9?cluster=${cluster}`,
-    },
-  ];
-};
