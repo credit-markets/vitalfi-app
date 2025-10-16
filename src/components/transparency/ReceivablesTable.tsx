@@ -138,6 +138,8 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
                 <button
                   key={status}
                   onClick={() => toggleStatusFilter(status)}
+                  aria-label={`Filter by ${status} status`}
+                  aria-pressed={filters.status?.includes(status)}
                   className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                     filters.status?.includes(status)
                       ? 'bg-primary/20 border-primary text-primary'
@@ -192,20 +194,33 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
                       {(r.advancePct * 100).toFixed(1)}%
                     </TableCell>
                     <TableCell className="text-sm">
-                      {new Date(r.maturityDate).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                      {r.status !== 'Repaid' && r.daysToMaturity !== undefined && r.daysToMaturity >= 0 && (
-                        <span className="text-xs text-muted-foreground ml-1">
-                          ({r.daysToMaturity}d)
-                        </span>
-                      )}
-                      {r.status !== 'Repaid' && r.daysPastDue !== undefined && r.daysPastDue > 0 && (
-                        <span className="text-xs text-red-400 ml-1">
-                          (+{r.daysPastDue}d)
-                        </span>
-                      )}
+                      {(() => {
+                        const maturityDate = new Date(r.maturityDate);
+                        const isValidDate = !isNaN(maturityDate.getTime());
+
+                        if (!isValidDate) {
+                          return <span className="text-red-400">Invalid date</span>;
+                        }
+
+                        return (
+                          <>
+                            {maturityDate.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                            {r.status !== 'Repaid' && r.daysToMaturity !== undefined && r.daysToMaturity >= 0 && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({r.daysToMaturity}d)
+                              </span>
+                            )}
+                            {r.status !== 'Repaid' && r.daysPastDue !== undefined && r.daysPastDue > 0 && (
+                              <span className="text-xs text-red-400 ml-1">
+                                (+{r.daysPastDue}d)
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>{getStatusBadge(r.status)}</TableCell>
                     <TableCell className="text-center">

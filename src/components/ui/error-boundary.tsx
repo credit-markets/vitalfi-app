@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Button } from "./button";
+import { trackError } from "@/lib/error-tracking";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -13,12 +14,13 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   retryCount: number;
+  showReloadConfirmation: boolean;
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null, retryCount: 0 };
+    this.state = { hasError: false, error: null, retryCount: 0, showReloadConfirmation: false };
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
@@ -26,12 +28,17 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Track error with React error info context
+    trackError(error, {
+      componentStack: errorInfo.componentStack,
+      errorBoundary: 'ErrorBoundary',
+    });
+
     this.props.onError?.(error, errorInfo);
   }
 
   handleRetry = () => {
-    const { retryCount } = this.state;
+    const { retryCount, error } = this.state;
 
     // Try to recover without reload first (up to 2 attempts)
     if (retryCount < 2) {
@@ -41,10 +48,42 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         retryCount: retryCount + 1
       });
     } else {
-      // Full reload as last resort after 2 failed retries
-      window.location.reload();
+      // Track reload event before showing confirmation
+      trackError(new Error('ErrorBoundary: Full page reload triggered after failed retries'), {
+        originalError: error?.message,
+        retryCount,
+      });
+
+      // Show confirmation dialog before reload
+      this.setState({ showReloadConfirmation: true });
     }
   };
+
+  handleConfirmReload = () => {
+    window.location.reload();
+  };
+
+  handleCancelReload = () => {
+    // Reset retry count to allow user to try again
+    this.setState({ showReloadConfirmation: false, retryCount: 0 });
+  };
+
+  // Provide specific guidance based on error type
+  private getErrorGuidance(err: Error | null): string {
+    if (!err) return 'Please try again or contact support if the issue persists.';
+
+    const message = err.message.toLowerCase();
+    if (message.includes('network') || message.includes('fetch')) {
+      return 'Please check your internet connection and try again.';
+    }
+    if (message.includes('not found') || message.includes('vault')) {
+      return 'The requested resource may not exist. Please verify the vault ID.';
+    }
+    if (message.includes('timeout')) {
+      return 'The request took too long. Please try again.';
+    }
+    return 'Please try again or contact support if the issue persists.';
+  }
 
   render() {
     if (this.state.hasError) {
@@ -52,7 +91,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         return this.props.fallback;
       }
 
-      const { retryCount } = this.state;
+      const { retryCount, error, showReloadConfirmation } = this.state;
       const willReload = retryCount >= 2;
 
       return (
@@ -60,7 +99,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <div className="max-w-md text-center space-y-4">
             <h2 className="text-2xl font-semibold text-red-400">Something went wrong</h2>
             <p className="text-muted-foreground">
-              {this.state.error?.message || 'An unexpected error occurred'}
+              {error?.message || 'An unexpected error occurred'}
+            </p>
+            <p className="text-sm text-muted-foreground/80">
+              {this.getErrorGuidance(error)}
             </p>
             <div className="space-y-2">
               <Button onClick={this.handleRetry}>
@@ -71,7 +113,32 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                   Retry attempt {retryCount}/2
                 </p>
               )}
+              {willReload && !showReloadConfirmation && (
+                <p className="text-xs text-yellow-400">
+                  Warning: Reloading will lose any unsaved changes
+                </p>
+              )}
             </div>
+
+            {/* Reload Confirmation Dialog */}
+            {showReloadConfirmation && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-card border border-border rounded-lg p-6 max-w-sm space-y-4 shadow-xl">
+                  <h3 className="text-lg font-semibold text-foreground">Reload Required</h3>
+                  <p className="text-sm text-muted-foreground">
+                    The application needs to reload to recover. Any unsaved changes will be lost.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={this.handleCancelReload}>
+                      Cancel
+                    </Button>
+                    <Button onClick={this.handleConfirmReload}>
+                      Reload
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );

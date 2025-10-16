@@ -20,8 +20,17 @@ export async function listTransparencyVaults(): Promise<VaultSummary[]> {
  * Get full transparency data for a specific vault
  */
 export async function getVaultTransparency(vaultId: string): Promise<VaultTransparencyData> {
+  // Validate vaultId parameter
+  if (!vaultId || typeof vaultId !== 'string' || vaultId.trim() === '') {
+    throw new Error('Invalid vault ID provided');
+  }
+
   // In production, this would fetch from API/chain
-  return getMockVaultTransparency(vaultId);
+  const data = await getMockVaultTransparency(vaultId);
+  if (!data) {
+    throw new Error(`Vault "${vaultId}" not found. Please check the vault ID and try again.`);
+  }
+  return data;
 }
 
 /**
@@ -39,6 +48,18 @@ export async function exportReceivablesCsv(
 }
 
 /**
+ * Helper function to filter items by field with type-safe array checking
+ */
+function filterByField<T, K extends keyof T>(
+  items: T[],
+  field: K,
+  values: T[K][] | undefined
+): T[] {
+  if (!values || values.length === 0) return items;
+  return items.filter(item => values.includes(item[field]));
+}
+
+/**
  * Apply filters to receivables list (client-side)
  */
 export function filterReceivables(
@@ -47,20 +68,10 @@ export function filterReceivables(
 ): Receivable[] {
   let filtered = [...receivables];
 
-  // Status filter
-  if (filters.status && filters.status.length > 0) {
-    filtered = filtered.filter(r => filters.status!.includes(r.status));
-  }
-
-  // Originator filter
-  if (filters.originator && filters.originator.length > 0) {
-    filtered = filtered.filter(r => filters.originator!.includes(r.originator));
-  }
-
-  // Payer filter
-  if (filters.payer && filters.payer.length > 0) {
-    filtered = filtered.filter(r => filters.payer!.includes(r.payer));
-  }
+  // Apply field-based filters
+  filtered = filterByField(filtered, 'status', filters.status);
+  filtered = filterByField(filtered, 'originator', filters.originator);
+  filtered = filterByField(filtered, 'payer', filters.payer);
 
   // Date range filter (by maturity date)
   if (filters.dateRange) {
