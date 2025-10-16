@@ -12,6 +12,11 @@ import { formatDate, pluralize } from "@/lib/utils";
 export function VaultOverview() {
   const { info, computed } = useFundingVault();
 
+  // Early return if data not loaded (error state handled by parent)
+  if (!info || !computed) {
+    return null;
+  }
+
   return (
     <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
       <div className="space-y-6">

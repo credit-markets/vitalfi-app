@@ -350,7 +350,7 @@ export async function exportReceivablesCsv(
 }
 
 // Get mock funding vault info (for vault detail page)
-export function getMockFundingVaultInfo(vaultId: string = "vault-001"): VaultFundingInfo {
+export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
   const vaults = getMockTransparencyVaults();
   const vault = vaults.find(v => v.id === vaultId);
 

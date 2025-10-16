@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { VaultEvent } from '@/types/vault';
+import { VaultEvent, VaultFundingInfo } from '@/types/vault';
 import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
 
 /**
@@ -17,15 +17,24 @@ import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
 export function useFundingVault() {
   const params = useParams();
   const vaultId = params.vaultId as string;
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<VaultFundingInfo | null>(null);
 
-  if (!vaultId) {
-    throw new Error('useFundingVault must be used within a vault route with vaultId parameter');
-  }
+  // Load vault info
+  useEffect(() => {
+    if (!vaultId) {
+      setError('Vault ID is required');
+      return;
+    }
 
-  // TODO: Replace with actual API/on-chain calls
-  const info = useMemo(() => {
-    // Use centralized mock data
-    return getMockFundingVaultInfo(vaultId);
+    try {
+      const vaultInfo = getMockFundingVaultInfo(vaultId);
+      setInfo(vaultInfo);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load vault data');
+      setInfo(null);
+    }
   }, [vaultId]);
 
   // Mock events - TODO: fetch from indexer/API
@@ -84,6 +93,10 @@ export function useFundingVault() {
 
   // Compute derived values
   const computed = useMemo(() => {
+    if (!info) {
+      return null;
+    }
+
     const capRemainingSol = Math.max(0, info.capSol - info.raisedSol);
     const progressPct = info.capSol > 0 ? (info.raisedSol / info.capSol) * 100 : 0;
 
@@ -116,8 +129,9 @@ export function useFundingVault() {
   }, [info]);
 
   return {
-    info: { ...info, stage: computed.stage },
+    info: info && computed ? { ...info, stage: computed.stage } : null,
     events,
     computed,
+    error,
   };
 }

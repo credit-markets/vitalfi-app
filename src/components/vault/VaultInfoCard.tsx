@@ -19,6 +19,11 @@ export function VaultInfoCard() {
   const params = useParams();
   const vaultId = params.vaultId as string;
 
+  // Early return if data not loaded (error state handled by parent)
+  if (!info) {
+    return null;
+  }
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard`);

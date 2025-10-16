@@ -16,7 +16,35 @@ import { ArrowLeft } from "lucide-react";
 
 export default function VaultPage() {
   const { isCollapsed } = useSidebar();
-  const { info } = useFundingVault();
+  const { error } = useFundingVault();
+
+  // Show error state if vault not found
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <Sidebar />
+
+        <main
+          className={cn(
+            "pt-24 pb-20 lg:pb-16 transition-all duration-300",
+            "lg:ml-16",
+            !isCollapsed && "lg:ml-64"
+          )}
+        >
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center py-16">
+              <p className="text-red-400 text-lg mb-2">Vault not found</p>
+              <p className="text-muted-foreground text-sm mb-4">{error}</p>
+              <Link href="/">
+                <Button>Back to Vaults</Button>
+              </Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

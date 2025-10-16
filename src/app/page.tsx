@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { VaultCard } from "@/components/transparency/VaultCard";
@@ -15,22 +15,23 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadVaults() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await listTransparencyVaults();
-        setVaults(data);
-      } catch (err) {
-        console.error("Failed to load transparency vaults:", err);
-        setError(err instanceof Error ? err.message : "Failed to load transparency data");
-      } finally {
-        setLoading(false);
-      }
+  const loadVaults = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await listTransparencyVaults();
+      setVaults(data);
+    } catch (err) {
+      console.error("Failed to load transparency vaults:", err);
+      setError(err instanceof Error ? err.message : "Failed to load transparency data");
+    } finally {
+      setLoading(false);
     }
-    loadVaults();
   }, []);
+
+  useEffect(() => {
+    loadVaults();
+  }, [loadVaults]);
 
   return (
     <div className="min-h-screen bg-background">
