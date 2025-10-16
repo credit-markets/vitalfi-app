@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from 'react';
-import { VaultFundingInfo, VaultEvent } from '@/types/vault';
-import { MOCK_ADDRESSES } from '@/lib/solana/mock-data';
+import { VaultEvent } from '@/types/vault';
+import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
 
 /**
  * Hook for funding vault data and computed values
@@ -15,21 +15,9 @@ import { MOCK_ADDRESSES } from '@/lib/solana/mock-data';
  */
 export function useFundingVault() {
   // TODO: Replace with actual API/on-chain calls
-  const info: VaultFundingInfo = useMemo(() => {
-    return {
-      stage: 'Funding' as const, // Will be computed below
-      expectedApyPct: 12.0,
-      tvlSol: 1850000,
-      capSol: 5000000,
-      minInvestmentSol: 100,
-      raisedSol: 1850000,
-      fundingStartAt: new Date('2025-10-01T00:00:00Z').toISOString(),
-      fundingEndAt: new Date('2025-11-15T23:59:59Z').toISOString(),
-      maturityAt: new Date('2026-04-15T00:00:00Z').toISOString(),
-      originator: 'MedReceivables Brazil',
-      guarantees: 'Collateral',
-      addresses: MOCK_ADDRESSES,
-    };
+  const info = useMemo(() => {
+    // Use centralized mock data
+    return getMockFundingVaultInfo('vault-001');
   }, []);
 
   // Mock events - TODO: fetch from indexer/API
