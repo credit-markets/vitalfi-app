@@ -143,9 +143,13 @@ function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
   };
 }
 
-// Mock vault summaries (Funded & Matured only)
+// Mock vault summaries (all stages)
 export function getMockTransparencyVaults(): VaultSummary[] {
   const now = new Date();
+
+  const maturityFunding = new Date(now);
+  maturityFunding.setDate(maturityFunding.getDate() + 240); // 8 months out
+
   const maturityFunded = new Date(now);
   maturityFunded.setDate(maturityFunded.getDate() + 180); // 6 months out
 
@@ -172,6 +176,16 @@ export function getMockTransparencyVaults(): VaultSummary[] {
       targetApy: 0.105,
       maturityDate: maturityMatured.toISOString(),
       originator: originators.vida_med,
+    },
+    {
+      id: "vault-003",
+      title: "SME Receivables Brazil Q1 2026",
+      stage: "Funding",
+      raised: 180000,
+      cap: 400000,
+      targetApy: 0.135,
+      maturityDate: maturityFunding.toISOString(),
+      originator: originators.saude_plus,
     },
   ];
 }

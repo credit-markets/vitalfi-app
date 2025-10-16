@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { VaultCard } from "@/components/transparency/VaultCard";
+import { VaultsClientWrapper } from "@/components/vault/VaultsClientWrapper";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { listTransparencyVaults } from "@/lib/transparency/api";
+import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import type { VaultSummary } from "@/types/vault";
 
@@ -24,7 +25,9 @@ export default function Home() {
       setVaults(data);
     } catch (err) {
       console.error("Failed to load transparency vaults:", err);
-      setError(err instanceof Error ? err.message : "Failed to load transparency data");
+      setError(
+        err instanceof Error ? err.message : "Failed to load transparency data"
+      );
     } finally {
       setLoading(false);
     }
@@ -33,6 +36,15 @@ export default function Home() {
   useEffect(() => {
     loadVaults();
   }, [loadVaults]);
+
+  // Calculate summary stats
+  const { totalTvl, activeCount } = useMemo(() => {
+    const totalTvl = vaults.reduce((sum, v) => sum + (v.raised || 0), 0);
+    const activeCount = vaults.filter(
+      (v) => v.stage === "Funding" || v.stage === "Funded"
+    ).length;
+    return { totalTvl, activeCount };
+  }, [vaults]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -48,14 +60,15 @@ export default function Home() {
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Page Header */}
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+          <header className="space-y-2 mb-6 pb-6 border-b border-border/50">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               Vaults
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Explore available vaults and their transparency reports
+            <p className="text-sm text-muted-foreground max-w-2xl">
+              Each vault represents a tokenized pool of healthcare receivables,
+              providing on-chain access to short-term, yield-bearing assets.
             </p>
-          </div>
+          </header>
 
           {/* Vault Grid */}
           {loading ? (
@@ -69,11 +82,11 @@ export default function Home() {
             </div>
           ) : error ? (
             <div className="text-center py-16">
-              <p className="text-red-400 text-lg mb-2">Failed to load transparency data</p>
+              <p className="text-red-400 text-lg mb-2">
+                Failed to load transparency data
+              </p>
               <p className="text-muted-foreground text-sm mb-4">{error}</p>
-              <Button onClick={loadVaults}>
-                Retry
-              </Button>
+              <Button onClick={loadVaults}>Retry</Button>
             </div>
           ) : vaults.length === 0 ? (
             <div className="text-center py-16">
@@ -85,11 +98,11 @@ export default function Home() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {vaults.map((vault) => (
-                <VaultCard key={vault.id} vault={vault} />
-              ))}
-            </div>
+            <VaultsClientWrapper
+              vaults={vaults}
+              totalTvl={formatCurrency(totalTvl, "SOL")}
+              activeCount={activeCount}
+            />
           )}
         </div>
       </main>

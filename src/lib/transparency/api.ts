@@ -6,14 +6,12 @@ import {
 } from "./mock";
 
 /**
- * List all transparency vaults (Funded/Matured only)
- * Funding vaults are excluded
+ * List all vaults (all stages)
  */
 export async function listTransparencyVaults(): Promise<VaultSummary[]> {
   // In production, this would fetch from API/chain
-  // For now, return mock data filtered to Funded/Matured only
   const vaults = getMockTransparencyVaults();
-  return vaults.filter(v => v.stage === 'Funded' || v.stage === 'Matured');
+  return vaults;
 }
 
 /**

@@ -82,14 +82,14 @@ export function PortfolioHeader({ summary, positions }: PortfolioHeaderProps) {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="font-medium">Portfolio:</span>
           {stageBreakdown.fundingPct > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
               {stageBreakdown.fundingPct}% Funding
             </span>
           )}
           {stageBreakdown.fundedPct > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
               {stageBreakdown.fundedPct}% Funded
             </span>
           )}
