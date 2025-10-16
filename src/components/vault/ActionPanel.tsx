@@ -19,11 +19,6 @@ export function ActionPanel() {
   const { info, computed } = useFundingVault();
   const [depositAmount, setDepositAmount] = useState("");
 
-  // Early return if data not loaded (error state handled by parent)
-  if (!info || !computed) {
-    return null;
-  }
-
   const amountNum = parseFloat(depositAmount) || 0;
 
   // Validation

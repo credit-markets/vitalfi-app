@@ -3,7 +3,6 @@ export type VaultStage = 'Funding' | 'Funded' | 'Matured' | 'Closed';
 
 export interface VaultFundingInfo {
   stage: VaultStage;
-  name: string;                     // vault name/title (e.g., "Medical Receivables Brazil Q4 2025")
   expectedApyPct: number;           // e.g., 12.0
   tvlSol: number;                   // equals raisedSol for clarity
   capSol: number;
@@ -14,6 +13,7 @@ export interface VaultFundingInfo {
   fundingEndAt: string;             // ISO
   maturityAt: string;               // ISO
   originator: string;               // short label only
+  guarantees: 'Collateral';
   addresses: {
     programId: string;
     vaultPda: string;

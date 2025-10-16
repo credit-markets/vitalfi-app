@@ -12,17 +12,12 @@ import { formatDate, pluralize } from "@/lib/utils";
 export function VaultOverview() {
   const { info, computed } = useFundingVault();
 
-  // Early return if data not loaded (error state handled by parent)
-  if (!info || !computed) {
-    return null;
-  }
-
   return (
     <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
       <div className="space-y-6">
         {/* Header: Title + Stage Pill */}
         <div className="flex items-center justify-between">
-          <h3 className="text-xl sm:text-2xl font-bold">{info.name}</h3>
+          <h3 className="text-xl sm:text-2xl font-bold">Vault Overview</h3>
           <div className="px-4 py-1.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 text-sm font-medium">
             {info.stage}
           </div>
@@ -45,14 +40,8 @@ export function VaultOverview() {
             </div>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              Raised: {formatCompactCurrency(info.raisedSol)} (
-              {computed.progressPct.toFixed(1)}%)
-            </span>
-            <span>
-              Remaining: {formatCompactCurrency(computed.capRemainingSol)} (
-              {(100 - computed.progressPct).toFixed(1)}%)
-            </span>
+            <span>Raised: {formatCompactCurrency(info.raisedSol)} ({computed.progressPct.toFixed(1)}%)</span>
+            <span>Remaining: {formatCompactCurrency(computed.capRemainingSol)} ({(100 - computed.progressPct).toFixed(1)}%)</span>
           </div>
         </div>
 
@@ -63,7 +52,7 @@ export function VaultOverview() {
             <div className="font-semibold">
               {formatDate(info.fundingEndAt)}
               <span className="text-xs text-muted-foreground ml-1">
-                ({pluralize(computed.daysToFundingEnd, "day")} left)
+                ({pluralize(computed.daysToFundingEnd, 'day')} left)
               </span>
             </div>
           </div>
@@ -75,7 +64,9 @@ export function VaultOverview() {
           </div>
           <div>
             <div className="text-muted-foreground mb-1">Maturity Date</div>
-            <div className="font-semibold">{formatDate(info.maturityAt)}</div>
+            <div className="font-semibold">
+              {formatDate(info.maturityAt)}
+            </div>
           </div>
           <div>
             <div className="text-muted-foreground mb-1">Total Cap</div>
@@ -87,8 +78,7 @@ export function VaultOverview() {
 
         {/* Caption */}
         <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          Funds are deployed after the funding phase. Investors receive
-          principal and expected yield upon maturity.
+          Funds are deployed after the funding phase. Investors receive principal and expected yield upon maturity.
         </div>
       </div>
     </Card>

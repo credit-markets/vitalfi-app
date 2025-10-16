@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, User } from "lucide-react";
+import { BarChart3, User, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -14,8 +14,9 @@ export function MobileNav() {
   const pathname = usePathname();
 
   const navLinks = [
-    { name: "Vaults", href: "/", icon: BarChart3 },
+    { name: "Vault", href: "/", icon: BarChart3 },
     { name: "Portfolio", href: "/portfolio", icon: User },
+    { name: "Transparency", href: "/transparency", icon: Eye },
   ];
 
   return (

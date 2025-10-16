@@ -13,11 +13,6 @@ import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 export function KpiStrip() {
   const { info, computed } = useFundingVault();
 
-  // Early return if data not loaded (error state handled by parent)
-  if (!info || !computed) {
-    return null;
-  }
-
   const kpis = [
     {
       label: "TVL",

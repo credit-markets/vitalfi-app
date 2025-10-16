@@ -33,11 +33,6 @@ export function ActivityFeed() {
   const [filter, setFilter] = useState<ActivityFilter>("all");
   const { events, info } = useFundingVault();
 
-  // Early return if data not loaded (error state handled by parent)
-  if (!info) {
-    return null;
-  }
-
   const filteredActivity = filter === "all"
     ? events
     : events.filter(e => {
