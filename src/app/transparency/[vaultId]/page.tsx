@@ -55,8 +55,8 @@ export default function VaultTransparencyDetail() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      // Revoke immediately after click - no need for finally block
-      window.URL.revokeObjectURL(url);
+      // Delay revoke for Safari compatibility - download may not start immediately
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
     } catch (err) {
       console.error('CSV export failed:', err);
       toast.error('Failed to export CSV');

@@ -21,7 +21,11 @@ export async function listTransparencyVaults(): Promise<VaultSummary[]> {
  */
 export async function getVaultTransparency(vaultId: string): Promise<VaultTransparencyData> {
   // In production, this would fetch from API/chain
-  return getMockVaultTransparency(vaultId);
+  const data = await getMockVaultTransparency(vaultId);
+  if (!data) {
+    throw new Error(`Vault "${vaultId}" not found. Please check the vault ID and try again.`);
+  }
+  return data;
 }
 
 /**
@@ -49,17 +53,20 @@ export function filterReceivables(
 
   // Status filter
   if (filters.status && filters.status.length > 0) {
-    filtered = filtered.filter(r => filters.status!.includes(r.status));
+    const statusFilter = filters.status;
+    filtered = filtered.filter(r => statusFilter.includes(r.status));
   }
 
   // Originator filter
   if (filters.originator && filters.originator.length > 0) {
-    filtered = filtered.filter(r => filters.originator!.includes(r.originator));
+    const originatorFilter = filters.originator;
+    filtered = filtered.filter(r => originatorFilter.includes(r.originator));
   }
 
   // Payer filter
   if (filters.payer && filters.payer.length > 0) {
-    filtered = filtered.filter(r => filters.payer!.includes(r.payer));
+    const payerFilter = filters.payer;
+    filtered = filtered.filter(r => payerFilter.includes(r.payer));
   }
 
   // Date range filter (by maturity date)

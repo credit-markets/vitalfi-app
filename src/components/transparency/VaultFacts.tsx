@@ -14,7 +14,10 @@ interface VaultFactsProps {
 
 export function VaultFacts({ summary, lastUpdated }: VaultFactsProps) {
   const maturityDate = new Date(summary.maturityDate);
-  const daysToMaturity = Math.floor((maturityDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const isValidDate = !isNaN(maturityDate.getTime());
+  const daysToMaturity = isValidDate
+    ? Math.floor((maturityDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : 0;
   const isMatured = daysToMaturity < 0;
 
   // Format last updated time ago
@@ -89,13 +92,17 @@ export function VaultFacts({ summary, lastUpdated }: VaultFactsProps) {
           <div>
             <div className="text-xs text-muted-foreground/80 mb-1">Maturity Date</div>
             <div className="text-sm font-semibold text-foreground">
-              {maturityDate.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
+              {isValidDate ? (
+                maturityDate.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              ) : (
+                <span className="text-red-400">Invalid date</span>
+              )}
             </div>
-            {!isMatured && daysToMaturity >= 0 && (
+            {isValidDate && !isMatured && daysToMaturity >= 0 && (
               <div className="text-xs text-muted-foreground mt-0.5">
                 in {daysToMaturity} days
               </div>

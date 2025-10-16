@@ -138,6 +138,8 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
                 <button
                   key={status}
                   onClick={() => toggleStatusFilter(status)}
+                  aria-label={`Filter by ${status} status`}
+                  aria-pressed={filters.status?.includes(status)}
                   className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                     filters.status?.includes(status)
                       ? 'bg-primary/20 border-primary text-primary'
