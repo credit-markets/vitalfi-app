@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useMemo } from 'react';
 import { VaultEvent, VaultFundingInfo } from '@/types/vault';
-import { getMockFundingVaultInfo } from '@/lib/transparency/mock';
+import { useVault, useVaultTransactions } from '@/lib/vault-hooks';
+import { getDefaultVault, getNetworkConfig, VITALFI_VAULT_PROGRAM_ID, getVaultPda, getCurrentNetwork } from '@/lib/vault-sdk';
+import BN from 'bn.js';
 
 // Computed values derived from vault info
 interface ComputedVaultData {
@@ -26,99 +27,139 @@ interface UseFundingVaultReturn {
 /**
  * Hook for funding vault data and computed values
  *
- * In production, this would fetch from:
- * - On-chain vault account data
- * - Event indexer/API for transaction history
- *
- * Returns null for info/computed when vault is not found or on error.
- * Components should check the error field first, then info/computed nullability.
+ * Fetches real on-chain vault data and transforms it into the UI format.
+ * Falls back to default vault if no vaultId is provided.
  */
 export function useFundingVault(): UseFundingVaultReturn {
-  const params = useParams();
-  const vaultId = params.vaultId as string;
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<VaultFundingInfo | null>(null);
-
-  // Load vault info
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!vaultId) {
-      setError('Vault ID is required');
-      return;
-    }
-
+  // Get vault configuration
+  const vaultConfig = useMemo(() => {
     try {
-      const vaultInfo = getMockFundingVaultInfo(vaultId);
-      if (!cancelled) {
-        setInfo(vaultInfo);
-        setError(null);
-      }
+      return getDefaultVault();
     } catch (err) {
-      if (!cancelled) {
-        setError(err instanceof Error ? err.message : 'Failed to load vault data');
-        setInfo(null);
-      }
+      console.error('Failed to get vault config:', err);
+      return null;
+    }
+  }, []);
+
+  // Get network authority
+  const networkConfig = useMemo(() => {
+    try {
+      return getNetworkConfig();
+    } catch (err) {
+      console.error('Failed to get network config:', err);
+      return null;
+    }
+  }, []);
+
+  // Fetch on-chain vault data
+  const {
+    data: vaultAccount,
+    isLoading,
+    error: fetchError,
+  } = useVault(
+    networkConfig?.authority || null,
+    vaultConfig?.id || null,
+    {
+      enabled: !!vaultConfig && !!networkConfig,
+    }
+  );
+
+  // Derive vault PDA
+  const vaultPda = useMemo(() => {
+    if (!networkConfig || !vaultConfig) return null;
+    const [pda] = getVaultPda(networkConfig.authority, vaultConfig.id);
+    return pda;
+  }, [networkConfig, vaultConfig]);
+
+  // Transform on-chain data to UI format
+  const info = useMemo<VaultFundingInfo | null>(() => {
+    if (!vaultAccount || !vaultConfig || !networkConfig || !vaultPda) {
+      return null;
     }
 
-    return () => {
-      cancelled = true;
+    // Convert lamports to SOL (9 decimals)
+    const lamportsToSol = (lamports: BN): number => {
+      return lamports.toNumber() / 1e9;
     };
-  }, [vaultId]);
 
-  // Mock events - TODO: fetch from indexer/API
+    // Map on-chain status to UI stage
+    let stage: VaultFundingInfo['stage'] = 'Funding';
+    const statusKey = Object.keys(vaultAccount.status)[0];
+    if (statusKey === 'matured') {
+      stage = 'Matured';
+    } else if (statusKey === 'active') {
+      stage = 'Funded';
+    } else if (statusKey === 'canceled') {
+      stage = 'Funding'; // Or 'Canceled' if you add that stage
+    }
+
+    // Convert timestamps to ISO strings
+    const fundingEndAt = new Date(vaultAccount.fundingEndTs.toNumber() * 1000).toISOString();
+    const maturityAt = new Date(vaultAccount.maturityTs.toNumber() * 1000).toISOString();
+    const fundingStartAt = new Date(vaultAccount.fundingEndTs.toNumber() * 1000 - 30 * 24 * 60 * 60 * 1000).toISOString(); // Assume 30 days before funding end
+
+    // Calculate APY from target_apy_bps (basis points)
+    const expectedApyPct = vaultAccount.targetApyBps / 100; // Convert basis points to percentage
+
+    return {
+      stage,
+      name: vaultConfig.name,
+      expectedApyPct,
+      tvlSol: lamportsToSol(vaultAccount.totalDeposited),
+      capSol: lamportsToSol(vaultAccount.cap),
+      minInvestmentSol: lamportsToSol(vaultAccount.minDeposit),
+      raisedSol: lamportsToSol(vaultAccount.totalDeposited),
+      fundingStartAt,
+      fundingEndAt,
+      maturityAt,
+      originator: 'VitalFi',
+      addresses: {
+        programId: VITALFI_VAULT_PROGRAM_ID.toBase58(),
+        vaultPda: vaultPda.toBase58(),
+        authorityPda: networkConfig.authority.toBase58(),
+        tokenMint: vaultAccount.assetMint.toBase58(),
+        vaultTokenAccount: vaultAccount.vaultToken.toBase58(),
+      },
+    };
+  }, [vaultAccount, vaultConfig, networkConfig, vaultPda]);
+
+  const error = useMemo(() => {
+    if (!vaultConfig) {
+      return 'No vault configuration found';
+    }
+    if (!networkConfig) {
+      return 'Invalid network configuration';
+    }
+    if (fetchError) {
+      return fetchError.message || 'Failed to fetch vault data';
+    }
+    if (!isLoading && !vaultAccount) {
+      return 'Vault not found on-chain';
+    }
+    return null;
+  }, [vaultConfig, networkConfig, fetchError, isLoading, vaultAccount]);
+
+  // Fetch real transaction history
+  const { data: transactions = [] } = useVaultTransactions(vaultPda, 20);
+
+  // Transform transactions to events for UI
   const events: VaultEvent[] = useMemo(() => {
-    const baseUrl = "https://explorer.solana.com/tx";
-    const cluster = "devnet";
+    if (!transactions || transactions.length === 0) return [];
 
-    return [
-      {
-        id: "evt-5",
-        tag: "Deposit",
-        ts: new Date("2025-10-15T10:30:00Z").toISOString(),
-        wallet: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-        amountSol: 50000,
-        txUrl: `${baseUrl}/5A5B5C5D5E5F5G5H5I5J5K5L5M5N5O5P5Q5R5S5T5U?cluster=${cluster}`,
-        note: "Funding deposit",
-      },
-      {
-        id: "evt-4",
-        tag: "Deposit",
-        ts: new Date("2025-10-12T14:20:00Z").toISOString(),
-        wallet: "9zMCte5nDpN8PxJ2LqWfXG3mYtSKVAhh4YmDUXs9Pmq",
-        amountSol: 75000,
-        txUrl: `${baseUrl}/4A4B4C4D4E4F4G4H4I4J4K4L4M4N4O4P4Q4R4S4T4U?cluster=${cluster}`,
-        note: "Funding deposit",
-      },
-      {
-        id: "evt-3",
-        tag: "Deposit",
-        ts: new Date("2025-10-08T09:15:00Z").toISOString(),
-        wallet: "4yKMtg1ED76bVw5BPoFaR23wtTL1XVyppYa6MsqTemk",
-        amountSol: 125000,
-        txUrl: `${baseUrl}/3A3B3C3D3E3F3G3H3I3J3K3L3M3N3O3P3Q3R3S3T3U?cluster=${cluster}`,
-        note: "Funding deposit",
-      },
-      {
-        id: "evt-2",
-        tag: "Deposit",
-        ts: new Date("2025-10-05T16:45:00Z").toISOString(),
-        wallet: "2vLpF8rGYK5HwD9x8jTnCpUaEbXmJvAqZsWtDe4BhNm",
-        amountSol: 200000,
-        txUrl: `${baseUrl}/2A2B2C2D2E2F2G2H2I2J2K2L2M2N2O2P2Q2R2S2T2U?cluster=${cluster}`,
-        note: "Funding deposit",
-      },
-      {
-        id: "evt-1",
-        tag: "Deposit",
-        ts: new Date("2025-10-01T10:00:00Z").toISOString(),
-        wallet: "AdminWallet111111111111111111111111111111111",
-        amountSol: 250000,
-        txUrl: `${baseUrl}/1A1B1C1D1E1F1G1H1I1J1K1L1M1N1O1P1Q1R1S1T1U?cluster=${cluster}`,
-        note: "Initial subordination deposit",
-      },
-    ];
-  }, []);
+    const network = getCurrentNetwork();
+    const baseUrl = "https://explorer.solana.com/tx";
+    const cluster = network === "mainnet-beta" ? "" : `?cluster=${network}`;
+
+    return transactions.map((tx) => ({
+      id: tx.signature,
+      tag: tx.type === "deposit" ? "Deposit" : tx.type === "claim" ? "Claim" : "Params",
+      ts: new Date(tx.timestamp * 1000).toISOString(),
+      wallet: tx.user?.toBase58() || "Unknown",
+      amountSol: tx.amount ? tx.amount.toNumber() / 1e9 : 0,
+      txUrl: `${baseUrl}/${tx.signature}${cluster}`,
+      note: tx.type.charAt(0).toUpperCase() + tx.type.slice(1),
+    }));
+  }, [transactions]);
 
   // Compute derived values
   const computed = useMemo(() => {

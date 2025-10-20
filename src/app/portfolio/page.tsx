@@ -12,8 +12,10 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Wallet as WalletIcon } from "lucide-react";
-import { toast } from "sonner";
 import type { PortfolioPosition } from "@/hooks/usePortfolio";
+import { useClaim } from "@/lib/vault-hooks";
+import { getAllVaults, getNetworkConfig } from "@/lib/vault-sdk";
+import BN from "bn.js";
 
 type StageFilter = "all" | "Funding" | "Funded" | "Matured";
 
@@ -24,6 +26,7 @@ export default function PortfolioPage() {
   const [highlightedVault, setHighlightedVault] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const claim = useClaim();
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -35,8 +38,30 @@ export default function PortfolioPage() {
   }, []);
 
   const handleClaim = async (vaultId: string) => {
-    // TODO: Implement actual claim transaction
-    toast.success(`Claim initiated for vault ${vaultId}`);
+    try {
+      // Get vault configuration
+      const vaultConfigs = getAllVaults();
+      const networkConfig = getNetworkConfig();
+
+      // Find vault config by ID
+      const vaultConfig = vaultConfigs.find(v => v.id.eq(new BN(vaultId)));
+
+      if (!vaultConfig) {
+        throw new Error(`Vault configuration not found for vault ${vaultId}`);
+      }
+
+      // Execute claim transaction
+      await claim.mutateAsync({
+        vaultId: vaultConfig.id,
+        authority: networkConfig.authority,
+        assetMint: vaultConfig.assetMint,
+      });
+
+      // Success - toast notification is automatic
+    } catch (error) {
+      // Error toast is automatic
+      console.error("Claim failed:", error);
+    }
   };
 
   const scrollToVault = (vaultId: string) => {
@@ -154,7 +179,11 @@ export default function PortfolioPage() {
                     highlightedVault === position.vaultId && "ring-2 ring-primary/50"
                   )}
                 >
-                  <PositionCard position={position} onClaim={handleClaim} />
+                  <PositionCard
+                    position={position}
+                    onClaim={handleClaim}
+                    claimPending={claim.isPending}
+                  />
                 </div>
               ))}
             </div>

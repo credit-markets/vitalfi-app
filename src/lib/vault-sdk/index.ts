@@ -26,3 +26,9 @@ export * from "./fetchers";
 
 // Client
 export * from "./client";
+
+// Configuration
+export * from "./config";
+
+// Transactions
+export * from "./transactions";

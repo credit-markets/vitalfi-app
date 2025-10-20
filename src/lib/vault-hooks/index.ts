@@ -9,3 +9,4 @@ export * from "./useVault";
 export * from "./usePosition";
 export * from "./useDeposit";
 export * from "./useClaim";
+export * from "./useVaultTransactions";

@@ -12,12 +12,13 @@ import type { PortfolioPosition } from "@/hooks/usePortfolio";
 interface PositionCardProps {
   position: PortfolioPosition;
   onClaim?: (vaultId: string) => void;
+  claimPending?: boolean;
 }
 
 /**
  * Position card showing vault investment with timeline and projected/realized returns
  */
-export function PositionCard({ position, onClaim }: PositionCardProps) {
+export function PositionCard({ position, onClaim, claimPending }: PositionCardProps) {
   const {
     vaultId,
     vaultName,
@@ -137,10 +138,10 @@ export function PositionCard({ position, onClaim }: PositionCardProps) {
             ) : (
               <Button
                 className="w-full text-sm"
-                disabled={!canClaim}
+                disabled={!canClaim || claimPending}
                 onClick={() => onClaim?.(vaultId)}
               >
-                {canClaim ? "Claim" : "Claim Not Available"}
+                {claimPending ? "Processing..." : canClaim ? "Claim" : "Claim Not Available"}
               </Button>
             )}
           </>

@@ -6,9 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useFundingVault } from "@/hooks/useFundingVault";
+import { useDeposit } from "@/lib/vault-hooks";
+import { getDefaultVault, getNetworkConfig } from "@/lib/vault-sdk";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { TrendingUp, AlertCircle, Info } from "lucide-react";
-import { toast } from "sonner";
+import { useWalletBalance } from "@/lib/hooks/useWalletBalance";
+import BN from "bn.js";
 
 /**
  * Single action panel for vault participation (deposits only during funding)
@@ -18,6 +21,8 @@ export function ActionPanel() {
   const { connected } = useWallet();
   const { info, computed } = useFundingVault();
   const [depositAmount, setDepositAmount] = useState("");
+  const deposit = useDeposit();
+  const { data: walletBalance = 0 } = useWalletBalance();
 
   // Early return if data not loaded (error state handled by parent)
   if (!info || !computed) {
@@ -57,9 +62,28 @@ export function ActionPanel() {
   const handleDeposit = async () => {
     if (!isValid) return;
 
-    // TODO: Actual transaction logic here
-    toast.success(`Deposited ${amountNum.toFixed(2)} SOL successfully!`);
-    setDepositAmount("");
+    try {
+      // Get vault configuration
+      const vaultConfig = getDefaultVault();
+      const networkConfig = getNetworkConfig();
+
+      // Convert SOL to lamports (9 decimals)
+      const lamports = new BN(Math.floor(amountNum * 1e9));
+
+      // Execute deposit transaction
+      await deposit.mutateAsync({
+        vaultId: vaultConfig.id,
+        authority: networkConfig.authority,
+        amount: lamports,
+        assetMint: vaultConfig.assetMint,
+      });
+
+      // Success - clear input (toast notification is automatic)
+      setDepositAmount("");
+    } catch (error) {
+      // Error toast is automatic
+      console.error("Deposit failed:", error);
+    }
   };
 
   return (
@@ -99,12 +123,11 @@ export function ActionPanel() {
                 <button
                   className="text-xs text-foreground hover:underline active:underline touch-manipulation p-1"
                   onClick={() => {
-                    // Mock max balance - in production would use actual wallet balance
-                    const maxDeposit = Math.min(100, computed.capRemainingSol);
-                    setDepositAmount(maxDeposit.toString());
+                    const maxDeposit = Math.min(walletBalance, computed.capRemainingSol);
+                    setDepositAmount(maxDeposit.toFixed(4));
                   }}
                 >
-                  Max: 100 SOL
+                  Max: {formatCurrency(walletBalance)} SOL
                 </button>
               )}
             </div>
@@ -184,10 +207,12 @@ export function ActionPanel() {
           <Button
             className="w-full h-12 text-base touch-manipulation"
             size="lg"
-            disabled={!isValid || !!disabledMessage}
+            disabled={!isValid || !!disabledMessage || deposit.isPending}
             onClick={handleDeposit}
           >
-            {!connected
+            {deposit.isPending
+              ? "Processing..."
+              : !connected
               ? "Connect Wallet"
               : disabledMessage
               ? disabledMessage.title
