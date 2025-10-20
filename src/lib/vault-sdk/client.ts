@@ -14,6 +14,7 @@ import {
   positionExists,
 } from "./fetchers";
 import { getVaultPda, getVaultTokenPda, getPositionPda, getAllPdas } from "./pdas";
+import { withPriorityFee } from "./tx";
 
 /**
  * VaultClient
@@ -122,6 +123,22 @@ export class VaultClient {
     // Get user's token account
     const userTokenAccount = getAssociatedTokenAddressSync(assetMint, user);
 
+    // Build instruction with priority fee
+    const ix = await this.program.methods
+      .deposit(amount)
+      .accountsPartial({
+        vault: pdas.vault,
+        vaultTokenAccount: pdas.vaultToken,
+        position: pdas.position!,
+        userTokenAccount,
+        user,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Add priority fee and execute
+    const priorityIx = withPriorityFee([ix]);
     const txSig = await this.program.methods
       .deposit(amount)
       .accountsPartial({
@@ -133,6 +150,7 @@ export class VaultClient {
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
+      .preInstructions(priorityIx.slice(0, 2)) // ComputeBudget instructions only
       .rpc();
 
     return txSig;
@@ -155,6 +173,21 @@ export class VaultClient {
     // Get user's token account
     const userTokenAccount = getAssociatedTokenAddressSync(assetMint, user);
 
+    // Build instruction with priority fee
+    const ix = await this.program.methods
+      .claim()
+      .accountsPartial({
+        vault: pdas.vault,
+        vaultTokenAccount: pdas.vaultToken,
+        position: pdas.position!,
+        userTokenAccount,
+        user,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Add priority fee and execute
+    const priorityIx = withPriorityFee([ix]);
     const txSig = await this.program.methods
       .claim()
       .accountsPartial({
@@ -165,6 +198,7 @@ export class VaultClient {
         user,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
+      .preInstructions(priorityIx.slice(0, 2)) // ComputeBudget instructions only
       .rpc();
 
     return txSig;
@@ -197,6 +231,22 @@ export class VaultClient {
     const [vault] = getVaultPda(authority, vaultId);
     const [vaultTokenAccount] = getVaultTokenPda(vault);
 
+    // Build instruction with priority fee
+    const ix = await this.program.methods
+      .initializeVault(vaultId, cap, targetApyBps, fundingEndTs, maturityTs, minDeposit)
+      .accountsPartial({
+        vault,
+        vaultTokenAccount,
+        assetMint,
+        authority,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      })
+      .instruction();
+
+    // Add priority fee and execute
+    const priorityIx = withPriorityFee([ix]);
     const txSig = await this.program.methods
       .initializeVault(vaultId, cap, targetApyBps, fundingEndTs, maturityTs, minDeposit)
       .accountsPartial({
@@ -208,6 +258,7 @@ export class VaultClient {
         tokenProgram: TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       })
+      .preInstructions(priorityIx.slice(0, 2)) // ComputeBudget instructions only
       .rpc();
 
     return txSig;
@@ -228,6 +279,20 @@ export class VaultClient {
     const [vaultTokenAccount] = getVaultTokenPda(vault);
     const authorityTokenAccount = getAssociatedTokenAddressSync(assetMint, authority);
 
+    // Build instruction with priority fee
+    const ix = await this.program.methods
+      .finalizeFunding()
+      .accountsPartial({
+        vault,
+        vaultTokenAccount,
+        authorityTokenAccount,
+        authority,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Add priority fee and execute
+    const priorityIx = withPriorityFee([ix]);
     const txSig = await this.program.methods
       .finalizeFunding()
       .accountsPartial({
@@ -237,6 +302,7 @@ export class VaultClient {
         authority,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
+      .preInstructions(priorityIx.slice(0, 2)) // ComputeBudget instructions only
       .rpc();
 
     return txSig;
@@ -258,6 +324,20 @@ export class VaultClient {
     const [vaultTokenAccount] = getVaultTokenPda(vault);
     const authorityTokenAccount = getAssociatedTokenAddressSync(assetMint, authority);
 
+    // Build instruction with priority fee
+    const ix = await this.program.methods
+      .matureVault(returnAmount)
+      .accountsPartial({
+        vault,
+        vaultTokenAccount,
+        authorityTokenAccount,
+        authority,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Add priority fee and execute
+    const priorityIx = withPriorityFee([ix]);
     const txSig = await this.program.methods
       .matureVault(returnAmount)
       .accountsPartial({
@@ -267,6 +347,7 @@ export class VaultClient {
         authority,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
+      .preInstructions(priorityIx.slice(0, 2)) // ComputeBudget instructions only
       .rpc();
 
     return txSig;
@@ -285,6 +366,19 @@ export class VaultClient {
     const [vault] = getVaultPda(authority, vaultId);
     const [vaultTokenAccount] = getVaultTokenPda(vault);
 
+    // Build instruction with priority fee
+    const ix = await this.program.methods
+      .closeVault()
+      .accountsPartial({
+        vault,
+        vaultTokenAccount,
+        authority,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    // Add priority fee and execute
+    const priorityIx = withPriorityFee([ix]);
     const txSig = await this.program.methods
       .closeVault()
       .accountsPartial({
@@ -293,6 +387,7 @@ export class VaultClient {
         authority,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
+      .preInstructions(priorityIx.slice(0, 2)) // ComputeBudget instructions only
       .rpc();
 
     return txSig;
