@@ -124,7 +124,7 @@ export class VaultClient {
 
     const txSig = await this.program.methods
       .deposit(amount)
-      .accounts({
+      .accountsPartial({
         vault: pdas.vault,
         vaultTokenAccount: pdas.vaultToken,
         position: pdas.position!,
@@ -157,7 +157,7 @@ export class VaultClient {
 
     const txSig = await this.program.methods
       .claim()
-      .accounts({
+      .accountsPartial({
         vault: pdas.vault,
         vaultTokenAccount: pdas.vaultToken,
         position: pdas.position!,
@@ -199,7 +199,7 @@ export class VaultClient {
 
     const txSig = await this.program.methods
       .initializeVault(vaultId, cap, targetApyBps, fundingEndTs, maturityTs, minDeposit)
-      .accounts({
+      .accountsPartial({
         vault,
         vaultTokenAccount,
         assetMint,
@@ -230,7 +230,7 @@ export class VaultClient {
 
     const txSig = await this.program.methods
       .finalizeFunding()
-      .accounts({
+      .accountsPartial({
         vault,
         vaultTokenAccount,
         authorityTokenAccount,
@@ -260,7 +260,7 @@ export class VaultClient {
 
     const txSig = await this.program.methods
       .matureVault(returnAmount)
-      .accounts({
+      .accountsPartial({
         vault,
         vaultTokenAccount,
         authorityTokenAccount,
@@ -287,7 +287,7 @@ export class VaultClient {
 
     const txSig = await this.program.methods
       .closeVault()
-      .accounts({
+      .accountsPartial({
         vault,
         vaultTokenAccount,
         authority,
