@@ -9,6 +9,8 @@ import { useVaultProgram } from "@/lib/solana/provider";
 import { getVaultPda, getPositionPda } from "@/lib/vault-sdk/pdas";
 import { reconcileFinalized } from "@/lib/utils/reconcile";
 import { toast } from "sonner";
+import { trackTransactionError, getUserFriendlyErrorMessage } from "@/lib/error-tracking";
+import { retryTransaction } from "@/lib/utils/retry";
 
 export interface ClaimParams {
   vaultId: BN;
@@ -46,7 +48,18 @@ export function useClaim() {
       }
 
       const { vaultId, authority, assetMint } = params;
-      return client.claim(vaultId, authority, assetMint);
+
+      // Retry transaction with exponential backoff
+      return retryTransaction(
+        () => client.claim(vaultId, authority, assetMint),
+        "claim",
+        {
+          maxAttempts: 3,
+          onRetry: (attempt) => {
+            toast.loading(`Retrying claim (${attempt}/3)...`, { id: "claim" });
+          },
+        }
+      );
     },
     onMutate: async () => {
       // Show loading toast
@@ -123,11 +136,19 @@ export function useClaim() {
         );
       }
     },
-    onError: (error: Error) => {
-      console.error("Claim error:", error);
+    onError: (error: Error, params) => {
+      // Track error with context
+      trackTransactionError(error, {
+        operation: "claim",
+        vault: params.authority.toBase58(),
+        user: user?.toBase58(),
+      });
+
+      // Show user-friendly error message
+      const friendlyMessage = getUserFriendlyErrorMessage(error);
       toast.error("Claim failed", {
         id: "claim",
-        description: error.message || "Transaction failed. Please try again.",
+        description: friendlyMessage,
       });
     },
   });

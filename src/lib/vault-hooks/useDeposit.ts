@@ -9,6 +9,8 @@ import { useVaultProgram } from "@/lib/solana/provider";
 import { getVaultPda, getPositionPda } from "@/lib/vault-sdk/pdas";
 import { reconcileFinalized } from "@/lib/utils/reconcile";
 import { toast } from "sonner";
+import { trackTransactionError, getUserFriendlyErrorMessage } from "@/lib/error-tracking";
+import { retryTransaction } from "@/lib/utils/retry";
 
 export interface DepositParams {
   vaultId: BN;
@@ -48,7 +50,18 @@ export function useDeposit() {
       }
 
       const { vaultId, authority, amount, assetMint } = params;
-      return client.deposit(vaultId, authority, amount, assetMint);
+
+      // Retry transaction with exponential backoff
+      return retryTransaction(
+        () => client.deposit(vaultId, authority, amount, assetMint),
+        "deposit",
+        {
+          maxAttempts: 3,
+          onRetry: (attempt) => {
+            toast.loading(`Retrying deposit (${attempt}/3)...`, { id: "deposit" });
+          },
+        }
+      );
     },
     onMutate: async () => {
       // Show loading toast
@@ -125,11 +138,19 @@ export function useDeposit() {
         );
       }
     },
-    onError: (error: Error) => {
-      console.error("Deposit error:", error);
+    onError: (error: Error, params) => {
+      // Track error with context
+      trackTransactionError(error, {
+        operation: "deposit",
+        vault: params.authority.toBase58(),
+        user: user?.toBase58(),
+      });
+
+      // Show user-friendly error message
+      const friendlyMessage = getUserFriendlyErrorMessage(error);
       toast.error("Deposit failed", {
         id: "deposit",
-        description: error.message || "Transaction failed. Please try again.",
+        description: friendlyMessage,
       });
     },
   });
