@@ -3,6 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import BN from "bn.js";
 import type { VitalfiVault, VaultAccount, PositionAccount } from "./types";
 import { getVaultPda, getPositionPda } from "./pdas";
+import { memcmpFilterAuthority, memcmpFilterOwner } from "./layout";
 
 /**
  * Account Fetchers
@@ -68,12 +69,7 @@ export async function fetchAllVaultsByAuthority(
 ): Promise<Array<{ pubkey: PublicKey; account: VaultAccount }>> {
   try {
     const vaults = await program.account.vault.all([
-      {
-        memcmp: {
-          offset: 8 + 2, // discriminator + version
-          bytes: authority.toBase58(),
-        },
-      },
+      memcmpFilterAuthority(authority),
     ]);
     return vaults.map((v) => ({
       pubkey: v.publicKey,
@@ -144,12 +140,7 @@ export async function fetchAllPositionsByUser(
 ): Promise<Array<{ pubkey: PublicKey; account: PositionAccount }>> {
   try {
     const positions = await program.account.position.all([
-      {
-        memcmp: {
-          offset: 8 + 32, // discriminator + vault pubkey
-          bytes: user.toBase58(),
-        },
-      },
+      memcmpFilterOwner(user),
     ]);
     return positions.map((p) => ({
       pubkey: p.publicKey,

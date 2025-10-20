@@ -1,0 +1,268 @@
+{
+  "milestones": [
+    {
+      "id": "M1",
+      "title": "Performance & Realtime",
+      "tasks": [
+        {
+          "id": "M1-1",
+          "path": "src/lib/solana/subscriptions.ts",
+          "action": "create",
+          "desc": "onPdaChange/onProgramChange with cleanup and confirmed commitment"
+        },
+        {
+          "id": "M1-2",
+          "path": "src/lib/vault-sdk/layout.ts",
+          "action": "create",
+          "desc": "VaultLayout.dataSize=192, PositionLayout.dataSize=89, authorityOffset=10, ownerOffset=40; vaultFilters/positionFilters functions"
+        },
+        {
+          "id": "M1-3",
+          "path": "src/lib/vault-sdk/batch.ts",
+          "action": "create",
+          "desc": "fetchMultipleVaults/fetchMultiplePositions using getProgramAccounts with strict filters from layout.ts"
+        },
+        {
+          "id": "M1-4",
+          "path": "src/lib/vault-hooks/useVault.ts",
+          "action": "update",
+          "desc": "Add useEffect to subscribe to vault PDA; hash compare before setQueryData; unsubscribe in cleanup"
+        },
+        {
+          "id": "M1-5",
+          "path": "src/lib/vault-hooks/usePosition.ts",
+          "action": "update",
+          "desc": "Add useEffect to subscribe to position PDA; hash compare before setQueryData; unsubscribe in cleanup"
+        },
+        {
+          "id": "M1-6",
+          "path": "src/lib/vault-sdk/fetchers.ts",
+          "action": "update",
+          "desc": "Replace hardcoded offset: 8+2 (line 74) with VaultLayout.authorityOffset; replace offset: 8+32 (line 149) with PositionLayout.ownerOffset"
+        }
+      ],
+      "acceptance": [
+        "Vault/position views refresh in <1s with no polling after on-chain change",
+        "List views (useVaultsByAuthority) use batched reads or filtered scans",
+        "Layout tests pass: VaultLayout.dataSize === 192, PositionLayout.dataSize === 89",
+        "All offsets centralized in layout.ts, no hardcoded numbers in fetchers.ts"
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "Tx Reliability",
+      "tasks": [
+        {
+          "id": "M2-1",
+          "path": "src/lib/vault-sdk/tx.ts",
+          "action": "create",
+          "desc": "withPriorityFee(instructions, {microLamports?, units?}); confirmWithMinContextSlot; recentBlockhashWithContext"
+        },
+        {
+          "id": "M2-2",
+          "path": "src/lib/utils/reconcile.ts",
+          "action": "create",
+          "desc": "reconcileFinalized(connection, pubkeys, decode, onChange) - fetch with finalized commitment, hash compare, call onChange only if differs"
+        },
+        {
+          "id": "M2-3",
+          "path": "src/lib/vault-hooks/useDeposit.ts",
+          "action": "update",
+          "desc": "Import parseAnchorError, reconcileFinalized; update onError to use parseAnchorError; narrow invalidations to ['vault', authority, vaultId] and ['position', vaultPda, user]; call reconcileFinalized after confirmed"
+        },
+        {
+          "id": "M2-4",
+          "path": "src/lib/vault-hooks/useClaim.ts",
+          "action": "update",
+          "desc": "Same updates as useDeposit.ts - parseAnchorError in onError, narrow invalidations, reconcileFinalized after confirmed"
+        },
+        {
+          "id": "M2-5",
+          "path": "src/lib/vault-sdk/client.ts",
+          "action": "update",
+          "desc": "Import withPriorityFee; wrap deposit() and claim() instructions with priority fees (default 5000 microlamports from env)"
+        }
+      ],
+      "acceptance": [
+        "Mainnet-ready: configurable priority fee via NEXT_PUBLIC_PRIORITY_FEE_MICROS env var",
+        "Finalized reconcile updates cache only if data differs (hash compare)",
+        "Invalidations scoped to specific keys: ['vault', authority, vaultId] not ['vault']",
+        "Failed tx rate <2% in load tests (devnet with 100 concurrent deposits)"
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Observability",
+      "tasks": [
+        {
+          "id": "M3-1",
+          "path": "src/lib/solana/anchor-errors.ts",
+          "action": "create",
+          "desc": "ANCHOR_ERROR_MAP with error codes from IDL (6000: 'Vault not in funding stage', etc.); parseAnchorError(error) function with regex match"
+        },
+        {
+          "id": "M3-2",
+          "path": "src/lib/error-tracking.ts",
+          "action": "update",
+          "desc": "Remove TODO comment line 21; import @sentry/nextjs; add Sentry.init in prod block with network tag; update trackError to call Sentry.captureException"
+        },
+        {
+          "id": "M3-3",
+          "path": "src/lib/solana/connection.ts",
+          "action": "update",
+          "desc": "Add fetchWithRetry(fn, maxRetries=3, baseDelay=1000) with exponential backoff + jitter; wrap reads only (not writes); export recentBlockhashWithContext using retry"
+        },
+        {
+          "id": "M3-4",
+          "path": "src/lib/config/env.ts",
+          "action": "create",
+          "desc": "requireEnv(key, prodOnly=true) throws if missing in prod; validateEnv() checks NEXT_PUBLIC_SOLANA_RPC_ENDPOINT"
+        }
+      ],
+      "acceptance": [
+        "Sentry receiving prod errors with network tag (devnet/mainnet-beta)",
+        "User toasts show parsed Anchor messages ('Vault not in funding stage' not '0x1771')",
+        "Retries only for idempotent reads (not writes); exponential backoff with jitter applied",
+        "Prod build fails if NEXT_PUBLIC_SOLANA_RPC_ENDPOINT missing (env validation)"
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "Tests & CI",
+      "tasks": [
+        {
+          "id": "M4-1",
+          "path": "vitest.config.ts",
+          "action": "create",
+          "desc": "Vitest config with test file patterns, coverage settings"
+        },
+        {
+          "id": "M4-2",
+          "path": "src/lib/vault-sdk/layout.test.ts",
+          "action": "create",
+          "desc": "Test VaultLayout.dataSize === 192; PositionLayout.dataSize === 89; vaultFilters() generates dataSize filter; vaultFilters(authority) generates memcmp at offset 10"
+        },
+        {
+          "id": "M4-3",
+          "path": "src/lib/utils/reconcile.test.ts",
+          "action": "create",
+          "desc": "Mock Connection.getMultipleAccountsInfo; test change detection (onChange called only if data differs)"
+        },
+        {
+          "id": "M4-4",
+          "path": "src/lib/vault-sdk/tx.test.ts",
+          "action": "create",
+          "desc": "Test withPriorityFee prepends 2 ComputeBudget instructions; test default microLamports=5000"
+        },
+        {
+          "id": "M4-5",
+          "path": "scripts/smoke.ts",
+          "action": "create",
+          "desc": "Fetch known vault PDA on devnet; assert accountInfo.data.length === 192; print exists, owner, dataLength"
+        },
+        {
+          "id": "M4-6",
+          "path": ".github/workflows/ci.yml",
+          "action": "create",
+          "desc": "CI workflow: lint → build → test → smoke (skippable without RPC env); runs on PRs and main branch"
+        },
+        {
+          "id": "M4-7",
+          "path": "package.json",
+          "action": "update",
+          "desc": "Add scripts: 'test': 'vitest', 'test:ui': 'vitest --ui', 'smoke': 'tsx scripts/smoke.ts'; add devDependencies: vitest@^2.0.0, @vitest/ui@^2.0.0, tsx@^4.0.0; add dependencies: @sentry/nextjs@^8.0.0"
+        }
+      ],
+      "acceptance": [
+        "Tests >80% coverage on SDK layer (layout.ts, batch.ts, tx.ts, reconcile.ts)",
+        "CI runs on PRs: lint → build → test → smoke (smoke skippable without RPC env)",
+        "Smoke script passes on devnet: fetches known vault PDA, validates dataSize === 192"
+      ]
+    }
+  ],
+  "policies": {
+    "commitment": {
+      "reads": "confirmed",
+      "reconcile": "finalized"
+    },
+    "rpc": {
+      "requirePaidEndpointInProd": true
+    },
+    "backwardsCompatibility": "not required; prefer simpler APIs",
+    "queryKeys": "narrow scope - ['vault', authority, vaultId] not ['vault']",
+    "priorityFees": {
+      "default": 5000,
+      "envVar": "NEXT_PUBLIC_PRIORITY_FEE_MICROS"
+    },
+    "retries": {
+      "reads": "retry with exponential backoff + jitter",
+      "writes": "no retries (not idempotent)"
+    }
+  },
+  "metrics": {
+    "performance": {
+      "rpc_calls_per_page_load": {
+        "current": "20-50",
+        "target": "<5"
+      },
+      "p95_data_freshness_after_write": {
+        "current": "30s (polling)",
+        "target": "<1s"
+      }
+    },
+    "reliability": {
+      "failed_tx_rate": {
+        "current": "~10% (no priority fees)",
+        "target": "<2%"
+      },
+      "tx_confirmation_time_p95": {
+        "current": "20-60s",
+        "target": "<5s mainnet"
+      }
+    },
+    "testing": {
+      "test_coverage_sdk": {
+        "current": "0%",
+        "target": ">80%"
+      },
+      "ci_pass_rate": {
+        "target": "100%"
+      }
+    }
+  },
+  "accountStructures": {
+    "Vault": {
+      "dataSize": 192,
+      "discriminator": 8,
+      "fields": {
+        "version": { "offset": 8, "size": 2 },
+        "authority": { "offset": 10, "size": 32 },
+        "vault_id": { "offset": 42, "size": 8 },
+        "asset_mint": { "offset": 50, "size": 32 },
+        "vault_token": { "offset": 82, "size": 32 },
+        "cap": { "offset": 114, "size": 8 },
+        "target_apy_bps": { "offset": 122, "size": 4 },
+        "funding_end_ts": { "offset": 126, "size": 8 },
+        "maturity_ts": { "offset": 134, "size": 8 },
+        "min_deposit": { "offset": 142, "size": 8 },
+        "status": { "offset": 150, "size": 1 },
+        "total_deposited": { "offset": 151, "size": 8 },
+        "total_claimed": { "offset": 159, "size": 8 },
+        "payout_num": { "offset": 167, "size": 16 },
+        "payout_den": { "offset": 183, "size": 16 },
+        "bump": { "offset": 199, "size": 1 }
+      }
+    },
+    "Position": {
+      "dataSize": 89,
+      "discriminator": 8,
+      "fields": {
+        "vault": { "offset": 8, "size": 32 },
+        "owner": { "offset": 40, "size": 32 },
+        "deposited": { "offset": 72, "size": 8 },
+        "claimed": { "offset": 80, "size": 8 },
+        "bump": { "offset": 88, "size": 1 }
+      }
+    }
+  }
+}
