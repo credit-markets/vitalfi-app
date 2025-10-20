@@ -7,6 +7,7 @@ import BN from "bn.js";
 import { useVaultClient } from "./useVaultClient";
 import { useVaultProgram } from "@/lib/solana/provider";
 import { getVaultPda, getPositionPda } from "@/lib/vault-sdk/pdas";
+import { VaultLayout, PositionLayout } from "@/lib/vault-sdk/layout";
 import { reconcileFinalized } from "@/lib/utils/reconcile";
 import { toast } from "sonner";
 import { trackTransactionError, getUserFriendlyErrorMessage } from "@/lib/error-tracking";
@@ -50,6 +51,10 @@ export function useClaim() {
       const { vaultId, authority, assetMint } = params;
 
       // Retry transaction with exponential backoff
+      // SAFETY: Retries are safe here because:
+      // 1. Claims close the position account (idempotent - second claim will fail)
+      // 2. Only transient errors (RPC timeout, network) are retried
+      // 3. Program errors (nothing to claim, invalid state) fail immediately
       return retryTransaction(
         () => client.claim(vaultId, authority, assetMint),
         "claim",
@@ -113,10 +118,12 @@ export function useClaim() {
           [vaultPda, positionPda],
           (data) => {
             // Determine account type from size
-            if (data.length === 200) {
+            if (data.length === VaultLayout.size) {
               return program.coder.accounts.decode("vault", data);
-            } else {
+            } else if (data.length === PositionLayout.size) {
               return program.coder.accounts.decode("position", data);
+            } else {
+              throw new Error(`Unknown account size: ${data.length}`);
             }
           },
           (pubkey, account) => {

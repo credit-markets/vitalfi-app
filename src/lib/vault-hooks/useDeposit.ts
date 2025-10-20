@@ -7,6 +7,7 @@ import BN from "bn.js";
 import { useVaultClient } from "./useVaultClient";
 import { useVaultProgram } from "@/lib/solana/provider";
 import { getVaultPda, getPositionPda } from "@/lib/vault-sdk/pdas";
+import { VaultLayout, PositionLayout } from "@/lib/vault-sdk/layout";
 import { reconcileFinalized } from "@/lib/utils/reconcile";
 import { toast } from "sonner";
 import { trackTransactionError, getUserFriendlyErrorMessage } from "@/lib/error-tracking";
@@ -52,6 +53,10 @@ export function useDeposit() {
       const { vaultId, authority, amount, assetMint } = params;
 
       // Retry transaction with exponential backoff
+      // SAFETY: Retries are safe here because:
+      // 1. The program enforces idempotency (duplicate deposits will fail with PROGRAM_ERROR)
+      // 2. Only transient errors (RPC timeout, network) are retried
+      // 3. Program errors (insufficient funds, invalid state) fail immediately
       return retryTransaction(
         () => client.deposit(vaultId, authority, amount, assetMint),
         "deposit",
@@ -115,10 +120,12 @@ export function useDeposit() {
           [vaultPda, positionPda],
           (data) => {
             // Determine account type from size
-            if (data.length === 200) {
+            if (data.length === VaultLayout.size) {
               return program.coder.accounts.decode("vault", data);
-            } else {
+            } else if (data.length === PositionLayout.size) {
               return program.coder.accounts.decode("position", data);
+            } else {
+              throw new Error(`Unknown account size: ${data.length}`);
             }
           },
           (pubkey, account) => {

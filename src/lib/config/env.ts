@@ -91,8 +91,14 @@ export function getEnv(key: string, defaultValue: string): string {
  */
 export function validateEnv(): void {
   const isProduction = process.env.NODE_ENV === "production";
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
 
-  // Required in production
+  // Skip validation during build (let runtime handle it)
+  if (isBuild) {
+    return;
+  }
+
+  // Required in production runtime
   const productionVars = [
     "NEXT_PUBLIC_SOLANA_RPC_ENDPOINT",
   ];

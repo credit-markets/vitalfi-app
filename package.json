@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
@@ -39,9 +43,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/ui": "^2.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
+    "jsdom": "^25.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.0.0",
+    "typescript": "^5",
+    "vitest": "^2.0.0"
   }
 }

@@ -7,6 +7,13 @@ import { ReactQueryProvider } from "@/lib/solana/query-provider";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Toaster } from "sonner";
+import { validateEnv } from "@/lib/config/env";
+
+// Validate environment variables on app initialization
+if (typeof window === "undefined") {
+  // Only validate server-side to avoid hydration issues
+  validateEnv();
+}
 
 const inter = Inter({
   subsets: ["latin"],

@@ -123,7 +123,7 @@ export class VaultClient {
     // Get user's token account
     const userTokenAccount = getAssociatedTokenAddressSync(assetMint, user);
 
-    // Build instruction with priority fee
+    // Build instruction
     const ix = await this.program.methods
       .deposit(amount)
       .accountsPartial({
@@ -137,8 +137,10 @@ export class VaultClient {
       })
       .instruction();
 
-    // Add priority fee and execute
-    const priorityIx = withPriorityFee([ix]);
+    // Add priority fees (prepends ComputeBudget instructions)
+    const txInstructions = withPriorityFee([ix]);
+
+    // Execute transaction with priority fees
     const txSig = await this.program.methods
       .deposit(amount)
       .accountsPartial({
@@ -150,7 +152,7 @@ export class VaultClient {
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .preInstructions(priorityIx.slice(0, 2)) // ComputeBudget instructions only
+      .preInstructions(txInstructions.slice(0, 2)) // Only ComputeBudget instructions
       .rpc();
 
     return txSig;
@@ -173,7 +175,7 @@ export class VaultClient {
     // Get user's token account
     const userTokenAccount = getAssociatedTokenAddressSync(assetMint, user);
 
-    // Build instruction with priority fee
+    // Build instruction
     const ix = await this.program.methods
       .claim()
       .accountsPartial({
@@ -186,8 +188,10 @@ export class VaultClient {
       })
       .instruction();
 
-    // Add priority fee and execute
-    const priorityIx = withPriorityFee([ix]);
+    // Add priority fees (prepends ComputeBudget instructions)
+    const txInstructions = withPriorityFee([ix]);
+
+    // Execute transaction with priority fees
     const txSig = await this.program.methods
       .claim()
       .accountsPartial({
@@ -198,7 +202,7 @@ export class VaultClient {
         user,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .preInstructions(priorityIx.slice(0, 2)) // ComputeBudget instructions only
+      .preInstructions(txInstructions.slice(0, 2)) // Only ComputeBudget instructions
       .rpc();
 
     return txSig;
