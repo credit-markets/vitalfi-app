@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { useVaultClient } from "./useVaultClient";
-import type { VaultAccount } from "@/lib/vault-sdk";
+import type { VaultAccount } from "@/lib/sdk";
 
 export interface UseVaultOptions {
   enabled?: boolean;

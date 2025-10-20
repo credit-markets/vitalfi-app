@@ -3,7 +3,7 @@
 import { FC, ReactNode, useMemo, createContext, useContext } from "react";
 import { AnchorProvider, Program, Idl } from "@coral-xyz/anchor";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { VitalfiVault, VitalfiVaultIDL } from "@/lib/vault-sdk/types";
+import { VitalfiVault, VitalfiVaultIDL } from "@/lib/sdk/types";
 
 /**
  * Anchor Program Context

@@ -3,11 +3,11 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCompactCurrency } from "@/lib/formatters";
-import { getStageColors } from "@/lib/vault-colors";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { getStageColors } from "@/lib/utils/colors";
 import { formatDate, daysUntil, expectedYieldSol, cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
-import type { PortfolioPosition } from "@/hooks/usePortfolio";
+import type { PortfolioPosition } from "@/hooks/vault/use-portfolio";
 
 interface PositionCardProps {
   position: PortfolioPosition;

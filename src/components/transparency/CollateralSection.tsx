@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
-import { formatCompactCurrency } from "@/lib/formatters";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { FileText, PieChart, TrendingUp, Calendar } from "lucide-react";
 import { ReceivablesTable } from "./ReceivablesTable";
 import type { CollateralAnalytics, Receivable } from "@/types/vault";

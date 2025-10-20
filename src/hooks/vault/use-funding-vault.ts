@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { VaultEvent, VaultFundingInfo } from '@/types/vault';
 import { useVault, useVaultTransactions } from '@/lib/vault-hooks';
-import { getDefaultVault, getNetworkConfig, VITALFI_VAULT_PROGRAM_ID, getVaultPda, getCurrentNetwork } from '@/lib/vault-sdk';
+import { getDefaultVault, getNetworkConfig, VITALFI_VAULT_PROGRAM_ID, getVaultPda, getCurrentNetwork } from '@/lib/sdk';
 import BN from 'bn.js';
 
 // Computed values derived from vault info

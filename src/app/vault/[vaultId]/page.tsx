@@ -9,8 +9,8 @@ import { VaultOverview } from "@/components/vault/VaultOverview";
 import { ActivityFeed } from "@/components/vault/ActivityFeed";
 import { ActionPanel } from "@/components/vault/ActionPanel";
 import { VaultInfoCard } from "@/components/vault/VaultInfoCard";
-import { useSidebar } from "@/contexts/SidebarContext";
-import { useFundingVault } from "@/hooks/useFundingVault";
+import { useSidebar } from "@/providers/SidebarContext";
+import { useFundingVault } from "@/hooks/vault/use-funding-vault";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 

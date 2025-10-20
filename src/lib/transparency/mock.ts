@@ -8,7 +8,6 @@ import type {
   OriginatorInfo,
   VaultFundingInfo,
 } from "@/types/vault";
-import { trackWarning } from "@/lib/error-tracking";
 import { MOCK_ADDRESSES } from "@/lib/solana/mock-data";
 
 // Mock originators
@@ -36,7 +35,7 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
 
   // Validate date
   if (isNaN(maturity.getTime())) {
-    trackWarning('Invalid maturity date detected', { maturityDate });
+    console.warn('Invalid maturity date detected', { maturityDate });
     return {}; // Return empty object if invalid date
   }
 

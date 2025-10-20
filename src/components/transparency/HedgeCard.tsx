@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
-import { formatCompactCurrency } from "@/lib/formatters";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { Shield, TrendingDown, TrendingUp, AlertCircle } from "lucide-react";
 import type { HedgePosition } from "@/types/vault";
 

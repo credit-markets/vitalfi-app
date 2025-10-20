@@ -2,8 +2,8 @@
 
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useFundingVault } from "@/hooks/useFundingVault";
-import { formatCompactCurrency } from "@/lib/formatters";
+import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 
 /**

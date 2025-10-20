@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PublicKey } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useVaultClient } from "./useVaultClient";
-import type { PositionAccount } from "@/lib/vault-sdk";
+import type { PositionAccount } from "@/lib/sdk";
 
 export interface UsePositionOptions {
   enabled?: boolean;
