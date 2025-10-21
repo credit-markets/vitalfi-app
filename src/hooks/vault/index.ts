@@ -4,5 +4,5 @@
  * Composed hooks that combine multiple data sources for vault-related features.
  */
 
-export { useFundingVault } from './use-funding-vault';
-export { usePortfolio } from './use-portfolio';
+export { useVaultAPI } from './use-vault-api';
+export { usePortfolioAPI } from './use-portfolio-api';

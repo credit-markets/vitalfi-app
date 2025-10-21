@@ -7,7 +7,7 @@ import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { getStageColors } from "@/lib/utils/colors";
 import { formatDate, daysUntil, expectedYieldSol, cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
-import type { PortfolioPosition } from "@/hooks/vault/use-portfolio";
+import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 
 interface PositionCardProps {
   position: PortfolioPosition;

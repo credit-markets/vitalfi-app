@@ -22,6 +22,9 @@ export interface VaultDTO {
   status: VaultStatus;
   cap: string | null;
   totalDeposited: string | null;
+  totalClaimed: string | null;
+  targetApyBps: number | null;
+  minDeposit: string | null;
   fundingEndTs: string | null;
   maturityTs: string | null;
   slot: number | null;
@@ -263,7 +266,11 @@ async function apiFetch<T>(
           "304 received but no cached data found, retrying without ETag"
         );
         // Retry without ETag by not providing cacheKey (which would add the ETag)
-        const newOptions = { ...options, retryOn304: false };
+        const newOptions = {
+          ...options,
+          retryOn304: false,
+          signal: options?.signal, // Preserve abort signal for React Query cancellation
+        };
         // Clear headers to remove If-None-Match
         delete (newOptions as { headers?: unknown }).headers;
         return apiFetch<T>(endpoint, newOptions);

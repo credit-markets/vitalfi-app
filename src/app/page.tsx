@@ -1,41 +1,60 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { VaultsClientWrapper } from "@/components/vault/VaultsClientWrapper";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/providers/SidebarContext";
-import { listTransparencyVaults } from "@/lib/transparency/api";
+import { useVaultsAPI } from "@/hooks/api";
 import { formatCurrency } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
+import { fromBaseUnits, parseTimestamp } from "@/lib/api/formatters";
 import type { VaultSummary } from "@/types/vault";
+
+// Get authority from environment or use default
+const AUTHORITY = process.env.NEXT_PUBLIC_VAULT_AUTHORITY || "";
 
 export default function Home() {
   const { isCollapsed } = useSidebar();
-  const [vaults, setVaults] = useState<VaultSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadVaults = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await listTransparencyVaults();
-      setVaults(data);
-    } catch (err) {
-      console.error("Failed to load transparency vaults:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load transparency data"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Fetch vaults from backend API
+  const {
+    data: vaultsResponse,
+    isLoading,
+    error: fetchError,
+    refetch,
+  } = useVaultsAPI({
+    authority: AUTHORITY,
+    limit: 100,
+    enabled: !!AUTHORITY,
+  });
 
-  useEffect(() => {
-    loadVaults();
-  }, [loadVaults]);
+  // Transform API DTOs to VaultSummary format
+  const vaults = useMemo<VaultSummary[]>(() => {
+    if (!vaultsResponse) return [];
+
+    return vaultsResponse.items.map((vault) => {
+      const decimals = 9; // SOL decimals
+      const raised = fromBaseUnits(vault.totalDeposited, decimals);
+      const cap = fromBaseUnits(vault.cap, decimals);
+
+      return {
+        id: vault.vaultId,
+        title: vault.vaultId,
+        stage: vault.status as VaultSummary["stage"],
+        raised,
+        cap,
+        targetApy: vault.targetApyBps ? vault.targetApyBps / 10000 : 0,
+        maturityDate: parseTimestamp(vault.maturityTs)?.toISOString() || "",
+        originator: {
+          id: "vitalfi",
+          name: "VitalFi",
+          country: "Brazil",
+        },
+      };
+    });
+  }, [vaultsResponse]);
 
   // Calculate summary stats
   const { totalTvl, activeCount } = useMemo(() => {
@@ -45,6 +64,13 @@ export default function Home() {
     ).length;
     return { totalTvl, activeCount };
   }, [vaults]);
+
+  const error =
+    fetchError instanceof Error
+      ? fetchError.message
+      : fetchError
+      ? "Failed to load vaults"
+      : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,7 +97,7 @@ export default function Home() {
           </header>
 
           {/* Vault Grid */}
-          {loading ? (
+          {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3].map((i) => (
                 <div
@@ -82,19 +108,17 @@ export default function Home() {
             </div>
           ) : error ? (
             <div className="text-center py-16">
-              <p className="text-red-400 text-lg mb-2">
-                Failed to load transparency data
-              </p>
+              <p className="text-red-400 text-lg mb-2">Failed to load vaults</p>
               <p className="text-muted-foreground text-sm mb-4">{error}</p>
-              <Button onClick={loadVaults}>Retry</Button>
+              <Button onClick={() => refetch()}>Retry</Button>
             </div>
           ) : vaults.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-muted-foreground text-lg">
-                No transparency data available yet
+                No vaults available yet
               </p>
               <p className="text-muted-foreground/60 text-sm mt-2">
-                Transparency reports are published for funded and matured vaults
+                Check back soon for new investment opportunities
               </p>
             </div>
           ) : (

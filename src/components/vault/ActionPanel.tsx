@@ -5,7 +5,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { useDeposit } from "@/hooks/mutations";
 import { getDefaultVault, getNetworkConfig } from "@/lib/sdk";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -19,7 +19,7 @@ import BN from "bn.js";
  */
 export function ActionPanel() {
   const { connected } = useWallet();
-  const { info, computed } = useFundingVault();
+  const { info, computed } = useVaultAPI();
   const [depositAmount, setDepositAmount] = useState("");
   const deposit = useDeposit();
   const { data: walletBalance = 0 } = useWalletBalance();

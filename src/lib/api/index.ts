@@ -5,20 +5,22 @@
  */
 
 export {
-  api,
+  backendApi,
   getHealth,
   listVaults,
   listPositions,
   getActivity,
-  ApiError,
-} from './client';
+  BackendApiError,
+} from './backend';
 
 export type {
   VaultDTO,
   PositionDTO,
   ActivityDTO,
+  ActivityType,
+  VaultStatus,
   PaginatedResponse,
-} from './client';
+} from './backend';
 
 export {
   vaultDtoToAccount,

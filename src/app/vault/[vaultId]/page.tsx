@@ -10,13 +10,13 @@ import { ActivityFeed } from "@/components/vault/ActivityFeed";
 import { ActionPanel } from "@/components/vault/ActionPanel";
 import { VaultInfoCard } from "@/components/vault/VaultInfoCard";
 import { useSidebar } from "@/providers/SidebarContext";
-import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 
 export default function VaultPage() {
   const { isCollapsed } = useSidebar();
-  const { error } = useFundingVault();
+  const { error } = useVaultAPI();
 
   // Show error state if vault not found
   if (error) {

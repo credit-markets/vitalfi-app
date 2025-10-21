@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { shortenAddress } from "@/lib/utils";
 import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/utils/constants";
 import { Copy, ExternalLink, Info, Eye } from "lucide-react";
@@ -15,7 +15,7 @@ import { toast } from "sonner";
  * Shows: Originator, Cap, Min Investment
  */
 export function VaultInfoCard() {
-  const { info } = useFundingVault();
+  const { info } = useVaultAPI();
   const params = useParams();
   const vaultId = params.vaultId as string;
 

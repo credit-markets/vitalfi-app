@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { formatCurrency, shortenAddress } from "@/lib/utils";
 import { Copy, ExternalLink, TrendingUp, DollarSign, LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ const activityColors: Record<EventTag, string> = {
  */
 export function ActivityFeed() {
   const [filter, setFilter] = useState<ActivityFilter>("all");
-  const { events, info } = useFundingVault();
+  const { events, info } = useVaultAPI();
 
   // Early return if data not loaded (error state handled by parent)
   if (!info) {

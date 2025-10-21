@@ -8,7 +8,7 @@
 
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
-import type { VaultDTO, PositionDTO, ActivityDTO } from "./client";
+import type { VaultDTO, PositionDTO, ActivityDTO } from "./backend";
 import type { VaultAccount, PositionAccount, VaultStatusOnChain } from "@/lib/sdk";
 import type { VaultEvent, EventTag } from "@/types/vault";
 

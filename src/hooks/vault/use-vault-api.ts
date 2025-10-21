@@ -23,7 +23,7 @@ interface ComputedVaultData {
 }
 
 // Hook return type with explicit error states
-interface UseFundingVaultReturn {
+export interface UseVaultReturn {
   info: VaultFundingInfo | null;
   events: VaultEvent[];
   computed: ComputedVaultData | null;
@@ -42,7 +42,7 @@ interface UseFundingVaultReturn {
  * - Stable query keys
  * - Abort signal support
  */
-export function useFundingVaultAPI(): UseFundingVaultReturn {
+export function useVaultAPI(): UseVaultReturn {
   // Get vault configuration
   const vaultConfig = useMemo(() => {
     try {
@@ -118,10 +118,10 @@ export function useFundingVaultAPI(): UseFundingVaultReturn {
     return {
       stage,
       name: vaultConfig.name,
-      expectedApyPct: 0, // Not in DTO yet - TODO: Add to backend
+      expectedApyPct: vaultDTO.targetApyBps ? vaultDTO.targetApyBps / 100 : 0,
       tvlSol: fromBaseUnits(vaultDTO.totalDeposited, decimals),
       capSol: fromBaseUnits(vaultDTO.cap, decimals),
-      minInvestmentSol: 0, // TODO: Add to backend DTO
+      minInvestmentSol: fromBaseUnits(vaultDTO.minDeposit, decimals),
       raisedSol: fromBaseUnits(vaultDTO.totalDeposited, decimals),
       fundingStartAt: toISOString(fundingStartDate),
       fundingEndAt: toISOString(fundingEndDate),

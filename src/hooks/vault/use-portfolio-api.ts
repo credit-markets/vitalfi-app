@@ -5,8 +5,43 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { usePositionsAPI, useVaultsAPI, useActivityAPI } from "@/hooks/api";
 import { expectedYieldSol } from "@/lib/utils";
 import { fromBaseUnits, parseTimestamp } from "@/lib/api/formatters";
-import type { PortfolioPosition, PortfolioActivity, PortfolioSummary } from "./use-portfolio";
 import { getAllVaults, getNetworkConfig } from "@/lib/sdk";
+
+export type PortfolioPosition = {
+  vaultId: string;
+  vaultName: string;
+  stage: 'Funding' | 'Funded' | 'Matured';
+  depositedSol: number;
+  expectedApyPct: number;
+  fundingEndAt: string; // ISO
+  maturityAt: string;   // ISO
+  // when matured:
+  realizedYieldSol?: number;
+  realizedTotalSol?: number;
+  canClaim?: boolean;
+  claimTxSig?: string;
+  // metadata
+  originatorShort: string;
+  collateralShort: string;
+  minInvestmentSOL?: number;
+};
+
+export type PortfolioActivity = {
+  type: 'Deposit' | 'Claim';
+  amountSol: number;
+  stage: 'Funding' | 'Funded' | 'Matured';
+  date: string;
+  txSig: string;
+  status: 'success' | 'pending' | 'failed';
+  vaultId: string;
+  vaultName: string;
+};
+
+export type PortfolioSummary = {
+  totalDepositedSol: number;
+  totalExpectedYieldSol: number; // across active positions
+  totalAtMaturitySol: number;
+};
 
 /**
  * Portfolio hook for maturity-based crowdfunding model (API-backed)
@@ -109,13 +144,14 @@ export function usePortfolioAPI() {
 
       const fundingEndDate = parseTimestamp(vault.fundingEndTs);
       const maturityDate = parseTimestamp(vault.maturityTs);
+      const minInvestmentSol = fromBaseUnits(vault.minDeposit, decimals);
 
       results.push({
         vaultId: vault.vaultId,
         vaultName: vaultConfig?.name || `Vault #${vault.vaultId}`,
         stage,
         depositedSol,
-        expectedApyPct: 0, // TODO: Add to VaultDTO
+        expectedApyPct: vault.targetApyBps ? vault.targetApyBps / 100 : 0,
         fundingEndAt: fundingEndDate?.toISOString() || "",
         maturityAt: maturityDate?.toISOString() || "",
         realizedYieldSol,
@@ -123,7 +159,7 @@ export function usePortfolioAPI() {
         canClaim,
         originatorShort: "VitalFi",
         collateralShort: "Medical Receivables",
-        minInvestmentSOL: 0, // TODO: Add to VaultDTO
+        minInvestmentSOL: minInvestmentSol,
       });
     }
 

@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { getStageColors } from "@/lib/utils/colors";
 import { formatDate, pluralize, cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ import { formatDate, pluralize, cn } from "@/lib/utils";
  * Header includes stage pill; no subordination or duplicate data
  */
 export function VaultOverview() {
-  const { info, computed } = useFundingVault();
+  const { info, computed } = useVaultAPI();
 
   // Early return if data not loaded (error state handled by parent)
   if (!info || !computed) {

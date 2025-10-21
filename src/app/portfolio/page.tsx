@@ -7,12 +7,12 @@ import { PortfolioHeader } from "@/components/portfolio/PortfolioHeader";
 import { PositionCard } from "@/components/portfolio/PositionCard";
 import { ActivityTable } from "@/components/portfolio/ActivityTable";
 import { Timeline } from "@/components/portfolio/Timeline";
-import { usePortfolio } from "@/hooks/vault/use-portfolio";
+import { usePortfolioAPI } from "@/hooks/vault/use-portfolio-api";
 import { useSidebar } from "@/providers/SidebarContext";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Wallet as WalletIcon } from "lucide-react";
-import type { PortfolioPosition } from "@/hooks/vault/use-portfolio";
+import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 import { useClaim } from "@/hooks/mutations";
 import { getAllVaults, getNetworkConfig } from "@/lib/sdk";
 import BN from "bn.js";
@@ -21,7 +21,7 @@ type StageFilter = "all" | "Funding" | "Funded" | "Matured";
 
 export default function PortfolioPage() {
   const { isCollapsed } = useSidebar();
-  const { summary, positions, activity, connected } = usePortfolio();
+  const { summary, positions, activity, connected } = usePortfolioAPI();
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [highlightedVault, setHighlightedVault] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});

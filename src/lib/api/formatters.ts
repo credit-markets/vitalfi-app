@@ -28,11 +28,19 @@ export function fromBaseUnits(
     // Reconstruct the value and compare
     const reconstructed = BigInt(Math.floor(result * 10 ** decimals));
     if (reconstructed !== bigAmount) {
-      console.warn(
-        `Precision loss detected for amount: ${amount}. ` +
-          `Original: ${bigAmount}, Reconstructed: ${reconstructed}. ` +
-          `Consider using BigInt or Decimal library for this value.`
-      );
+      // Calculate precision loss percentage
+      const diff = bigAmount - reconstructed;
+      const lossPercentage = (Number(diff) / Number(bigAmount)) * 100;
+
+      // Only warn if precision loss > 0.01% (significant loss)
+      if (Math.abs(lossPercentage) > 0.01) {
+        console.warn(
+          `Precision loss detected for amount: ${amount}. ` +
+            `Original: ${bigAmount}, Reconstructed: ${reconstructed}. ` +
+            `Loss: ${lossPercentage.toFixed(4)}%. ` +
+            `Consider using BigInt or Decimal library for this value.`
+        );
+      }
     }
 
     return result;

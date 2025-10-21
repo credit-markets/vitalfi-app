@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 
@@ -11,7 +11,7 @@ import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
  * Shows 4 cards only: TVL, Expected APY, Cap Remaining, Days to Maturity
  */
 export function KpiStrip() {
-  const { info, computed } = useFundingVault();
+  const { info, computed } = useVaultAPI();
 
   // Early return if data not loaded (error state handled by parent)
   if (!info || !computed) {
