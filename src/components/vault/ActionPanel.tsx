@@ -5,12 +5,12 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useFundingVault } from "@/hooks/useFundingVault";
-import { useDeposit } from "@/lib/vault-hooks";
-import { getDefaultVault, getNetworkConfig } from "@/lib/vault-sdk";
+import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { useDeposit } from "@/hooks/mutations";
+import { getDefaultVault, getNetworkConfig } from "@/lib/sdk";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { TrendingUp, AlertCircle, Info } from "lucide-react";
-import { useWalletBalance } from "@/lib/hooks/useWalletBalance";
+import { useWalletBalance } from "@/hooks/wallet/use-wallet-balance";
 import BN from "bn.js";
 
 /**

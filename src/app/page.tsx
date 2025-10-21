@@ -5,9 +5,9 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { VaultsClientWrapper } from "@/components/vault/VaultsClientWrapper";
 import { Button } from "@/components/ui/button";
-import { useSidebar } from "@/contexts/SidebarContext";
+import { useSidebar } from "@/providers/SidebarContext";
 import { listTransparencyVaults } from "@/lib/transparency/api";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import type { VaultSummary } from "@/types/vault";
 

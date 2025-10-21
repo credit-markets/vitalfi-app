@@ -2,9 +2,9 @@
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useFundingVault } from "@/hooks/useFundingVault";
-import { formatCompactCurrency } from "@/lib/formatters";
-import { getStageColors } from "@/lib/vault-colors";
+import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { getStageColors } from "@/lib/utils/colors";
 import { formatDate, pluralize, cn } from "@/lib/utils";
 
 /**

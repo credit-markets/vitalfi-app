@@ -4,8 +4,8 @@ import { useMemo } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { expectedYieldSol } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { useVaultClient } from "@/lib/vault-hooks";
-import { getAllVaults } from "@/lib/vault-sdk";
+import { useVaultClient } from "@/hooks/wallet";
+import { getAllVaults } from "@/lib/sdk";
 import BN from "bn.js";
 
 export type PortfolioPosition = {

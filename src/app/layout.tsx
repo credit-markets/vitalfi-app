@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { SolanaWalletProvider } from "@/contexts/WalletProvider";
+import { SolanaWalletProvider } from "@/providers/WalletProvider";
 import { VaultProgramProvider } from "@/lib/solana/provider";
-import { ReactQueryProvider } from "@/lib/solana/query-provider";
-import { SidebarProvider } from "@/contexts/SidebarContext";
+import { ReactQueryProvider } from "@/providers/query-provider";
+import { SidebarProvider } from "@/providers/SidebarContext";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Toaster } from "sonner";
 

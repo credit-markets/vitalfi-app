@@ -5,7 +5,7 @@
  *
  * @example
  * ```typescript
- * import { VaultClient, getVaultPda } from '@/lib/vault-sdk';
+ * import { VaultClient, getVaultPda } from '@/lib/sdk';
  *
  * const client = new VaultClient(program);
  * const vault = await client.getVault(vaultId);

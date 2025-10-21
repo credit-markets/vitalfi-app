@@ -12,12 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCompactCurrency } from "@/lib/formatters";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { formatDate } from "@/lib/utils";
 import { shortenAddress } from "@/lib/utils";
 import { Copy, ExternalLink, TrendingUp, DollarSign, Download } from "lucide-react";
 import { toast } from "sonner";
-import type { PortfolioActivity } from "@/hooks/usePortfolio";
+import type { PortfolioActivity } from "@/hooks/vault/use-portfolio";
 
 interface ActivityTableProps {
   activity: PortfolioActivity[];
