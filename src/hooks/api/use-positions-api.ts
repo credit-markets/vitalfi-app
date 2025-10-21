@@ -1,0 +1,58 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { listPositions } from "@/lib/api/backend";
+import { hasStatusCode } from "@/lib/api/type-guards";
+import { useMemo } from "react";
+
+export interface UsePositionsAPIParams {
+  owner: string;
+  cursor?: number;
+  limit?: number;
+  enabled?: boolean;
+}
+
+/**
+ * Hook to fetch user positions from backend API
+ *
+ * RESILIENCY FEATURES:
+ * - Stable query keys (useMemo for params object)
+ * - Abort signal automatically provided by React Query
+ * - Retry on 5xx, no retry on 4xx
+ * - ETag/304 caching via backend client
+ */
+export function usePositionsAPI(params: UsePositionsAPIParams) {
+  // RESILIENCY PATCH: Stable query keys
+  const stableParams = useMemo(
+    () => ({
+      owner: params.owner,
+      cursor: params.cursor,
+      limit: params.limit,
+    }),
+    [params.owner, params.cursor, params.limit]
+  );
+
+  return useQuery({
+    queryKey: ["positions-api", stableParams],
+    queryFn: async ({ signal }) =>
+      listPositions(
+        {
+          owner: params.owner,
+          cursor: params.cursor,
+          limit: params.limit,
+        },
+        { signal }
+      ),
+    enabled: params.enabled !== false && !!params.owner,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: (failureCount, error: unknown) => {
+      if (hasStatusCode(error) && error.statusCode >= 500) {
+        return failureCount < 3;
+      }
+      return false;
+    },
+    retryDelay: (attemptIndex) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+}

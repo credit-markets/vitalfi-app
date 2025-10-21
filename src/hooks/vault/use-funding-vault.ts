@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import { VaultEvent, VaultFundingInfo } from '@/types/vault';
 import { useVault, useVaultTransactions } from '@/lib/vault-hooks';
 import { getDefaultVault, getNetworkConfig, VITALFI_VAULT_PROGRAM_ID, getVaultPda, getCurrentNetwork } from '@/lib/sdk';
+import { shouldUseBackendAPI } from '@/lib/feature-flags';
+import { useFundingVaultAPI } from './use-funding-vault-api';
 import BN from 'bn.js';
 
 // Computed values derived from vault info
@@ -27,10 +29,32 @@ interface UseFundingVaultReturn {
 /**
  * Hook for funding vault data and computed values
  *
+ * Automatically switches between RPC and API based on feature flag.
+ * - API: Fast, cached, sub-50ms latency
+ * - RPC: Direct on-chain reads, instant correctness
+ *
+ * IMPORTANT: Calls both hooks unconditionally to follow Rules of Hooks,
+ * then returns the appropriate result based on feature flag.
+ */
+export function useFundingVault(): UseFundingVaultReturn {
+  const useBackend = shouldUseBackendAPI();
+
+  // Call both hooks unconditionally (Rules of Hooks requirement)
+  const apiResult = useFundingVaultAPI();
+  const rpcResult = useFundingVaultRPC();
+
+  // Return the correct one based on feature flag
+  // This ensures hook call order is consistent across renders
+  return useBackend ? apiResult : rpcResult;
+}
+
+/**
+ * RPC-based implementation (legacy)
+ *
  * Fetches real on-chain vault data and transforms it into the UI format.
  * Falls back to default vault if no vaultId is provided.
  */
-export function useFundingVault(): UseFundingVaultReturn {
+function useFundingVaultRPC(): UseFundingVaultReturn {
   // Get vault configuration
   const vaultConfig = useMemo(() => {
     try {

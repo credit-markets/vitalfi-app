@@ -6,6 +6,8 @@ import { expectedYieldSol } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useVaultClient } from "@/hooks/wallet";
 import { getAllVaults } from "@/lib/sdk";
+import { shouldUseBackendAPI } from "@/lib/feature-flags";
+import { usePortfolioAPI } from "./use-portfolio-api";
 import BN from "bn.js";
 
 export type PortfolioPosition = {
@@ -46,9 +48,33 @@ export type PortfolioSummary = {
 
 /**
  * Portfolio hook for maturity-based crowdfunding model
+ *
+ * Automatically switches between RPC and API based on feature flag.
+ * - API: Fast, cached, indexed queries
+ * - RPC: Direct on-chain reads
+ *
  * Returns user positions, activity, and aggregated summary
+ *
+ * IMPORTANT: Calls both hooks unconditionally to follow Rules of Hooks,
+ * then returns the appropriate result based on feature flag.
  */
 export function usePortfolio() {
+  const { publicKey } = useWallet();
+  const useBackend = shouldUseBackendAPI(publicKey?.toBase58());
+
+  // Call both hooks unconditionally (Rules of Hooks requirement)
+  const apiResult = usePortfolioAPI();
+  const rpcResult = usePortfolioRPC();
+
+  // Return the correct one based on feature flag
+  // This ensures hook call order is consistent across renders
+  return useBackend ? apiResult : rpcResult;
+}
+
+/**
+ * RPC-based portfolio implementation (legacy)
+ */
+function usePortfolioRPC() {
   const { publicKey, connected } = useWallet();
   const client = useVaultClient();
 

@@ -2,32 +2,58 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
+import { hasStatusCode } from "@/lib/api/type-guards";
 
 /**
  * React Query Provider for the application
  *
  * Provides React Query client to all components.
- * Creates a new client instance per component tree to avoid state sharing.
+ *
+ * RESILIENCY FEATURES:
+ * - SSR hydration safety (useState for client instantiation)
+ * - Optimized for backend API integration
+ * - Smart retry logic (5xx only)
+ * - Exponential backoff
+ * - Reconnect on network restore
  */
 export function ReactQueryProvider({ children }: { children: ReactNode }) {
-  // Create a client per component tree to avoid cross-request state pollution
+  // RESILIENCY PATCH: SSR hydration safety
+  // Create a client per component tree to avoid state sharing
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Disable automatic refetching on window focus in development
-            refetchOnWindowFocus: process.env.NODE_ENV === "production",
-            // Retry failed requests
-            retry: 1,
-            // Stale time: 30 seconds default
-            staleTime: 30000,
-            // Cache time: 5 minutes
+            // Match backend s-maxage (30s fresh, 60s stale-while-revalidate)
+            staleTime: 30_000,
+            // Garbage collection time: 5 minutes
             gcTime: 5 * 60 * 1000,
+            // Disable automatic refetching on window focus (handled by staleTime)
+            refetchOnWindowFocus: false,
+            // Reconnect on network restore
+            refetchOnReconnect: true,
+            // Smart retry logic: only retry on 5xx errors
+            retry: (failureCount, error: unknown) => {
+              // Don't retry if statusCode is 4xx (client errors)
+              if (hasStatusCode(error) && error.statusCode >= 400 && error.statusCode < 500) {
+                return false;
+              }
+              // Retry up to 3 times for 5xx or network errors
+              return failureCount < 3;
+            },
+            // Exponential backoff
+            retryDelay: (attemptIndex) =>
+              Math.min(1000 * 2 ** attemptIndex, 30000),
           },
           mutations: {
-            // Retry failed mutations once
-            retry: 1,
+            // Retry mutations once on network errors only
+            retry: (failureCount, error: unknown) => {
+              // Only retry network errors, not API errors
+              if (hasStatusCode(error)) {
+                return false;
+              }
+              return failureCount < 1;
+            },
           },
         },
       })
