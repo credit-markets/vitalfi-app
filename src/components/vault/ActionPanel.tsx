@@ -5,21 +5,28 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useFundingVault } from "@/hooks/vault/use-funding-vault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { useDeposit } from "@/hooks/mutations";
-import { getDefaultVault, getNetworkConfig } from "@/lib/sdk";
+import { env } from "@/lib/env";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { getTokenDecimals } from "@/lib/sdk/config";
 import { TrendingUp, AlertCircle, Info } from "lucide-react";
 import { useWalletBalance } from "@/hooks/wallet/use-wallet-balance";
 import BN from "bn.js";
+import { PublicKey } from "@solana/web3.js";
+import { NATIVE_MINT } from "@solana/spl-token";
+
+export interface ActionPanelProps {
+  vaultId: string;
+}
 
 /**
  * Single action panel for vault participation (deposits only during funding)
  * Disabled states: "Funding closed" or "Cap reached"
  */
-export function ActionPanel() {
+export function ActionPanel({ vaultId }: ActionPanelProps) {
   const { connected } = useWallet();
-  const { info, computed } = useFundingVault();
+  const { info, computed } = useVaultAPI(vaultId);
   const [depositAmount, setDepositAmount] = useState("");
   const deposit = useDeposit();
   const { data: walletBalance = 0 } = useWalletBalance();
@@ -60,22 +67,26 @@ export function ActionPanel() {
   const disabledMessage = getDisabledMessage();
 
   const handleDeposit = async () => {
-    if (!isValid) return;
+    if (!isValid || !info) return;
 
     try {
-      // Get vault configuration
-      const vaultConfig = getDefaultVault();
-      const networkConfig = getNetworkConfig();
+      // Get vault configuration from backend API data
+      const authority = new PublicKey(env.vaultAuthority);
+      const vaultIdBN = new BN(vaultId);
+      const assetMint = info.addresses.tokenMint
+        ? new PublicKey(info.addresses.tokenMint)
+        : NATIVE_MINT; // Native SOL wrapped token
 
-      // Convert SOL to lamports (9 decimals)
-      const lamports = new BN(Math.floor(amountNum * 1e9));
+      // Convert amount to base units using token decimals
+      const decimals = getTokenDecimals(assetMint);
+      const baseUnits = new BN(Math.floor(amountNum * 10 ** decimals));
 
       // Execute deposit transaction
       await deposit.mutateAsync({
-        vaultId: vaultConfig.id,
-        authority: networkConfig.authority,
-        amount: lamports,
-        assetMint: vaultConfig.assetMint,
+        vaultId: vaultIdBN,
+        authority,
+        amount: baseUnits,
+        assetMint,
       });
 
       // Success - clear input (toast notification is automatic)

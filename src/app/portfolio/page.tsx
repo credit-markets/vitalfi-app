@@ -7,21 +7,23 @@ import { PortfolioHeader } from "@/components/portfolio/PortfolioHeader";
 import { PositionCard } from "@/components/portfolio/PositionCard";
 import { ActivityTable } from "@/components/portfolio/ActivityTable";
 import { Timeline } from "@/components/portfolio/Timeline";
-import { usePortfolio } from "@/hooks/vault/use-portfolio";
+import { usePortfolioAPI } from "@/hooks/vault/use-portfolio-api";
 import { useSidebar } from "@/providers/SidebarContext";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Wallet as WalletIcon } from "lucide-react";
-import type { PortfolioPosition } from "@/hooks/vault/use-portfolio";
+import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 import { useClaim } from "@/hooks/mutations";
-import { getAllVaults, getNetworkConfig } from "@/lib/sdk";
+import { env } from "@/lib/env";
 import BN from "bn.js";
+import { PublicKey } from "@solana/web3.js";
 
 type StageFilter = "all" | "Funding" | "Funded" | "Matured";
 
 export default function PortfolioPage() {
   const { isCollapsed } = useSidebar();
-  const { summary, positions, activity, connected } = usePortfolio();
+  const { summary, positions, activity, connected, vaults } = usePortfolioAPI();
+
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [highlightedVault, setHighlightedVault] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -39,22 +41,26 @@ export default function PortfolioPage() {
 
   const handleClaim = async (vaultId: string) => {
     try {
-      // Get vault configuration
-      const vaultConfigs = getAllVaults();
-      const networkConfig = getNetworkConfig();
-
-      // Find vault config by ID
-      const vaultConfig = vaultConfigs.find(v => v.id.eq(new BN(vaultId)));
-
-      if (!vaultConfig) {
-        throw new Error(`Vault configuration not found for vault ${vaultId}`);
+      // Find vault to get assetMint
+      const vault = vaults.find(v => v.vaultId === vaultId);
+      if (!vault) {
+        throw new Error(`Vault ${vaultId} not found`);
       }
+
+      if (!vault.assetMint) {
+        throw new Error(`Vault ${vaultId} has no asset mint`);
+      }
+
+      // Get authority and prepare transaction params
+      const authority = new PublicKey(env.vaultAuthority);
+      const vaultIdBN = new BN(vaultId);
+      const assetMint = new PublicKey(vault.assetMint);
 
       // Execute claim transaction
       await claim.mutateAsync({
-        vaultId: vaultConfig.id,
-        authority: networkConfig.authority,
-        assetMint: vaultConfig.assetMint,
+        vaultId: vaultIdBN,
+        authority,
+        assetMint,
       });
 
       // Success - toast notification is automatic

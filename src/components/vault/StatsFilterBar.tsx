@@ -12,6 +12,7 @@ interface StatsFilterBarProps {
     Funding: number;
     Funded: number;
     Matured: number;
+    Closed: number;
   };
 }
 

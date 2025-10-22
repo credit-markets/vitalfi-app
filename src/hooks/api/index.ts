@@ -2,28 +2,12 @@
  * Backend API Hooks
  *
  * React Query hooks for fetching data from the VitalFi backend API.
+ *
+ * API-backed hooks (with ETag/304 caching, abort signals, and retry logic):
+ * - useVaultsAPI, usePositionsAPI, useActivityAPI, useInfiniteActivity
  */
 
-// Vault hooks
-export {
-  useVaults,
-  useVaultByPda,
-  useAllVaults,
-  type UseVaultsOptions,
-} from './use-vaults';
-
-// Position hooks
-export {
-  useUserPositions,
-  useVaultPositions,
-  usePosition,
-  type UsePositionsOptions,
-} from './use-positions';
-
-// Activity hooks
-export {
-  useAuthorityActivity,
-  useUserActivity,
-  useActivity,
-  type UseActivityOptions,
-} from './use-activity';
+// Backend API hooks with ETag/304 caching
+export * from "./use-vaults-api";
+export * from "./use-positions-api";
+export * from "./use-activity-api";
