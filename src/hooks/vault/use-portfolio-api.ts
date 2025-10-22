@@ -133,7 +133,8 @@ export function usePortfolioAPI() {
             realizedYieldSol = realizedTotalSol - depositedSol;
             canClaim = claimedSol < realizedTotalSol;
           } else {
-            // Fallback: payout denominator is 0 (shouldn't happen)
+            // Invalid state: payout denominator is 0
+            console.error(`Vault ${vault.vaultId}: Invalid payout denominator (0)`);
             realizedTotalSol = depositedSol;
             realizedYieldSol = 0;
             canClaim = claimedSol < depositedSol;

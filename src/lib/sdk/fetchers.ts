@@ -12,6 +12,17 @@ import { getVaultPda, getPositionPda } from "./pdas";
  */
 
 /**
+ * Account layout offsets for memcmp filters
+ *
+ * These values depend on the on-chain account structure from vitalfi-programs.
+ * Account structure:
+ * - Vault: discriminator(8) + version(2) + authority(32) + ...
+ * - Position: discriminator(8) + vault(32) + owner(32) + ...
+ */
+const VAULT_AUTHORITY_OFFSET = 8 + 2; // discriminator(8) + version(2)
+const POSITION_OWNER_OFFSET = 8 + 32; // discriminator(8) + vault_pubkey(32)
+
+/**
  * Fetch a single vault account by ID
  *
  * @param program - Anchor program instance
@@ -70,7 +81,7 @@ export async function fetchAllVaultsByAuthority(
     const vaults = await program.account.vault.all([
       {
         memcmp: {
-          offset: 8 + 2, // discriminator + version
+          offset: VAULT_AUTHORITY_OFFSET,
           bytes: authority.toBase58(),
         },
       },
@@ -146,7 +157,7 @@ export async function fetchAllPositionsByUser(
     const positions = await program.account.position.all([
       {
         memcmp: {
-          offset: 8 + 32, // discriminator + vault pubkey
+          offset: POSITION_OWNER_OFFSET,
           bytes: user.toBase58(),
         },
       },

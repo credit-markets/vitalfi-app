@@ -176,9 +176,12 @@ function clearOldestCacheEntries(): void {
       if (key && key.startsWith(DATA_CACHE_PREFIX)) {
         try {
           const data = JSON.parse(localStorage.getItem(key) || "{}");
-          // Assume data has updatedAtEpoch or use current time as fallback
+          // Try multiple timestamp sources with proper fallback
           const timestamp =
-            data?.updatedAtEpoch || data?.timestamp || Date.now() / 1000;
+            data?.updatedAtEpoch ||
+            data?.items?.[0]?.updatedAtEpoch ||
+            data?.timestamp ||
+            Date.now() / 1000;
           cacheEntries.push({ key, timestamp });
         } catch {
           // If we can't parse it, mark it for deletion
