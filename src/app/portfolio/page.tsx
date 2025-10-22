@@ -40,6 +40,9 @@ export default function PortfolioPage() {
   }, []);
 
   const handleClaim = async (vaultId: string) => {
+    // Prevent race conditions from double-clicks
+    if (claim.isPending) return;
+
     try {
       // Find vault to get assetMint
       const vault = vaults.find(v => v.vaultId === vaultId);

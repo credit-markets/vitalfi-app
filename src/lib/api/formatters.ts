@@ -52,19 +52,6 @@ export function fromBaseUnits(
 }
 
 /**
- * Convert decimal amount to string lamports/base units
- *
- * @param amount - Decimal amount
- * @param decimals - Token decimals (9 for SOL, 6 for USDC)
- * @returns Amount in smallest unit as string
- */
-export function toBaseUnits(amount: number, decimals: number = 9): string {
-  // Convert to base units (e.g., SOL → lamports)
-  const amountBigInt = BigInt(Math.floor(amount * 10 ** decimals));
-  return amountBigInt.toString();
-}
-
-/**
  * Format timestamp string to Date with null safety
  *
  * @param timestamp - ISO 8601 string or Unix epoch string (seconds)

@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { useVaultClient } from "@/hooks/wallet/use-vault-client";
+import { getCurrentNetwork } from "@/lib/sdk";
 import { toast } from "sonner";
 
 export interface DepositParams {
@@ -65,7 +66,7 @@ export function useDeposit() {
         action: {
           label: "View",
           onClick: () => {
-            const cluster = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet";
+            const cluster = getCurrentNetwork();
             window.open(
               `https://explorer.solana.com/tx/${txSig}?cluster=${cluster}`,
               "_blank"

@@ -1,7 +1,7 @@
 /**
  * VitalFi Backend API
  *
- * Re-export API client, types, and adapters for easy importing
+ * Re-export API client and types for easy importing
  */
 
 export {
@@ -21,12 +21,3 @@ export type {
   VaultStatus,
   PaginatedResponse,
 } from './backend';
-
-export {
-  vaultDtoToAccount,
-  positionDtoToAccount,
-  activityDtoToVaultEvent,
-  vaultDtosToAccounts,
-  positionDtosToAccounts,
-  activityDtosToVaultEvents,
-} from './adapters';
