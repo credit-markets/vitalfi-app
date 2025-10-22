@@ -25,13 +25,17 @@ const activityColors: Record<EventTag, string> = {
   Params: "text-muted-foreground",
 };
 
+export interface ActivityFeedProps {
+  vaultId: string;
+}
+
 /**
  * Funding Transactions table
  * Shows deposits and claims only (no PPS, shares, queue columns)
  */
-export function ActivityFeed() {
+export function ActivityFeed({ vaultId }: ActivityFeedProps) {
   const [filter, setFilter] = useState<ActivityFilter>("all");
-  const { events, info } = useVaultAPI();
+  const { events, info } = useVaultAPI(vaultId);
 
   // Early return if data not loaded (error state handled by parent)
   if (!info) {

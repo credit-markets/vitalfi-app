@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { listVaults, VaultStatus } from "@/lib/api/backend";
 import { hasStatusCode } from "@/lib/api/type-guards";
+import { calculateRetryDelay } from "@/lib/constants";
 import { useMemo } from "react";
 
 export interface UseVaultsAPIParams {
@@ -15,12 +16,6 @@ export interface UseVaultsAPIParams {
 
 /**
  * Hook to fetch vaults from backend API
- *
- * RESILIENCY FEATURES:
- * - Stable query keys (useMemo for params object)
- * - Abort signal automatically provided by React Query
- * - Retry on 5xx, no retry on 4xx
- * - ETag/304 caching via backend client
  */
 export function useVaultsAPI(params: UseVaultsAPIParams) {
   // RESILIENCY PATCH: Stable query keys
@@ -57,7 +52,6 @@ export function useVaultsAPI(params: UseVaultsAPIParams) {
       }
       return false;
     },
-    retryDelay: (attemptIndex) =>
-      Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retryDelay: calculateRetryDelay,
   });
 }

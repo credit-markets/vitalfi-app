@@ -10,7 +10,10 @@ import { useVaultsAPI } from "@/hooks/api";
 import { formatCurrency } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { fromBaseUnits, parseTimestamp } from "@/lib/api/formatters";
+import { mapVaultStatusToStage } from "@/lib/api/backend";
+import { getTokenDecimals } from "@/lib/sdk/config";
 import type { VaultSummary } from "@/types/vault";
+import { SOL_DECIMALS, DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
 
 // Get authority from environment or use default
 const AUTHORITY = process.env.NEXT_PUBLIC_VAULT_AUTHORITY || "";
@@ -35,23 +38,22 @@ export default function Home() {
     if (!vaultsResponse) return [];
 
     return vaultsResponse.items.map((vault) => {
-      const decimals = 9; // SOL decimals
+      const decimals = vault.assetMint ? getTokenDecimals(vault.assetMint) : SOL_DECIMALS;
       const raised = fromBaseUnits(vault.totalDeposited, decimals);
       const cap = fromBaseUnits(vault.cap, decimals);
+
+      // Map backend status to frontend stage
+      const stage = mapVaultStatusToStage(vault.status);
 
       return {
         id: vault.vaultId,
         title: vault.vaultId,
-        stage: vault.status as VaultSummary["stage"],
+        stage,
         raised,
         cap,
         targetApy: vault.targetApyBps ? vault.targetApyBps / 10000 : 0,
         maturityDate: parseTimestamp(vault.maturityTs)?.toISOString() || "",
-        originator: {
-          id: "vitalfi",
-          name: "VitalFi",
-          country: "Brazil",
-        },
+        originator: DEFAULT_ORIGINATOR,
       };
     });
   }, [vaultsResponse]);

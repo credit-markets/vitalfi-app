@@ -5,12 +5,15 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { usePositionsAPI, useVaultsAPI, useActivityAPI } from "@/hooks/api";
 import { expectedYieldSol } from "@/lib/utils";
 import { fromBaseUnits, parseTimestamp } from "@/lib/api/formatters";
-import { getAllVaults, getNetworkConfig } from "@/lib/sdk";
+import { mapVaultStatusToStage } from "@/lib/api/backend";
+import { getTokenDecimals } from "@/lib/sdk/config";
+import { env } from "@/lib/env";
+import { SOL_DECIMALS, DEFAULT_ORIGINATOR, DEFAULT_COLLATERAL_TYPE } from "@/lib/utils/constants";
 
 export type PortfolioPosition = {
   vaultId: string;
   vaultName: string;
-  stage: 'Funding' | 'Funded' | 'Matured';
+  stage: 'Funding' | 'Funded' | 'Matured' | 'Closed';
   depositedSol: number;
   expectedApyPct: number;
   fundingEndAt: string; // ISO
@@ -29,7 +32,7 @@ export type PortfolioPosition = {
 export type PortfolioActivity = {
   type: 'Deposit' | 'Claim';
   amountSol: number;
-  stage: 'Funding' | 'Funded' | 'Matured';
+  stage: 'Funding' | 'Funded' | 'Matured' | 'Closed';
   date: string;
   txSig: string;
   status: 'success' | 'pending' | 'failed';
@@ -48,11 +51,6 @@ export type PortfolioSummary = {
  *
  * Returns user positions, activity, and aggregated summary from backend API.
  *
- * RESILIENCY FEATURES:
- * - Multi-authority portfolio support (not hardcoded)
- * - Decimals-aware formatting
- * - UTC time handling
- * - Stable query keys
  */
 export function usePortfolioAPI() {
   const { publicKey, connected } = useWallet();
@@ -70,17 +68,8 @@ export function usePortfolioAPI() {
     return [...new Set(positionsResponse.items.map((p) => p.vaultPda))];
   }, [positionsResponse]);
 
-  // RESILIENCY PATCH: Multi-authority support
-  // Get authority from network config
-  const authority = useMemo(() => {
-    try {
-      const networkConfig = getNetworkConfig();
-      return networkConfig.authority.toBase58();
-    } catch (error) {
-      console.error("Failed to get network config:", error);
-      return "";
-    }
-  }, []);
+  // Get authority from environment
+  const authority = env.vaultAuthority;
 
   // Fetch vaults for the network authority
   const { data: vaultsResponse } = useVaultsAPI({
@@ -100,9 +89,6 @@ export function usePortfolioAPI() {
   const positions = useMemo<PortfolioPosition[]>(() => {
     if (!positionsResponse || !vaultsResponse) return [];
 
-    const vaultConfigs = getAllVaults();
-    const decimals = 9; // SOL decimals (TODO: read from mint metadata)
-
     const results: PortfolioPosition[] = [];
 
     for (const position of positionsResponse.items) {
@@ -111,36 +97,27 @@ export function usePortfolioAPI() {
       );
       if (!vault) continue;
 
-        // Find vault config for name
-        const vaultConfig = vaultConfigs.find(
-          (v) => v.id.toString() === vault.vaultId
-        );
+      // Map backend status to UI stage
+      const stage = mapVaultStatusToStage(vault.status);
 
-        // Map backend status to UI stage
-        let stage: PortfolioPosition["stage"] = "Funding";
-        if (vault.status === "Matured") {
-          stage = "Matured";
-        } else if (vault.status === "Active") {
-          stage = "Funded";
-        }
+      const decimals = vault.assetMint ? getTokenDecimals(vault.assetMint) : SOL_DECIMALS;
+      const depositedSol = fromBaseUnits(position.deposited, decimals);
+      const claimedSol = fromBaseUnits(position.claimed, decimals);
 
-        const depositedSol = fromBaseUnits(position.deposited, decimals);
-        const claimedSol = fromBaseUnits(position.claimed, decimals);
+      // Calculate realized yield for matured vaults
+      // Note: Backend doesn't provide payout_num/payout_den yet
+      // This would need to be added to VaultDTO
+      let realizedYieldSol: number | undefined;
+      let realizedTotalSol: number | undefined;
+      let canClaim = false;
 
-        // Calculate realized yield for matured vaults
-        // Note: Backend doesn't provide payout_num/payout_den yet
-        // This would need to be added to VaultDTO
-        let realizedYieldSol: number | undefined;
-        let realizedTotalSol: number | undefined;
-        let canClaim = false;
-
-        if (stage === "Matured") {
-          // TODO: Calculate from vault.payoutNum / vault.payoutDen when available
-          // For now, assume 1:1 payout (no yield)
-          realizedTotalSol = depositedSol;
-          realizedYieldSol = 0;
-          canClaim = claimedSol < depositedSol;
-        }
+      if (stage === "Matured") {
+        // TODO: Calculate from vault.payoutNum / vault.payoutDen when available
+        // For now, assume 1:1 payout (no yield)
+        realizedTotalSol = depositedSol;
+        realizedYieldSol = 0;
+        canClaim = claimedSol < depositedSol;
+      }
 
       const fundingEndDate = parseTimestamp(vault.fundingEndTs);
       const maturityDate = parseTimestamp(vault.maturityTs);
@@ -148,7 +125,7 @@ export function usePortfolioAPI() {
 
       results.push({
         vaultId: vault.vaultId,
-        vaultName: vaultConfig?.name || `Vault #${vault.vaultId}`,
+        vaultName: vault.vaultId,
         stage,
         depositedSol,
         expectedApyPct: vault.targetApyBps ? vault.targetApyBps / 100 : 0,
@@ -157,8 +134,8 @@ export function usePortfolioAPI() {
         realizedYieldSol,
         realizedTotalSol,
         canClaim,
-        originatorShort: "VitalFi",
-        collateralShort: "Medical Receivables",
+        originatorShort: DEFAULT_ORIGINATOR.name,
+        collateralShort: DEFAULT_COLLATERAL_TYPE,
         minInvestmentSOL: minInvestmentSol,
       });
     }
@@ -170,9 +147,6 @@ export function usePortfolioAPI() {
   const activity = useMemo<PortfolioActivity[]>(() => {
     if (!activityResponse || !vaultsResponse) return [];
 
-    const vaultConfigs = getAllVaults();
-    const decimals = 9;
-
     return activityResponse.items
       .filter(
         (act) =>
@@ -182,17 +156,10 @@ export function usePortfolioAPI() {
         const vault = vaultsResponse.items.find(
           (v) => v.vaultPda === act.vaultPda
         );
-        const vaultConfig = vaultConfigs.find(
-          (v) => v.id.toString() === vault?.vaultId
-        );
+        const decimals = act.assetMint ? getTokenDecimals(act.assetMint) : SOL_DECIMALS;
 
         // Map backend status to UI stage
-        let stage: PortfolioActivity["stage"] = "Funding";
-        if (vault?.status === "Matured") {
-          stage = "Matured";
-        } else if (vault?.status === "Active") {
-          stage = "Funded";
-        }
+        const stage = vault?.status ? mapVaultStatusToStage(vault.status) : 'Funding';
 
         return {
           type: act.type === "deposit" ? "Deposit" : "Claim",
@@ -202,7 +169,7 @@ export function usePortfolioAPI() {
           txSig: act.txSig,
           status: "success" as const, // Confirmed transactions only
           vaultId: vault?.vaultId || "",
-          vaultName: vaultConfig?.name || `Vault #${vault?.vaultId || ""}`,
+          vaultName: vault?.vaultId || "",
         };
       });
   }, [activityResponse, vaultsResponse]);
@@ -237,5 +204,6 @@ export function usePortfolioAPI() {
     positions,
     activity,
     connected,
+    vaults: vaultsResponse?.items || [],
   };
 }

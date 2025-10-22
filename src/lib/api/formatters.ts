@@ -1,9 +1,10 @@
 /**
  * Decimals-aware formatters for API DTOs
  *
- * RESILIENCY PATCH: Support non-SOL tokens (USDC, etc.)
  * All amounts in DTOs are strings in token base units (lamports for SOL, smallest unit for USDC)
  */
+
+import { PRECISION_LOSS_THRESHOLD } from "@/lib/constants";
 
 /**
  * Convert string lamports/base units to decimal amount
@@ -32,13 +33,13 @@ export function fromBaseUnits(
       const diff = bigAmount - reconstructed;
       const lossPercentage = (Number(diff) / Number(bigAmount)) * 100;
 
-      // Only warn if precision loss > 0.01% (significant loss)
-      if (Math.abs(lossPercentage) > 0.01) {
+      // Only warn if precision loss exceeds threshold
+      if (Math.abs(lossPercentage) > PRECISION_LOSS_THRESHOLD) {
         console.warn(
           `Precision loss detected for amount: ${amount}. ` +
-            `Original: ${bigAmount}, Reconstructed: ${reconstructed}. ` +
-            `Loss: ${lossPercentage.toFixed(4)}%. ` +
-            `Consider using BigInt or Decimal library for this value.`
+          `Original: ${bigAmount}, Reconstructed: ${reconstructed}. ` +
+          `Loss: ${lossPercentage.toFixed(4)}%. ` +
+          `Consider using BigInt or Decimal library for this value.`
         );
       }
     }
@@ -65,8 +66,6 @@ export function toBaseUnits(amount: number, decimals: number = 9): string {
 
 /**
  * Format timestamp string to Date with null safety
- *
- * RESILIENCY PATCH: UTC time handling with null guards
  *
  * @param timestamp - ISO 8601 string or Unix epoch string (seconds)
  * @returns Date object or null

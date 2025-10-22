@@ -3,21 +3,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
 import { hasStatusCode } from "@/lib/api/type-guards";
+import { calculateRetryDelay } from "@/lib/constants";
 
 /**
  * React Query Provider for the application
  *
  * Provides React Query client to all components.
  *
- * RESILIENCY FEATURES:
- * - SSR hydration safety (useState for client instantiation)
- * - Optimized for backend API integration
- * - Smart retry logic (5xx only)
- * - Exponential backoff
- * - Reconnect on network restore
  */
 export function ReactQueryProvider({ children }: { children: ReactNode }) {
-  // RESILIENCY PATCH: SSR hydration safety
   // Create a client per component tree to avoid state sharing
   const [queryClient] = useState(
     () =>
@@ -35,15 +29,18 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
             // Smart retry logic: only retry on 5xx errors
             retry: (failureCount, error: unknown) => {
               // Don't retry if statusCode is 4xx (client errors)
-              if (hasStatusCode(error) && error.statusCode >= 400 && error.statusCode < 500) {
+              if (
+                hasStatusCode(error) &&
+                error.statusCode >= 400 &&
+                error.statusCode < 500
+              ) {
                 return false;
               }
               // Retry up to 3 times for 5xx or network errors
               return failureCount < 3;
             },
             // Exponential backoff
-            retryDelay: (attemptIndex) =>
-              Math.min(1000 * 2 ** attemptIndex, 30000),
+            retryDelay: calculateRetryDelay,
           },
           mutations: {
             // Retry mutations once on network errors only

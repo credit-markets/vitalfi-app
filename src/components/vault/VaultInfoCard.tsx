@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
@@ -10,14 +9,16 @@ import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/utils/constants";
 import { Copy, ExternalLink, Info, Eye } from "lucide-react";
 import { toast } from "sonner";
 
+export interface VaultInfoCardProps {
+  vaultId: string;
+}
+
 /**
  * Vault info card with addresses and facts
  * Shows: Originator, Cap, Min Investment
  */
-export function VaultInfoCard() {
-  const { info } = useVaultAPI();
-  const params = useParams();
-  const vaultId = params.vaultId as string;
+export function VaultInfoCard({ vaultId }: VaultInfoCardProps) {
+  const { info } = useVaultAPI(vaultId);
 
   // Early return if data not loaded (error state handled by parent)
   if (!info) {

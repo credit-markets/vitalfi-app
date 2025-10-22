@@ -379,10 +379,6 @@ export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
   const fundingEndAt = new Date(maturityDate);
   fundingEndAt.setDate(fundingEndAt.getDate() - 150);
 
-  // Calculate funding start date (45 days before funding end)
-  const fundingStartAt = new Date(fundingEndAt);
-  fundingStartAt.setDate(fundingStartAt.getDate() - 45);
-
   return {
     stage: vault.stage, // Stage is computed dynamically by the hook
     name: vault.title,
@@ -391,7 +387,6 @@ export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
     capSol: vault.cap,
     minInvestmentSol: 100,
     raisedSol: vault.raised,
-    fundingStartAt: fundingStartAt.toISOString(),
     fundingEndAt: fundingEndAt.toISOString(),
     maturityAt: vault.maturityDate,
     originator: vault.originator.name,

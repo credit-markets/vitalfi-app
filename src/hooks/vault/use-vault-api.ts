@@ -4,13 +4,17 @@ import { useMemo } from "react";
 import { VaultEvent, VaultFundingInfo } from "@/types/vault";
 import { useVaultsAPI, useActivityAPI } from "@/hooks/api";
 import {
-  getDefaultVault,
-  getNetworkConfig,
   VITALFI_VAULT_PROGRAM_ID,
   getVaultPda,
   getCurrentNetwork,
 } from "@/lib/sdk";
 import { fromBaseUnits, parseTimestamp, toISOString } from "@/lib/api/formatters";
+import { mapVaultStatusToStage } from "@/lib/api/backend";
+import { getTokenDecimals } from "@/lib/sdk/config";
+import { env } from "@/lib/env";
+import { SOL_DECIMALS, DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
+import BN from "bn.js";
+import { PublicKey } from "@solana/web3.js";
 
 // Computed values derived from vault info
 interface ComputedVaultData {
@@ -34,34 +38,12 @@ export interface UseVaultReturn {
  * Hook for funding vault data and computed values (API-backed)
  *
  * Fetches vault data from backend API with ETag/304 caching.
- * Falls back to default vault if no vaultId is provided.
  *
- * RESILIENCY FEATURES:
- * - Decimals-aware formatting (supports non-SOL tokens)
- * - UTC time handling with null guards
- * - Stable query keys
- * - Abort signal support
+ * @param vaultId - The vault ID to fetch (required)
  */
-export function useVaultAPI(): UseVaultReturn {
-  // Get vault configuration
-  const vaultConfig = useMemo(() => {
-    try {
-      return getDefaultVault();
-    } catch (err) {
-      console.error("Failed to get vault config:", err);
-      return null;
-    }
-  }, []);
-
-  // Get network authority
-  const networkConfig = useMemo(() => {
-    try {
-      return getNetworkConfig();
-    } catch (err) {
-      console.error("Failed to get network config:", err);
-      return null;
-    }
-  }, []);
+export function useVaultAPI(vaultId: string): UseVaultReturn {
+  // Get authority from environment
+  const authority = env.vaultAuthority;
 
   // Fetch vaults from backend API
   const {
@@ -69,73 +51,64 @@ export function useVaultAPI(): UseVaultReturn {
     isLoading,
     error: fetchError,
   } = useVaultsAPI({
-    authority: networkConfig?.authority.toBase58() || "",
+    authority,
     status: undefined,
-    limit: 10,
-    enabled: !!vaultConfig && !!networkConfig,
+    limit: 100,
+    enabled: !!authority,
   });
 
   // Find the specific vault by vaultId
   const vaultDTO = useMemo(() => {
-    if (!vaultsResponse || !vaultConfig) return null;
-    return vaultsResponse.items.find(
-      (v) => v.vaultId === vaultConfig.id.toString()
-    );
-  }, [vaultsResponse, vaultConfig]);
+    if (!vaultsResponse) return null;
+    return vaultsResponse.items.find((v) => v.vaultId === vaultId);
+  }, [vaultsResponse, vaultId]);
 
   // Derive vault PDA
   const vaultPda = useMemo(() => {
-    if (!networkConfig || !vaultConfig) return null;
-    const [pda] = getVaultPda(networkConfig.authority, vaultConfig.id);
-    return pda;
-  }, [networkConfig, vaultConfig]);
+    if (!vaultDTO || !authority) return null;
+    try {
+      const authorityPubkey = new PublicKey(authority);
+      const vaultIdBN = new BN(vaultId);
+      const [pda] = getVaultPda(authorityPubkey, vaultIdBN);
+      return pda;
+    } catch (err) {
+      console.error("Failed to derive vault PDA:", err);
+      return null;
+    }
+  }, [vaultDTO, authority, vaultId]);
 
   // Transform DTO to UI format
   const info = useMemo<VaultFundingInfo | null>(() => {
-    if (!vaultDTO || !vaultConfig || !networkConfig || !vaultPda) return null;
+    if (!vaultDTO || !vaultPda) return null;
 
-    // RESILIENCY PATCH: Decimals-aware formatting
-    // Assume 9 decimals for SOL (could be extended to read from asset mint metadata)
-    const decimals = 9;
+    const decimals = vaultDTO.assetMint ? getTokenDecimals(vaultDTO.assetMint) : SOL_DECIMALS;
 
     // Map backend status to UI stage
-    let stage: VaultFundingInfo["stage"] = "Funding";
-    if (vaultDTO.status === "Matured") {
-      stage = "Matured";
-    } else if (vaultDTO.status === "Active") {
-      stage = "Funded";
-    } else if (vaultDTO.status === "Canceled") {
-      stage = "Funding"; // Or add 'Canceled' stage if needed
-    }
+    const stage = mapVaultStatusToStage(vaultDTO.status);
 
-    // RESILIENCY PATCH: UTC time handling with null guards
     const fundingEndDate = parseTimestamp(vaultDTO.fundingEndTs);
     const maturityDate = parseTimestamp(vaultDTO.maturityTs);
-    const fundingStartDate = fundingEndDate
-      ? new Date(fundingEndDate.getTime() - 30 * 24 * 60 * 60 * 1000)
-      : null;
 
     return {
       stage,
-      name: vaultConfig.name,
+      name: vaultId,
       expectedApyPct: vaultDTO.targetApyBps ? vaultDTO.targetApyBps / 100 : 0,
       tvlSol: fromBaseUnits(vaultDTO.totalDeposited, decimals),
       capSol: fromBaseUnits(vaultDTO.cap, decimals),
       minInvestmentSol: fromBaseUnits(vaultDTO.minDeposit, decimals),
       raisedSol: fromBaseUnits(vaultDTO.totalDeposited, decimals),
-      fundingStartAt: toISOString(fundingStartDate),
       fundingEndAt: toISOString(fundingEndDate),
       maturityAt: toISOString(maturityDate),
-      originator: "VitalFi",
+      originator: DEFAULT_ORIGINATOR.name,
       addresses: {
         programId: VITALFI_VAULT_PROGRAM_ID.toBase58(),
         vaultPda: vaultDTO.vaultPda,
         authorityPda: vaultDTO.authority,
         tokenMint: vaultDTO.assetMint || "",
-        vaultTokenAccount: "", // Not in DTO - add if needed
+        vaultTokenAccount: vaultDTO.vaultTokenAccount,
       },
     };
-  }, [vaultDTO, vaultConfig, networkConfig, vaultPda]);
+  }, [vaultDTO, vaultPda, vaultId]);
 
   // Fetch activity from backend
   const { data: activityResponse } = useActivityAPI({
@@ -153,15 +126,15 @@ export function useVaultAPI(): UseVaultReturn {
     const cluster = network === "mainnet-beta" ? "" : `?cluster=${network}`;
 
     return activityResponse.items.map((activity) => {
-      const decimals = 9; // TODO: Get from asset mint
+      const decimals = activity.assetMint ? getTokenDecimals(activity.assetMint) : SOL_DECIMALS;
       return {
         id: activity.id,
         tag:
           activity.type === "deposit"
             ? "Deposit"
             : activity.type === "claim"
-            ? "Claim"
-            : "Params",
+              ? "Claim"
+              : "Params",
         ts: activity.blockTime || new Date().toISOString(),
         wallet: activity.owner || activity.authority || "Unknown",
         amountSol: fromBaseUnits(activity.amount, decimals),
@@ -173,22 +146,16 @@ export function useVaultAPI(): UseVaultReturn {
   }, [activityResponse]);
 
   const error = useMemo(() => {
-    if (!vaultConfig) {
-      return "No vault configuration found";
-    }
-    if (!networkConfig) {
-      return "Invalid network configuration";
-    }
     if (fetchError) {
       return fetchError instanceof Error
         ? fetchError.message
         : "Failed to fetch vault data";
     }
     if (!isLoading && !vaultDTO) {
-      return "Vault not found";
+      return `${vaultId} not found`;
     }
     return null;
-  }, [vaultConfig, networkConfig, fetchError, isLoading, vaultDTO]);
+  }, [fetchError, isLoading, vaultDTO, vaultId]);
 
   // Compute derived values
   const computed = useMemo(() => {

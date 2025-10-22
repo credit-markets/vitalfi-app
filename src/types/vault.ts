@@ -10,7 +10,6 @@ export interface VaultFundingInfo {
   minInvestmentSol: number;
   raisedSol: number;
   subordinationSol?: number;        // optional
-  fundingStartAt: string;           // ISO
   fundingEndAt: string;             // ISO
   maturityAt: string;               // ISO
   originator: string;               // short label only

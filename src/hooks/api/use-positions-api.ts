@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { listPositions } from "@/lib/api/backend";
+import { calculateRetryDelay } from "@/lib/constants";
 import { hasStatusCode } from "@/lib/api/type-guards";
 import { useMemo } from "react";
 
@@ -14,12 +15,6 @@ export interface UsePositionsAPIParams {
 
 /**
  * Hook to fetch user positions from backend API
- *
- * RESILIENCY FEATURES:
- * - Stable query keys (useMemo for params object)
- * - Abort signal automatically provided by React Query
- * - Retry on 5xx, no retry on 4xx
- * - ETag/304 caching via backend client
  */
 export function usePositionsAPI(params: UsePositionsAPIParams) {
   // RESILIENCY PATCH: Stable query keys
@@ -53,6 +48,6 @@ export function usePositionsAPI(params: UsePositionsAPIParams) {
       return false;
     },
     retryDelay: (attemptIndex) =>
-      Math.min(1000 * 2 ** attemptIndex, 30000),
+      calculateRetryDelay(attemptIndex),
   });
 }

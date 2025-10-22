@@ -13,10 +13,13 @@ import { useSidebar } from "@/providers/SidebarContext";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
+import { useParams } from "next/navigation";
 
 export default function VaultPage() {
   const { isCollapsed } = useSidebar();
-  const { error } = useVaultAPI();
+  const params = useParams();
+  const vaultId = params.vaultId as string;
+  const { error } = useVaultAPI(vaultId);
 
   // Show error state if vault not found
   if (error) {
@@ -70,33 +73,33 @@ export default function VaultPage() {
           </div>
 
           {/* KPI Strip */}
-          <KpiStrip />
+          <KpiStrip vaultId={vaultId} />
 
           {/* Mobile-first stacked layout, desktop two-column */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
             {/* Left column: Vault Overview + Activity Feed */}
             <section className="lg:col-span-7 space-y-4 sm:space-y-6">
-              <VaultOverview />
+              <VaultOverview vaultId={vaultId} />
 
               {/* Activity Feed - hidden on mobile, shown on desktop */}
               <div className="hidden lg:block">
-                <ActivityFeed />
+                <ActivityFeed vaultId={vaultId} />
               </div>
             </section>
 
             {/* Right column: Action Panel + Vault Info (desktop) */}
             <aside className="lg:col-span-5 space-y-4 sm:space-y-6">
-              <ActionPanel />
+              <ActionPanel vaultId={vaultId} />
 
               {/* Vault Info - shown on desktop */}
               <div className="hidden lg:block">
-                <VaultInfoCard />
+                <VaultInfoCard vaultId={vaultId} />
               </div>
 
               {/* Mobile-only sections (shown below ActionPanel) */}
               <div className="lg:hidden space-y-4 sm:space-y-6">
-                <VaultInfoCard />
-                <ActivityFeed />
+                <VaultInfoCard vaultId={vaultId} />
+                <ActivityFeed vaultId={vaultId} />
               </div>
             </aside>
           </div>

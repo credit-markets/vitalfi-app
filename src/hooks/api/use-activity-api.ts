@@ -9,6 +9,7 @@ import {
   ActivityType,
 } from "@/lib/api/backend";
 import { hasStatusCode } from "@/lib/api/type-guards";
+import { calculateRetryDelay } from "@/lib/constants";
 import { useMemo } from "react";
 
 export interface UseActivityAPIParams {
@@ -22,11 +23,6 @@ export interface UseActivityAPIParams {
 
 /**
  * Hook to fetch activity feed (paginated)
- *
- * RESILIENCY FEATURES:
- * - Stable query keys (useMemo for params object)
- * - Abort signal automatically provided by React Query
- * - Activity updates more frequently (15s staleTime)
  */
 export function useActivityAPI(params: UseActivityAPIParams) {
   // RESILIENCY PATCH: Stable query keys
@@ -64,17 +60,12 @@ export function useActivityAPI(params: UseActivityAPIParams) {
       return false;
     },
     retryDelay: (attemptIndex) =>
-      Math.min(1000 * 2 ** attemptIndex, 30000),
+      calculateRetryDelay(attemptIndex),
   });
 }
 
 /**
  * Hook for infinite scroll activity feed
- *
- * RESILIENCY FEATURES:
- * - Proper undefined handling for end-of-list (nextCursor null check)
- * - Stable query keys
- * - Abort signal support
  */
 export function useInfiniteActivity(params: {
   vault?: string;
@@ -122,6 +113,6 @@ export function useInfiniteActivity(params: {
       return false;
     },
     retryDelay: (attemptIndex) =>
-      Math.min(1000 * 2 ** attemptIndex, 30000),
+      calculateRetryDelay(attemptIndex),
   });
 }

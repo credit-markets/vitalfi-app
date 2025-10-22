@@ -8,14 +8,44 @@
  * @see BACKEND_ROUTES_SPEC.md
  */
 
+import { env } from "@/lib/env";
+import type { VaultStage } from "@/types/vault";
+
 // ============================================================================
 // DTOs (matching backend/src/types/dto.ts exactly)
 // ============================================================================
 
 export type VaultStatus = "Funding" | "Active" | "Matured" | "Canceled";
 
+/**
+ * Maps backend VaultStatus to frontend VaultStage
+ *
+ * Backend statuses:
+ * - Funding: Accepting deposits
+ * - Active: Funded, authority has withdrawn funds
+ * - Canceled: Funding failed (< 2/3 cap), users can claim refunds
+ * - Matured: Vault matured, users can claim payouts
+ *
+ * Frontend stages:
+ * - Funding: Vault is accepting deposits
+ * - Funded: Vault is active and funded
+ * - Matured: Vault has matured
+ * - Closed: Vault is canceled (funding failed)
+ */
+export function mapVaultStatusToStage(status: VaultStatus): VaultStage {
+  const mapping: Record<VaultStatus, VaultStage> = {
+    'Funding': 'Funding',
+    'Active': 'Funded',
+    'Matured': 'Matured',
+    'Canceled': 'Closed',  // Funding failed - show as closed to users
+  };
+
+  return mapping[status] || 'Funding'; // Safe default
+}
+
 export interface VaultDTO {
   vaultPda: string;
+  vaultTokenAccount: string;
   authority: string;
   vaultId: string;
   assetMint: string | null;
@@ -210,20 +240,29 @@ interface ApiFetchOptions extends RequestInit {
   retryOn304?: boolean; // Retry without ETag if 304 fails (first-load edge case)
 }
 
+/**
+ * Normalize endpoint for consistent cache keys
+ * Sorts query parameters to prevent cache misses from parameter reordering
+ */
+function normalizeEndpoint(endpoint: string): string {
+  const [path, query] = endpoint.split('?');
+  if (!query) return endpoint;
+
+  const params = new URLSearchParams(query);
+  // Sort parameters alphabetically for consistent cache keys
+  const sorted = Array.from(params.entries())
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  return `${path}?${new URLSearchParams(sorted).toString()}`;
+}
+
 async function apiFetch<T>(
   endpoint: string,
   options?: ApiFetchOptions
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_VITALFI_API_URL;
-  if (!baseUrl) {
-    throw new BackendApiError(
-      "NEXT_PUBLIC_VITALFI_API_URL not configured",
-      0
-    );
-  }
-
+  const baseUrl = env.backendUrl;
   const url = `${baseUrl}${endpoint}`;
-  const cacheKey = options?.cacheKey || endpoint;
+  const cacheKey = options?.cacheKey || normalizeEndpoint(endpoint);
 
   // Add ETag header if cached
   const cachedEtag = getEtagFromCache(cacheKey);
@@ -258,7 +297,6 @@ async function apiFetch<T>(
         return cached;
       }
 
-      // RESILIENCY PATCH: 304 fallback retry
       // If we get 304 but have no cached data (first-load edge case),
       // retry without ETag header
       if (options?.retryOn304 !== false) {

@@ -6,12 +6,16 @@ import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 
+export interface KpiStripProps {
+  vaultId: string;
+}
+
 /**
  * Compact KPI strip for funding vault
  * Shows 4 cards only: TVL, Expected APY, Cap Remaining, Days to Maturity
  */
-export function KpiStrip() {
-  const { info, computed } = useVaultAPI();
+export function KpiStrip({ vaultId }: KpiStripProps) {
+  const { info, computed } = useVaultAPI(vaultId);
 
   // Early return if data not loaded (error state handled by parent)
   if (!info || !computed) {
