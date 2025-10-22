@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatCompactCurrency } from "@/lib/formatters";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
 import {
   Download,
   ExternalLink,

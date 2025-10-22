@@ -2,17 +2,21 @@
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useFundingVault } from "@/hooks/useFundingVault";
-import { formatCompactCurrency } from "@/lib/formatters";
-import { getStageColors } from "@/lib/vault-colors";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { getStageColors } from "@/lib/utils/colors";
 import { formatDate, pluralize, cn } from "@/lib/utils";
+
+export interface VaultOverviewProps {
+  vaultId: string;
+}
 
 /**
  * Vault Overview with single gradient progress bar and 4-item info row
  * Header includes stage pill; no subordination or duplicate data
  */
-export function VaultOverview() {
-  const { info, computed } = useFundingVault();
+export function VaultOverview({ vaultId }: VaultOverviewProps) {
+  const { info, computed } = useVaultAPI(vaultId);
 
   // Early return if data not loaded (error state handled by parent)
   if (!info || !computed) {

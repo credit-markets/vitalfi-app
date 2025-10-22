@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
-import { formatCompactCurrency } from "@/lib/formatters";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { DollarSign, TrendingUp, Target, Calendar } from "lucide-react";
-import type { PortfolioSummary, PortfolioPosition } from "@/hooks/usePortfolio";
+import type { PortfolioSummary, PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 import { getNextMaturity, getStageBreakdown } from "@/lib/portfolio/selectors";
 import { pluralize } from "@/lib/utils";
 

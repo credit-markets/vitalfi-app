@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, User, ChevronLeft, ChevronRight, ExternalLink, FileText, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSidebar } from "@/contexts/SidebarContext";
+import { useSidebar } from "@/providers/SidebarContext";
 
 export function Sidebar() {
   const { isCollapsed, setIsCollapsed } = useSidebar();

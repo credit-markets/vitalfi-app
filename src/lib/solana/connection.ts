@@ -1,8 +1,9 @@
 import { Connection, clusterApiUrl, Commitment } from "@solana/web3.js";
+import { env } from "@/lib/env";
 
-export const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet";
+export const SOLANA_NETWORK = env.solanaNetwork;
 export const SOLANA_RPC_ENDPOINT =
-  process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT || clusterApiUrl(SOLANA_NETWORK as "devnet" | "testnet" | "mainnet-beta");
+  env.solanaRpc || clusterApiUrl(SOLANA_NETWORK as "devnet" | "testnet" | "mainnet-beta");
 
 export const DEFAULT_COMMITMENT: Commitment = "confirmed";
 

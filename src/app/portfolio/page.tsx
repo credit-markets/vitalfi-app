@@ -7,23 +7,28 @@ import { PortfolioHeader } from "@/components/portfolio/PortfolioHeader";
 import { PositionCard } from "@/components/portfolio/PositionCard";
 import { ActivityTable } from "@/components/portfolio/ActivityTable";
 import { Timeline } from "@/components/portfolio/Timeline";
-import { usePortfolio } from "@/hooks/usePortfolio";
-import { useSidebar } from "@/contexts/SidebarContext";
+import { usePortfolioAPI } from "@/hooks/vault/use-portfolio-api";
+import { useSidebar } from "@/providers/SidebarContext";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Wallet as WalletIcon } from "lucide-react";
-import { toast } from "sonner";
-import type { PortfolioPosition } from "@/hooks/usePortfolio";
+import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
+import { useClaim } from "@/hooks/mutations";
+import { env } from "@/lib/env";
+import BN from "bn.js";
+import { PublicKey } from "@solana/web3.js";
 
 type StageFilter = "all" | "Funding" | "Funded" | "Matured";
 
 export default function PortfolioPage() {
   const { isCollapsed } = useSidebar();
-  const { summary, positions, activity, connected } = usePortfolio();
+  const { summary, positions, activity, connected, vaults } = usePortfolioAPI();
+
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [highlightedVault, setHighlightedVault] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const claim = useClaim();
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -35,8 +40,37 @@ export default function PortfolioPage() {
   }, []);
 
   const handleClaim = async (vaultId: string) => {
-    // TODO: Implement actual claim transaction
-    toast.success(`Claim initiated for vault ${vaultId}`);
+    // Prevent race conditions from double-clicks
+    if (claim.isPending) return;
+
+    try {
+      // Find vault to get assetMint
+      const vault = vaults.find(v => v.vaultId === vaultId);
+      if (!vault) {
+        throw new Error(`Vault ${vaultId} not found`);
+      }
+
+      if (!vault.assetMint) {
+        throw new Error(`Vault ${vaultId} has no asset mint`);
+      }
+
+      // Get authority and prepare transaction params
+      const authority = new PublicKey(env.vaultAuthority);
+      const vaultIdBN = new BN(vaultId);
+      const assetMint = new PublicKey(vault.assetMint);
+
+      // Execute claim transaction
+      await claim.mutateAsync({
+        vaultId: vaultIdBN,
+        authority,
+        assetMint,
+      });
+
+      // Success - toast notification is automatic
+    } catch (error) {
+      // Error toast is automatic
+      console.error("Claim failed:", error);
+    }
   };
 
   const scrollToVault = (vaultId: string) => {
@@ -154,7 +188,11 @@ export default function PortfolioPage() {
                     highlightedVault === position.vaultId && "ring-2 ring-primary/50"
                   )}
                 >
-                  <PositionCard position={position} onClaim={handleClaim} />
+                  <PositionCard
+                    position={position}
+                    onClaim={handleClaim}
+                    claimPending={claim.isPending}
+                  />
                 </div>
               ))}
             </div>

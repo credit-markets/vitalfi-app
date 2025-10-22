@@ -13,13 +13,14 @@ interface StageFilterProps {
     Funding: number;
     Funded: number;
     Matured: number;
+    Closed: number;
   };
   className?: string;
 }
 
 // Type guard to validate StageFilterValue at runtime
 function isStageFilterValue(value: string): value is StageFilterValue {
-  return value === 'all' || value === 'Funding' || value === 'Funded' || value === 'Matured';
+  return value === 'all' || value === 'Funding' || value === 'Funded' || value === 'Matured' || value === 'Closed';
 }
 
 export function StageFilter({ value, onValueChange, counts, className }: StageFilterProps) {
@@ -47,6 +48,10 @@ export function StageFilter({ value, onValueChange, counts, className }: StageFi
         <TabsTrigger value="Matured">
           Matured
           {counts && <span className="ml-1.5 text-xs opacity-70">({counts.Matured})</span>}
+        </TabsTrigger>
+        <TabsTrigger value="Closed">
+          Closed
+          {counts && <span className="ml-1.5 text-xs opacity-70">({counts.Closed})</span>}
         </TabsTrigger>
       </TabsList>
     </Tabs>
