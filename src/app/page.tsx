@@ -14,9 +14,10 @@ import { mapVaultStatusToStage } from "@/lib/api/backend";
 import { getTokenDecimals } from "@/lib/sdk/config";
 import type { VaultSummary } from "@/types/vault";
 import { SOL_DECIMALS, DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
+import { env } from "@/lib/env";
 
-// Get authority from environment or use default
-const AUTHORITY = process.env.NEXT_PUBLIC_VAULT_AUTHORITY || "";
+// Get authority from centralized environment configuration
+const AUTHORITY = env.vaultAuthority;
 
 export default function Home() {
   const { isCollapsed } = useSidebar();
@@ -38,7 +39,9 @@ export default function Home() {
     if (!vaultsResponse) return [];
 
     return vaultsResponse.items.map((vault) => {
-      const decimals = vault.assetMint ? getTokenDecimals(vault.assetMint) : SOL_DECIMALS;
+      const decimals = vault.assetMint
+        ? getTokenDecimals(vault.assetMint)
+        : SOL_DECIMALS;
       const raised = fromBaseUnits(vault.totalDeposited, decimals);
       const cap = fromBaseUnits(vault.cap, decimals);
 

@@ -105,18 +105,45 @@ export function usePortfolioAPI() {
       const claimedSol = fromBaseUnits(position.claimed, decimals);
 
       // Calculate realized yield for matured vaults
-      // Note: Backend doesn't provide payout_num/payout_den yet
-      // This would need to be added to VaultDTO
       let realizedYieldSol: number | undefined;
       let realizedTotalSol: number | undefined;
       let canClaim = false;
 
       if (stage === "Matured") {
-        // TODO: Calculate from vault.payoutNum / vault.payoutDen when available
-        // For now, assume 1:1 payout (no yield)
-        realizedTotalSol = depositedSol;
-        realizedYieldSol = 0;
-        canClaim = claimedSol < depositedSol;
+        // Calculate actual payout using vault.payoutNum / vault.payoutDen
+        // Formula: userPayout = floor(deposited * payoutNum / payoutDen)
+        // Example: deposited 400, payoutNum=770, payoutDen=700 → 440 (57.1% return)
+
+        if (vault.payoutNum && vault.payoutDen) {
+          // Parse payout ratio from strings (u128 values)
+          const payoutNum = BigInt(vault.payoutNum);
+          const payoutDen = BigInt(vault.payoutDen);
+
+          // Avoid division by zero
+          if (payoutDen > 0n) {
+            // Convert deposited SOL to base units for precise calculation
+            const depositedBaseUnits = BigInt(Math.floor(depositedSol * 10 ** decimals));
+
+            // Calculate payout in base units: floor(deposited * payoutNum / payoutDen)
+            const payoutBaseUnits = (depositedBaseUnits * payoutNum) / payoutDen;
+
+            // Convert back to SOL
+            realizedTotalSol = Number(payoutBaseUnits) / 10 ** decimals;
+            realizedYieldSol = realizedTotalSol - depositedSol;
+            canClaim = claimedSol < realizedTotalSol;
+          } else {
+            // Fallback: payout denominator is 0 (shouldn't happen)
+            realizedTotalSol = depositedSol;
+            realizedYieldSol = 0;
+            canClaim = claimedSol < depositedSol;
+          }
+        } else {
+          // Fallback: payout ratio not set (vault matured before authority called matureVault)
+          // Assume 1:1 payout (no yield)
+          realizedTotalSol = depositedSol;
+          realizedYieldSol = 0;
+          canClaim = claimedSol < depositedSol;
+        }
       }
 
       const fundingEndDate = parseTimestamp(vault.fundingEndTs);

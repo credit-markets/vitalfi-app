@@ -14,6 +14,7 @@ import { TrendingUp, AlertCircle, Info } from "lucide-react";
 import { useWalletBalance } from "@/hooks/wallet/use-wallet-balance";
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
+import { NATIVE_MINT } from "@solana/spl-token";
 
 export interface ActionPanelProps {
   vaultId: string;
@@ -74,7 +75,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
       const vaultIdBN = new BN(vaultId);
       const assetMint = info.addresses.tokenMint
         ? new PublicKey(info.addresses.tokenMint)
-        : new PublicKey("So11111111111111111111111111111111111111112"); // SOL
+        : NATIVE_MINT; // Native SOL wrapped token
 
       // Convert amount to base units using token decimals
       const decimals = getTokenDecimals(assetMint);

@@ -57,6 +57,8 @@ export interface VaultDTO {
   minDeposit: string | null;
   fundingEndTs: string | null;
   maturityTs: string | null;
+  payoutNum: string | null; // Payout numerator (u128 as string)
+  payoutDen: string | null; // Payout denominator (u128 as string)
   slot: number | null;
   updatedAt: string; // ISO 8601
   updatedAtEpoch: number; // Unix epoch for cursors
