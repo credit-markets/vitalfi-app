@@ -3,21 +3,22 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCompactCurrency } from "@/lib/formatters";
-import { getStageColors } from "@/lib/vault-colors";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { getStageColors } from "@/lib/utils/colors";
 import { formatDate, daysUntil, expectedYieldSol, cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
-import type { PortfolioPosition } from "@/hooks/usePortfolio";
+import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 
 interface PositionCardProps {
   position: PortfolioPosition;
   onClaim?: (vaultId: string) => void;
+  claimPending?: boolean;
 }
 
 /**
  * Position card showing vault investment with timeline and projected/realized returns
  */
-export function PositionCard({ position, onClaim }: PositionCardProps) {
+export function PositionCard({ position, onClaim, claimPending }: PositionCardProps) {
   const {
     vaultId,
     vaultName,
@@ -137,10 +138,10 @@ export function PositionCard({ position, onClaim }: PositionCardProps) {
             ) : (
               <Button
                 className="w-full text-sm"
-                disabled={!canClaim}
+                disabled={!canClaim || claimPending}
                 onClick={() => onClaim?.(vaultId)}
               >
-                {canClaim ? "Claim" : "Claim Not Available"}
+                {claimPending ? "Processing..." : canClaim ? "Claim" : "Claim Not Available"}
               </Button>
             )}
           </>

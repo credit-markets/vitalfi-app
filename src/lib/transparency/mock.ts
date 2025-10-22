@@ -8,7 +8,6 @@ import type {
   OriginatorInfo,
   VaultFundingInfo,
 } from "@/types/vault";
-import { trackWarning } from "@/lib/error-tracking";
 import { MOCK_ADDRESSES } from "@/lib/solana/mock-data";
 
 // Mock originators
@@ -36,7 +35,7 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
 
   // Validate date
   if (isNaN(maturity.getTime())) {
-    trackWarning('Invalid maturity date detected', { maturityDate });
+    console.warn('Invalid maturity date detected', { maturityDate });
     return {}; // Return empty object if invalid date
   }
 
@@ -380,22 +379,19 @@ export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
   const fundingEndAt = new Date(maturityDate);
   fundingEndAt.setDate(fundingEndAt.getDate() - 150);
 
-  // Calculate funding start date (45 days before funding end)
-  const fundingStartAt = new Date(fundingEndAt);
-  fundingStartAt.setDate(fundingStartAt.getDate() - 45);
-
   return {
     stage: vault.stage, // Stage is computed dynamically by the hook
     name: vault.title,
     expectedApyPct: vault.targetApy * 100, // Convert decimal to percentage
-    tvlSol: vault.raised,
     capSol: vault.cap,
     minInvestmentSol: 100,
     raisedSol: vault.raised,
-    fundingStartAt: fundingStartAt.toISOString(),
+    totalClaimedSol: 0,
     fundingEndAt: fundingEndAt.toISOString(),
     maturityAt: vault.maturityDate,
     originator: vault.originator.name,
+    payoutNum: null,
+    payoutDen: null,
     addresses: MOCK_ADDRESSES,
   };
 }

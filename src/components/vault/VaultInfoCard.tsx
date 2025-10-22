@@ -1,23 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useFundingVault } from "@/hooks/useFundingVault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { shortenAddress } from "@/lib/utils";
-import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/constants";
+import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/utils/constants";
 import { Copy, ExternalLink, Info, Eye } from "lucide-react";
 import { toast } from "sonner";
+
+export interface VaultInfoCardProps {
+  vaultId: string;
+}
 
 /**
  * Vault info card with addresses and facts
  * Shows: Originator, Cap, Min Investment
  */
-export function VaultInfoCard() {
-  const { info } = useFundingVault();
-  const params = useParams();
-  const vaultId = params.vaultId as string;
+export function VaultInfoCard({ vaultId }: VaultInfoCardProps) {
+  const { info } = useVaultAPI(vaultId);
 
   // Early return if data not loaded (error state handled by parent)
   if (!info) {
@@ -32,7 +33,7 @@ export function VaultInfoCard() {
   const addresses = [
     { label: "Program ID", value: info.addresses.programId },
     { label: "Vault PDA", value: info.addresses.vaultPda },
-    { label: "Authority PDA", value: info.addresses.authorityPda },
+    { label: "Authority", value: info.addresses.authority },
     { label: "Token Mint", value: info.addresses.tokenMint },
     { label: "Asset Account", value: info.addresses.vaultTokenAccount },
   ];

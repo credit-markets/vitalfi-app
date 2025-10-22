@@ -3,8 +3,8 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCompactCurrency } from "@/lib/formatters";
-import { getStageColors } from "@/lib/vault-colors";
+import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { getStageColors } from "@/lib/utils/colors";
 import { ArrowRight, Calendar, Target, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";

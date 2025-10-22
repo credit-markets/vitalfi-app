@@ -10,9 +10,8 @@ import { HedgeCard } from "@/components/transparency/HedgeCard";
 import { DocumentsList } from "@/components/transparency/DocumentsList";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import { useSidebar } from "@/contexts/SidebarContext";
+import { useSidebar } from "@/providers/SidebarContext";
 import { getVaultTransparency, exportReceivablesCsv } from "@/lib/transparency/api";
-import { trackError } from "@/lib/error-tracking";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -56,7 +55,7 @@ export default function VaultTransparencyDetail() {
       } catch (err) {
         if (!cancelled) {
           const error = err instanceof Error ? err : new Error('Failed to load vault data');
-          trackError(error, { vaultId, context: 'loadVaultTransparency' });
+          console.error('Error loading vault transparency:', error, { vaultId });
           setError(error.message);
         }
       } finally {
@@ -91,7 +90,7 @@ export default function VaultTransparencyDetail() {
       setTimeout(() => window.URL.revokeObjectURL(url), SAFARI_DOWNLOAD_DELAY_MS);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to export CSV');
-      trackError(error, { vaultId, receivablesCount: receivables.length, context: 'exportCsv' });
+      console.error('Error exporting CSV:', error, { vaultId, receivablesCount: receivables.length });
       toast.error(error.message, {
         description: 'Please try again or contact support if the issue persists.',
       });

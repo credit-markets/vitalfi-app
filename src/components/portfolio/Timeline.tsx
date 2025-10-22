@@ -1,7 +1,7 @@
 "use client";
 
 import { Calendar, TrendingUp } from "lucide-react";
-import type { PortfolioPosition } from "@/hooks/usePortfolio";
+import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 import { getUpcomingEvents } from "@/lib/portfolio/selectors";
 import { formatDate } from "@/lib/utils";
 

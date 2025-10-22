@@ -1,4 +1,4 @@
-import type { PortfolioPosition } from "@/hooks/usePortfolio";
+import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 import { daysUntil } from "@/lib/utils";
 
 /**

@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Button } from "./button";
-import { trackError } from "@/lib/error-tracking";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -29,7 +28,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Track error with React error info context
-    trackError(error, {
+    console.error(error, {
       componentStack: errorInfo.componentStack,
       errorBoundary: 'ErrorBoundary',
     });
@@ -49,7 +48,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       });
     } else {
       // Track reload event before showing confirmation
-      trackError(new Error('ErrorBoundary: Full page reload triggered after failed retries'), {
+      console.error(new Error('ErrorBoundary: Full page reload triggered after failed retries'), {
         originalError: error?.message,
         retryCount,
       });

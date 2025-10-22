@@ -5,19 +5,31 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useFundingVault } from "@/hooks/useFundingVault";
+import { useVaultAPI } from "@/hooks/vault/use-vault-api";
+import { useDeposit } from "@/hooks/mutations";
+import { env } from "@/lib/env";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { getTokenDecimals } from "@/lib/sdk/config";
 import { TrendingUp, AlertCircle, Info } from "lucide-react";
-import { toast } from "sonner";
+import { useWalletBalance } from "@/hooks/wallet/use-wallet-balance";
+import BN from "bn.js";
+import { PublicKey } from "@solana/web3.js";
+import { NATIVE_MINT } from "@solana/spl-token";
+
+export interface ActionPanelProps {
+  vaultId: string;
+}
 
 /**
  * Single action panel for vault participation (deposits only during funding)
  * Disabled states: "Funding closed" or "Cap reached"
  */
-export function ActionPanel() {
+export function ActionPanel({ vaultId }: ActionPanelProps) {
   const { connected } = useWallet();
-  const { info, computed } = useFundingVault();
+  const { info, computed } = useVaultAPI(vaultId);
   const [depositAmount, setDepositAmount] = useState("");
+  const deposit = useDeposit();
+  const { data: walletBalance = 0 } = useWalletBalance();
 
   // Early return if data not loaded (error state handled by parent)
   if (!info || !computed) {
@@ -55,11 +67,34 @@ export function ActionPanel() {
   const disabledMessage = getDisabledMessage();
 
   const handleDeposit = async () => {
-    if (!isValid) return;
+    if (!isValid || !info) return;
 
-    // TODO: Actual transaction logic here
-    toast.success(`Deposited ${amountNum.toFixed(2)} SOL successfully!`);
-    setDepositAmount("");
+    try {
+      // Get vault configuration from backend API data
+      const authority = new PublicKey(env.vaultAuthority);
+      const vaultIdBN = new BN(vaultId);
+      const assetMint = info.addresses.tokenMint
+        ? new PublicKey(info.addresses.tokenMint)
+        : NATIVE_MINT; // Native SOL wrapped token
+
+      // Convert amount to base units using token decimals
+      const decimals = getTokenDecimals(assetMint);
+      const baseUnits = new BN(Math.floor(amountNum * 10 ** decimals));
+
+      // Execute deposit transaction
+      await deposit.mutateAsync({
+        vaultId: vaultIdBN,
+        authority,
+        amount: baseUnits,
+        assetMint,
+      });
+
+      // Success - clear input (toast notification is automatic)
+      setDepositAmount("");
+    } catch (error) {
+      // Error toast is automatic
+      console.error("Deposit failed:", error);
+    }
   };
 
   return (
@@ -99,12 +134,11 @@ export function ActionPanel() {
                 <button
                   className="text-xs text-foreground hover:underline active:underline touch-manipulation p-1"
                   onClick={() => {
-                    // Mock max balance - in production would use actual wallet balance
-                    const maxDeposit = Math.min(100, computed.capRemainingSol);
-                    setDepositAmount(maxDeposit.toString());
+                    const maxDeposit = Math.min(walletBalance, computed.capRemainingSol);
+                    setDepositAmount(maxDeposit.toFixed(4));
                   }}
                 >
-                  Max: 100 SOL
+                  Max: {formatCurrency(walletBalance)} SOL
                 </button>
               )}
             </div>
@@ -184,10 +218,12 @@ export function ActionPanel() {
           <Button
             className="w-full h-12 text-base touch-manipulation"
             size="lg"
-            disabled={!isValid || !!disabledMessage}
+            disabled={!isValid || !!disabledMessage || deposit.isPending}
             onClick={handleDeposit}
           >
-            {!connected
+            {deposit.isPending
+              ? "Processing..."
+              : !connected
               ? "Connect Wallet"
               : disabledMessage
               ? disabledMessage.title
