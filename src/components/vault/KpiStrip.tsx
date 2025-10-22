@@ -25,8 +25,8 @@ export function KpiStrip({ vaultId }: KpiStripProps) {
   const kpis = [
     {
       label: "TVL",
-      value: formatCompactCurrency(info.tvlSol),
-      tooltip: `Total Value Locked: ${formatCompactCurrency(info.tvlSol)} SOL`,
+      value: formatCompactCurrency(info.raisedSol),
+      tooltip: `Total Value Locked: ${formatCompactCurrency(info.raisedSol)} SOL`,
       icon: DollarSign,
     },
     {

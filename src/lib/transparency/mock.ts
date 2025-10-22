@@ -383,13 +383,15 @@ export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
     stage: vault.stage, // Stage is computed dynamically by the hook
     name: vault.title,
     expectedApyPct: vault.targetApy * 100, // Convert decimal to percentage
-    tvlSol: vault.raised,
     capSol: vault.cap,
     minInvestmentSol: 100,
     raisedSol: vault.raised,
+    totalClaimedSol: 0,
     fundingEndAt: fundingEndAt.toISOString(),
     maturityAt: vault.maturityDate,
     originator: vault.originator.name,
+    payoutNum: null,
+    payoutDen: null,
     addresses: MOCK_ADDRESSES,
   };
 }

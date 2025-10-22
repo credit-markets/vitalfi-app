@@ -4,10 +4,8 @@ import { useState, useMemo } from "react";
 import { VaultCard } from "@/components/transparency/VaultCard";
 import { StatsFilterBar } from "./StatsFilterBar";
 import type { StageFilterValue } from "./StageFilter";
-import type { VaultSummary, VaultStage } from "@/types/vault";
-
-// Stages that are tracked in the filter (excludes 'Closed')
-const TRACKED_STAGES: VaultStage[] = ['Funding', 'Funded', 'Matured'] as const;
+import type { VaultSummary } from "@/types/vault";
+import { VAULT_STAGES } from "@/types/vault";
 
 interface VaultsClientWrapperProps {
   vaults: VaultSummary[];
@@ -37,11 +35,11 @@ export function VaultsClientWrapper({ vaults, totalTvl, activeCount }: VaultsCli
 
   // Calculate counts for each stage using a single pass
   const counts = useMemo(() => {
-    const result = { all: 0, Funding: 0, Funded: 0, Matured: 0 };
+    const result = { all: 0, Funding: 0, Funded: 0, Matured: 0, Closed: 0 };
     validVaults.forEach(v => {
       result.all++;
-      // Only count stages that are tracked in the filter
-      if (TRACKED_STAGES.includes(v.stage)) {
+      // Count all valid vault stages
+      if (VAULT_STAGES.includes(v.stage as typeof VAULT_STAGES[number])) {
         result[v.stage as keyof typeof result]++;
       }
     });

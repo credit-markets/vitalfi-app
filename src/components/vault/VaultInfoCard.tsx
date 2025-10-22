@@ -33,7 +33,7 @@ export function VaultInfoCard({ vaultId }: VaultInfoCardProps) {
   const addresses = [
     { label: "Program ID", value: info.addresses.programId },
     { label: "Vault PDA", value: info.addresses.vaultPda },
-    { label: "Authority PDA", value: info.addresses.authorityPda },
+    { label: "Authority", value: info.addresses.authority },
     { label: "Token Mint", value: info.addresses.tokenMint },
     { label: "Asset Account", value: info.addresses.vaultTokenAccount },
   ];

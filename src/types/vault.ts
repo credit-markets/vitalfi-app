@@ -1,22 +1,26 @@
 
-export type VaultStage = 'Funding' | 'Funded' | 'Matured' | 'Closed';
+// Vault stages - single source of truth
+export const VAULT_STAGES = ['Funding', 'Funded', 'Matured', 'Closed'] as const;
+export type VaultStage = typeof VAULT_STAGES[number];
 
 export interface VaultFundingInfo {
   stage: VaultStage;
   name: string;                     // vault name/title (e.g., "Medical Receivables Brazil Q4 2025")
   expectedApyPct: number;           // e.g., 12.0
-  tvlSol: number;                   // equals raisedSol for clarity
   capSol: number;
   minInvestmentSol: number;
   raisedSol: number;
-  subordinationSol?: number;        // optional
+  totalClaimedSol: number;          // Total amount claimed by users
   fundingEndAt: string;             // ISO
   maturityAt: string;               // ISO
   originator: string;               // short label only
+  // Payout fields for matured vaults
+  payoutNum: string | null;         // Payout numerator (u128 as string)
+  payoutDen: string | null;         // Payout denominator (u128 as string)
   addresses: {
     programId: string;
     vaultPda: string;
-    authorityPda: string;
+    authority: string;              // Authority wallet address (not a PDA)
     tokenMint: string;
     vaultTokenAccount: string;
   };

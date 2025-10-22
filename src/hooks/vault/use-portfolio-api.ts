@@ -9,11 +9,12 @@ import { mapVaultStatusToStage } from "@/lib/api/backend";
 import { getTokenDecimals } from "@/lib/sdk/config";
 import { env } from "@/lib/env";
 import { SOL_DECIMALS, DEFAULT_ORIGINATOR, DEFAULT_COLLATERAL_TYPE } from "@/lib/utils/constants";
+import type { VaultStage } from "@/types/vault";
 
 export type PortfolioPosition = {
   vaultId: string;
   vaultName: string;
-  stage: 'Funding' | 'Funded' | 'Matured' | 'Closed';
+  stage: VaultStage;
   depositedSol: number;
   expectedApyPct: number;
   fundingEndAt: string; // ISO
@@ -32,10 +33,10 @@ export type PortfolioPosition = {
 export type PortfolioActivity = {
   type: 'Deposit' | 'Claim';
   amountSol: number;
-  stage: 'Funding' | 'Funded' | 'Matured' | 'Closed';
+  stage: VaultStage;
   date: string;
   txSig: string;
-  status: 'success' | 'pending' | 'failed';
+  status: 'success'; // Backend only returns confirmed transactions
   vaultId: string;
   vaultName: string;
 };
