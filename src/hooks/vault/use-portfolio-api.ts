@@ -122,8 +122,8 @@ export function usePortfolioAPI() {
 
           // Avoid division by zero
           if (payoutDen > 0n) {
-            // Convert deposited SOL to base units for precise calculation
-            const depositedBaseUnits = BigInt(Math.floor(depositedSol * 10 ** decimals));
+            // Use original deposited amount from DTO (string in base units) to avoid precision loss
+            const depositedBaseUnits = BigInt(position.deposited || '0');
 
             // Calculate payout in base units: floor(deposited * payoutNum / payoutDen)
             const payoutBaseUnits = (depositedBaseUnits * payoutNum) / payoutDen;

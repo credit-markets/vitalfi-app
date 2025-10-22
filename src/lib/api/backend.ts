@@ -347,9 +347,9 @@ async function apiFetch<T>(
 
     return data;
   } catch (error) {
-    // Handle abort errors gracefully
+    // Let React Query handle abort errors naturally (don't wrap)
     if (error instanceof Error && error.name === "AbortError") {
-      throw new BackendApiError("Request aborted", 0, error);
+      throw error;
     }
 
     if (error instanceof BackendApiError) {
