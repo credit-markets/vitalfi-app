@@ -187,7 +187,7 @@ Test on devnet:
 
 ## 📄 License
 
-TBD
+TBD.
 
 ## 🔗 Links
 
