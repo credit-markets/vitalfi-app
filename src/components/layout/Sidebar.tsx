@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, User, ChevronLeft, ChevronRight, ExternalLink, FileText, Shield } from "lucide-react";
+import { BarChart3, User, ChevronLeft, ChevronRight, ExternalLink, FileText, Shield, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/providers/SidebarContext";
 
@@ -13,6 +13,7 @@ export function Sidebar() {
   const navLinks = [
     { name: "Vaults", href: "/", icon: BarChart3 },
     { name: "Portfolio", href: "/portfolio", icon: User },
+    { name: "Admin", href: "/admin", icon: Settings },
   ];
 
   const externalLinks = [

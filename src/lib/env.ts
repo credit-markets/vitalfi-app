@@ -12,7 +12,7 @@ function getEnv(key: string, required = true): string {
     if (required) {
       const isDev = process.env.NODE_ENV === 'development';
       const isBuild = process.env.NEXT_PHASE === 'phase-production-build';
-      
+
       if (isDev || isBuild) {
         console.warn(`⚠️  Missing environment variable: ${key}`);
         return '';
