@@ -5,16 +5,15 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { usePositionsAPI, useVaultsAPI, useActivityAPI } from "@/hooks/api";
 import { expectedYieldSol } from "@/lib/utils";
 import { fromBaseUnits, parseTimestamp } from "@/lib/api/formatters";
-import { mapVaultStatusToStage } from "@/lib/api/backend";
 import { getTokenDecimals } from "@/lib/sdk/config";
 import { env } from "@/lib/env";
 import { SOL_DECIMALS, DEFAULT_ORIGINATOR, DEFAULT_COLLATERAL_TYPE } from "@/lib/utils/constants";
-import type { VaultStage } from "@/types/vault";
+import type { VaultStatus } from "@/types/vault";
 
 export type PortfolioPosition = {
   vaultId: string;
   vaultName: string;
-  stage: VaultStage;
+  status: VaultStatus;
   depositedSol: number;
   expectedApyPct: number;
   fundingEndAt: string; // ISO
@@ -33,7 +32,7 @@ export type PortfolioPosition = {
 export type PortfolioActivity = {
   type: 'Deposit' | 'Claim';
   amountSol: number;
-  stage: VaultStage;
+  vaultStatus: VaultStatus;
   date: string;
   txSig: string;
   status: 'success'; // Backend only returns confirmed transactions
@@ -98,9 +97,6 @@ export function usePortfolioAPI() {
       );
       if (!vault) continue;
 
-      // Map backend status to UI stage
-      const stage = mapVaultStatusToStage(vault.status);
-
       const decimals = vault.assetMint ? getTokenDecimals(vault.assetMint) : SOL_DECIMALS;
       const depositedSol = fromBaseUnits(position.deposited, decimals);
       const claimedSol = fromBaseUnits(position.claimed, decimals);
@@ -110,7 +106,7 @@ export function usePortfolioAPI() {
       let realizedTotalSol: number | undefined;
       let canClaim = false;
 
-      if (stage === "Matured") {
+      if (vault.status === "Matured") {
         // Calculate actual payout using vault.payoutNum / vault.payoutDen
         // Formula: userPayout = floor(deposited * payoutNum / payoutDen)
         // Example: deposited 400, payoutNum=770, payoutDen=700 → 440 (57.1% return)
@@ -155,7 +151,7 @@ export function usePortfolioAPI() {
       results.push({
         vaultId: vault.vaultId,
         vaultName: vault.vaultId,
-        stage,
+        status: vault.status,
         depositedSol,
         expectedApyPct: vault.targetApyBps ? vault.targetApyBps / 100 : 0,
         fundingEndAt: fundingEndDate?.toISOString() || "",
@@ -187,13 +183,10 @@ export function usePortfolioAPI() {
         );
         const decimals = act.assetMint ? getTokenDecimals(act.assetMint) : SOL_DECIMALS;
 
-        // Map backend status to UI stage
-        const stage = vault?.status ? mapVaultStatusToStage(vault.status) : 'Funding';
-
         return {
           type: act.type === "deposit" ? "Deposit" : "Claim",
           amountSol: fromBaseUnits(act.amount, decimals),
-          stage,
+          vaultStatus: vault?.status || 'Funding',
           date: act.blockTime || new Date().toISOString(),
           txSig: act.txSig,
           status: "success" as const, // Confirmed transactions only
@@ -211,7 +204,7 @@ export function usePortfolioAPI() {
     );
 
     const totalExpectedYieldSol = positions
-      .filter((p) => p.stage !== "Matured") // Only count active positions
+      .filter((p) => p.status !== "Matured") // Only count active positions
       .reduce((sum, p) => {
         if (!p.maturityAt) return sum;
         return (

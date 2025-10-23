@@ -48,7 +48,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
 
   // Disabled state messages
   const getDisabledMessage = () => {
-    if (info.stage === "Funded" || info.stage === "Matured") {
+    if (info.status === "Active" || info.status === "Matured") {
       return {
         title: "Funding Closed",
         message:

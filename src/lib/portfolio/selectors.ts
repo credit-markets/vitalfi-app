@@ -5,7 +5,7 @@ import { daysUntil } from "@/lib/utils";
  * Get the next upcoming maturity across all positions
  */
 export function getNextMaturity(positions: PortfolioPosition[]) {
-  const activePositions = positions.filter(p => p.stage !== 'Matured');
+  const activePositions = positions.filter(p => p.status !== 'Matured');
 
   if (activePositions.length === 0) {
     return null;
@@ -25,28 +25,28 @@ export function getNextMaturity(positions: PortfolioPosition[]) {
 }
 
 /**
- * Get stage breakdown percentages (optimized with single-pass reduce)
+ * Get status breakdown percentages (optimized with single-pass reduce)
  */
 export function getStageBreakdown(positions: PortfolioPosition[]) {
   if (positions.length === 0) {
-    return { fundingPct: 0, fundedPct: 0, maturedPct: 0 };
+    return { fundingPct: 0, activePct: 0, maturedPct: 0 };
   }
 
   const counts = positions.reduce(
     (acc, p) => {
-      if (p.stage === 'Funding') acc.funding++;
-      else if (p.stage === 'Funded') acc.funded++;
-      else if (p.stage === 'Matured') acc.matured++;
+      if (p.status === 'Funding') acc.funding++;
+      else if (p.status === 'Active') acc.active++;
+      else if (p.status === 'Matured') acc.matured++;
       return acc;
     },
-    { funding: 0, funded: 0, matured: 0 }
+    { funding: 0, active: 0, matured: 0 }
   );
 
   const total = positions.length;
 
   return {
     fundingPct: Math.round((counts.funding / total) * 100),
-    fundedPct: Math.round((counts.funded / total) * 100),
+    activePct: Math.round((counts.active / total) * 100),
     maturedPct: Math.round((counts.matured / total) * 100),
   };
 }
@@ -65,8 +65,8 @@ export function getUpcomingEvents(positions: PortfolioPosition[]) {
   }> = [];
 
   positions.forEach(position => {
-    // Add funding end event if stage is Funding
-    if (position.stage === 'Funding' && position.fundingEndAt) {
+    // Add funding end event if status is Funding
+    if (position.status === 'Funding' && position.fundingEndAt) {
       events.push({
         id: `${position.vaultId}-funding-end`,
         type: 'FUNDING_END',
@@ -78,7 +78,7 @@ export function getUpcomingEvents(positions: PortfolioPosition[]) {
     }
 
     // Add maturity event if not yet matured
-    if (position.stage !== 'Matured') {
+    if (position.status !== 'Matured') {
       events.push({
         id: `${position.vaultId}-maturity`,
         type: 'MATURITY',

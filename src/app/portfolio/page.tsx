@@ -96,7 +96,7 @@ export default function PortfolioPage() {
   const filteredPositions: PortfolioPosition[] =
     stageFilter === "all"
       ? positions
-      : positions.filter((p) => p.stage === stageFilter);
+      : positions.filter((p) => p.status === stageFilter);
 
   if (!connected) {
     return (

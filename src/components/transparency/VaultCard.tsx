@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
-import { getStageColors } from "@/lib/utils/colors";
+import { getStatusColors } from "@/lib/utils/colors";
 import { ArrowRight, Calendar, Target, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -36,9 +36,9 @@ export function VaultCard({ vault }: VaultCardProps) {
         </div>
         <Badge
           variant="outline"
-          className={cn("flex-shrink-0", getStageColors(vault.stage))}
+          className={cn("flex-shrink-0", getStatusColors(vault.status))}
         >
-          {vault.stage}
+          {vault.status}
         </Badge>
       </div>
 
@@ -84,7 +84,7 @@ export function VaultCard({ vault }: VaultCardProps) {
             day: 'numeric',
             year: 'numeric',
           })}
-          {vault.stage === 'Funded' && daysToMaturity > 0 && (
+          {vault.status === 'Active' && daysToMaturity > 0 && (
             <span className="text-muted-foreground ml-2">
               ({daysToMaturity} days)
             </span>

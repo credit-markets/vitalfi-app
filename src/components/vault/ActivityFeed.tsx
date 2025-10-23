@@ -64,7 +64,7 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="deposits">Deposits</TabsTrigger>
-              <TabsTrigger value="claims" disabled={info.stage !== 'Matured'}>
+              <TabsTrigger value="claims" disabled={info.status !== 'Matured'}>
                 Claims
               </TabsTrigger>
             </TabsList>

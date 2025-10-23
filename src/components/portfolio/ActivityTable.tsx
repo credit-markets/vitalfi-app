@@ -41,12 +41,12 @@ export function ActivityTable({ activity }: ActivityTableProps) {
   };
 
   const exportCSV = () => {
-    const headers = ["Type", "Amount (SOL)", "Vault", "Stage", "Date", "Status", "Tx Signature"];
+    const headers = ["Type", "Amount (SOL)", "Vault", "Status", "Date", "Transaction Status", "Tx Signature"];
     const rows = filteredActivity.map((a) => [
       a.type,
       a.amountSol.toString(),
       a.vaultName,
-      a.stage,
+      a.vaultStatus,
       new Date(a.date).toLocaleString(),
       a.status,
       a.txSig,
@@ -153,7 +153,7 @@ export function ActivityTable({ activity }: ActivityTableProps) {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {activity.stage}
+                          {activity.vaultStatus}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">

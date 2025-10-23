@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
-import { getStageColors } from "@/lib/utils/colors";
+import { getStatusColors } from "@/lib/utils/colors";
 import { formatDate, pluralize, cn } from "@/lib/utils";
 
 export interface VaultOverviewProps {
@@ -31,9 +31,9 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <h3 className="text-xl sm:text-2xl font-bold flex-1 min-w-0">{info.name}</h3>
           <Badge
             variant="outline"
-            className={cn("flex-shrink-0", getStageColors(info.stage))}
+            className={cn("flex-shrink-0", getStatusColors(info.status))}
           >
-            {info.stage}
+            {info.status}
           </Badge>
         </div>
 

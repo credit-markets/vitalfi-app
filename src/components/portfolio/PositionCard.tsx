@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
-import { getStageColors } from "@/lib/utils/colors";
+import { getStatusColors } from "@/lib/utils/colors";
 import { formatDate, daysUntil, expectedYieldSol, cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
@@ -22,7 +22,7 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
   const {
     vaultId,
     vaultName,
-    stage,
+    status,
     depositedSol,
     expectedApyPct,
     fundingEndAt,
@@ -36,10 +36,10 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
   // Calculate timeline status text
   let timelineText = "";
 
-  if (stage === 'Funding') {
+  if (status === 'Funding') {
     const daysToFundingEnd = daysUntil(fundingEndAt);
     timelineText = `Funding ends in ${daysToFundingEnd} ${daysToFundingEnd === 1 ? 'day' : 'days'}`;
-  } else if (stage === 'Funded') {
+  } else if (status === 'Active') {
     const daysToMaturity = daysUntil(maturityAt);
     timelineText = `Maturity in ${daysToMaturity} ${daysToMaturity === 1 ? 'day' : 'days'}`;
   } else {
@@ -58,14 +58,14 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
           <h3 className="text-lg sm:text-xl font-bold leading-tight">{vaultName}</h3>
           <Badge
             variant="outline"
-            className={cn("flex-shrink-0", getStageColors(stage))}
+            className={cn("flex-shrink-0", getStatusColors(status))}
           >
-            {stage}
+            {status}
           </Badge>
         </div>
 
         {/* Investment Summary - Hide for Matured */}
-        {stage !== 'Matured' ? (
+        {status !== 'Matured' ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               <div>
@@ -93,7 +93,7 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
         {/* Projected / Realized Return Panel */}
         <div className="border border-border rounded-lg p-4 bg-muted/10">
           <div className="text-sm font-semibold mb-3">
-            {stage === 'Matured' && realizedYieldSol !== undefined
+            {status === 'Matured' && realizedYieldSol !== undefined
               ? "Realized Return"
               : "Projected Return (at Maturity)"}
           </div>
@@ -104,7 +104,7 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">
-                {stage === 'Matured' && realizedYieldSol !== undefined ? "Yield Earned" : "Expected Yield"}
+                {status === 'Matured' && realizedYieldSol !== undefined ? "Yield Earned" : "Expected Yield"}
               </span>
               <span className="font-medium text-green-500">
                 +{formatCompactCurrency(realizedYieldSol ?? expectedYield)} SOL
@@ -120,7 +120,7 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
         </div>
 
         {/* Claim CTA (only when matured) */}
-        {stage === 'Matured' && (
+        {status === 'Matured' && (
           <>
             {claimTxSig ? (
               <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/20 rounded-lg">

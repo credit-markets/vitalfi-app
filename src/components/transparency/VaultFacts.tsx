@@ -41,14 +41,14 @@ export function VaultFacts({ summary, lastUpdated }: VaultFactsProps) {
           </h2>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge
-              variant={summary.stage === 'Funded' ? 'default' : 'secondary'}
+              variant={summary.status === 'Active' ? 'default' : 'secondary'}
               className={
-                summary.stage === 'Funded'
+                summary.status === 'Active'
                   ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
                   : 'bg-green-500/10 text-green-400 border-green-500/20'
               }
             >
-              {summary.stage}
+              {summary.status}
             </Badge>
             {lastUpdated && (
               <Tooltip content={<p className="text-xs">Last data refresh</p>}>

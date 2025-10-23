@@ -9,7 +9,6 @@ import {
   getCurrentNetwork,
 } from "@/lib/sdk";
 import { fromBaseUnits, parseTimestamp, toISOString } from "@/lib/api/formatters";
-import { mapVaultStatusToStage } from "@/lib/api/backend";
 import { getTokenDecimals } from "@/lib/sdk/config";
 import { env } from "@/lib/env";
 import { SOL_DECIMALS, DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
@@ -20,7 +19,7 @@ import { PublicKey } from "@solana/web3.js";
 interface ComputedVaultData {
   capRemainingSol: number;
   progressPct: number;
-  stage: VaultFundingInfo["stage"];
+  status: VaultFundingInfo["status"];
   daysToMaturity: number;
   daysToFundingEnd: number;
   canDeposit: boolean;
@@ -83,14 +82,11 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
 
     const decimals = vaultDTO.assetMint ? getTokenDecimals(vaultDTO.assetMint) : SOL_DECIMALS;
 
-    // Map backend status to UI stage
-    const stage = mapVaultStatusToStage(vaultDTO.status);
-
     const fundingEndDate = parseTimestamp(vaultDTO.fundingEndTs);
     const maturityDate = parseTimestamp(vaultDTO.maturityTs);
 
     return {
-      stage,
+      status: vaultDTO.status,
       name: vaultId,
       expectedApyPct: vaultDTO.targetApyBps ? vaultDTO.targetApyBps / 100 : 0,
       capSol: fromBaseUnits(vaultDTO.cap, decimals),
@@ -173,14 +169,6 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
     const fundingEnds = new Date(info.fundingEndAt);
     const maturity = new Date(info.maturityAt);
 
-    // Compute stage dynamically
-    let stage: typeof info.stage = "Funding";
-    if (now >= maturity) {
-      stage = "Matured";
-    } else if (now >= fundingEnds || capRemainingSol <= 0) {
-      stage = "Funded";
-    }
-
     // Days to maturity from now (minimum 0)
     const daysToMaturity = Math.max(
       0,
@@ -196,15 +184,15 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
     return {
       capRemainingSol,
       progressPct,
-      stage,
+      status: info.status,
       daysToMaturity,
       daysToFundingEnd,
-      canDeposit: stage === "Funding" && capRemainingSol > 0,
+      canDeposit: info.status === "Funding" && capRemainingSol > 0,
     };
   }, [info]);
 
   return {
-    info: info && computed ? { ...info, stage: computed.stage } : null,
+    info,
     events,
     computed,
     error,

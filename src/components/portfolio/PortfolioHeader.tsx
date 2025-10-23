@@ -87,10 +87,10 @@ export function PortfolioHeader({ summary, positions }: PortfolioHeaderProps) {
               {stageBreakdown.fundingPct}% Funding
             </span>
           )}
-          {stageBreakdown.fundedPct > 0 && (
+          {stageBreakdown.activePct > 0 && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-              {stageBreakdown.fundedPct}% Funded
+              {stageBreakdown.activePct}% Active
             </span>
           )}
           {stageBreakdown.maturedPct > 0 && (
