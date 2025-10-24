@@ -30,7 +30,8 @@ export interface VaultFundingInfo {
 export type EventTag =
   | "Deposit"
   | "Claim"
-  | "Params";
+  | "Withdraw"
+  | "System";
 
 // Vault event for activity feed (SIMPLIFIED - funding model only)
 export interface VaultEvent {

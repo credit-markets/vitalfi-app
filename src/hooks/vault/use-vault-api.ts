@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { VaultEvent, VaultFundingInfo } from "@/types/vault";
+import { VaultEvent, VaultFundingInfo, EventTag } from "@/types/vault";
 import { useVaultsAPI, useActivityAPI } from "@/hooks/api";
 import {
   VITALFI_VAULT_PROGRAM_ID,
@@ -125,20 +125,53 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
 
     return activityResponse.items.map((activity) => {
       const decimals = activity.assetMint ? getTokenDecimals(activity.assetMint) : SOL_DECIMALS;
+
+      // Map activity types to display labels
+      let tag: EventTag;
+      let note: string;
+
+      switch (activity.type) {
+        case "deposit":
+          tag = "Deposit";
+          note = "Deposit";
+          break;
+        case "claim":
+          tag = "Claim";
+          note = "Claim";
+          break;
+        case "vault_created":
+          tag = "System";
+          note = "Vault Created";
+          break;
+        case "funding_finalized":
+          tag = "System";
+          note = "Funding Finalized";
+          break;
+        case "authority_withdraw":
+          tag = "Withdraw";
+          note = "Authority Withdraw";
+          break;
+        case "matured":
+          tag = "System";
+          note = "Vault Matured";
+          break;
+        case "vault_closed":
+          tag = "System";
+          note = "Vault Closed";
+          break;
+        default:
+          tag = "System";
+          note = activity.type;
+      }
+
       return {
         id: activity.id,
-        tag:
-          activity.type === "deposit"
-            ? "Deposit"
-            : activity.type === "claim"
-              ? "Claim"
-              : "Params",
+        tag,
         ts: activity.blockTime || new Date().toISOString(),
         wallet: activity.owner || activity.authority || "Unknown",
         amountSol: fromBaseUnits(activity.amount, decimals),
         txUrl: `${baseUrl}/${activity.txSig}${cluster}`,
-        note:
-          activity.type.charAt(0).toUpperCase() + activity.type.slice(1),
+        note,
       };
     });
   }, [activityResponse]);

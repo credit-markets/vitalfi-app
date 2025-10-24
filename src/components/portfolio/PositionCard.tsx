@@ -8,6 +8,8 @@ import { getStatusColors } from "@/lib/utils/colors";
 import { formatDate, daysUntil, expectedYieldSol, cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 import type { PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 
 interface PositionCardProps {
   position: PortfolioPosition;
@@ -50,6 +52,10 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
   const expectedYield = expectedYieldSol(depositedSol, expectedApyPct, maturityAt);
   const expectedTotal = depositedSol + expectedYield;
 
+  // Get token symbol for display
+  const tokenMint = position.assetMint || NATIVE_MINT.toBase58();
+  const tokenSymbol = getTokenSymbol(tokenMint);
+
   return (
     <Card className="p-5 sm:p-6 bg-gradient-card border-border/50">
       <div className="space-y-5">
@@ -70,7 +76,7 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               <div>
                 <div className="text-muted-foreground mb-1">Deposited</div>
-                <div className="font-semibold">{formatCompactCurrency(depositedSol)} SOL</div>
+                <div className="font-semibold">{formatCompactCurrency(depositedSol)} {tokenSymbol}</div>
               </div>
               <div>
                 <div className="text-muted-foreground mb-1">Expected APY</div>
@@ -100,20 +106,20 @@ export function PositionCard({ position, onClaim, claimPending }: PositionCardPr
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Principal</span>
-              <span className="font-medium">{formatCompactCurrency(depositedSol)} SOL</span>
+              <span className="font-medium">{formatCompactCurrency(depositedSol)} {tokenSymbol}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">
                 {status === 'Matured' && realizedYieldSol !== undefined ? "Yield Earned" : "Expected Yield"}
               </span>
               <span className="font-medium text-green-500">
-                +{formatCompactCurrency(realizedYieldSol ?? expectedYield)} SOL
+                +{formatCompactCurrency(realizedYieldSol ?? expectedYield)} {tokenSymbol}
               </span>
             </div>
             <div className="flex justify-between pt-2 border-t border-border">
               <span className="font-semibold">Total</span>
               <span className="font-bold text-accent">
-                {formatCompactCurrency(realizedTotalSol ?? expectedTotal)} SOL
+                {formatCompactCurrency(realizedTotalSol ?? expectedTotal)} {tokenSymbol}
               </span>
             </div>
           </div>

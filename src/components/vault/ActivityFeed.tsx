@@ -16,13 +16,15 @@ type ActivityFilter = "all" | "deposits" | "claims";
 const activityIcons: Record<EventTag, LucideIcon> = {
   Deposit: TrendingUp,
   Claim: DollarSign,
-  Params: DollarSign,
+  Withdraw: DollarSign,
+  System: DollarSign,
 };
 
 const activityColors: Record<EventTag, string> = {
   Deposit: "text-accent",
   Claim: "text-primary",
-  Params: "text-muted-foreground",
+  Withdraw: "text-orange-500",
+  System: "text-muted-foreground",
 };
 
 export interface ActivityFeedProps {

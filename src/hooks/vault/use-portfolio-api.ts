@@ -27,6 +27,7 @@ export type PortfolioPosition = {
   originatorShort: string;
   collateralShort: string;
   minInvestmentSOL?: number;
+  assetMint?: string;
 };
 
 export type PortfolioActivity = {
@@ -162,6 +163,7 @@ export function usePortfolioAPI() {
         originatorShort: DEFAULT_ORIGINATOR.name,
         collateralShort: DEFAULT_COLLATERAL_TYPE,
         minInvestmentSOL: minInvestmentSol,
+        assetMint: vault.assetMint,
       });
     }
 

@@ -9,7 +9,7 @@ import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { useDeposit } from "@/hooks/mutations";
 import { env } from "@/lib/env";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { getTokenDecimals } from "@/lib/sdk/config";
+import { getTokenDecimals, getTokenSymbol } from "@/lib/sdk/config";
 import { TrendingUp, AlertCircle, Info } from "lucide-react";
 import { useWalletBalance } from "@/hooks/wallet/use-wallet-balance";
 import BN from "bn.js";
@@ -35,6 +35,10 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
   if (!info || !computed) {
     return null;
   }
+
+  // Get token symbol for display
+  const tokenMint = info.addresses.tokenMint || NATIVE_MINT.toBase58();
+  const tokenSymbol = getTokenSymbol(tokenMint);
 
   const amountNum = parseFloat(depositAmount) || 0;
 
@@ -129,7 +133,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
           {/* Deposit Input */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium">Amount (SOL)</label>
+              <label className="text-sm font-medium">Amount ({tokenSymbol})</label>
               {connected && computed.canDeposit && (
                 <button
                   className="text-xs text-foreground hover:underline active:underline touch-manipulation p-1"
@@ -138,7 +142,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                     setDepositAmount(maxDeposit.toFixed(4));
                   }}
                 >
-                  Max: {formatCurrency(walletBalance)} SOL
+                  Max: {formatCurrency(walletBalance)} {tokenSymbol}
                 </button>
               )}
             </div>
@@ -157,7 +161,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                 <AlertCircle className="w-3 h-3" />
                 <span>
                   Minimum investment: {formatCurrency(info.minInvestmentSol)}{" "}
-                  SOL
+                  {tokenSymbol}
                 </span>
               </div>
             )}
@@ -166,7 +170,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                 <AlertCircle className="w-3 h-3" />
                 <span>
                   Amount exceeds available capacity:{" "}
-                  {formatCurrency(computed.capRemainingSol)} SOL
+                  {formatCurrency(computed.capRemainingSol)} {tokenSymbol}
                 </span>
               </div>
             )}
@@ -179,7 +183,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">You Invest</span>
                   <span className="font-bold text-foreground">
-                    {formatCurrency(amountNum)} SOL
+                    {formatCurrency(amountNum)} {tokenSymbol}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -199,7 +203,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                           (info.expectedApyPct / 100) *
                             (computed.daysToMaturity / 365))
                     )}{" "}
-                    SOL
+                    {tokenSymbol}
                   </span>
                 </div>
               </div>
@@ -227,7 +231,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
               ? "Connect Wallet"
               : disabledMessage
               ? disabledMessage.title
-              : "Deposit SOL"}
+              : `Deposit ${tokenSymbol}`}
           </Button>
 
           {/* Help Text */}

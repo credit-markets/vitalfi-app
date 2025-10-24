@@ -51,12 +51,11 @@ export interface PositionDTO {
 export type ActivityType =
   | "deposit"
   | "claim"
+  | "vault_created"
   | "funding_finalized"
   | "authority_withdraw"
   | "matured"
-  | "canceled"
-  | "vault_created"
-  | "position_created";
+  | "vault_closed";
 
 export interface ActivityDTO {
   id: string;

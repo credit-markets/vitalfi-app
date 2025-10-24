@@ -13,6 +13,7 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSidebar } from "@/providers/SidebarContext";
 import { cn } from "@/lib/utils";
+import { TOKEN_MINTS } from "@/lib/sdk/config";
 
 export default function AdminPage() {
   const { publicKey, connected } = useWallet();
@@ -22,25 +23,25 @@ export default function AdminPage() {
   // Initialize Vault Form State
   const [initForm, setInitForm] = useState({
     vaultId: "1",
-    cap: "1",
+    cap: "100",
     targetApyBps: "1200",
     fundingEndTs: "",
     maturityTs: "",
-    minDeposit: "0.1",
-    assetMint: "So11111111111111111111111111111111111111112", // Wrapped SOL
+    minDeposit: "1",
+    assetMint: TOKEN_MINTS.USDT.DEVNET.toBase58(), // Devnet USDT
   });
 
   // Finalize Funding Form State
   const [finalizeForm, setFinalizeForm] = useState({
     vaultId: "1",
-    assetMint: "So11111111111111111111111111111111111111112",
+    assetMint: TOKEN_MINTS.USDT.DEVNET.toBase58(),
   });
 
   // Mature Vault Form State
   const [matureForm, setMatureForm] = useState({
     vaultId: "1",
     returnAmount: "1100",
-    assetMint: "So11111111111111111111111111111111111111112",
+    assetMint: TOKEN_MINTS.USDT.DEVNET.toBase58(),
   });
 
   // Close Vault Form State
@@ -264,6 +265,41 @@ export default function AdminPage() {
     );
   }
 
+  // Check if connected wallet is the vault authority
+  const isAuthorized = publicKey?.toBase58() === process.env.NEXT_PUBLIC_VAULT_AUTHORITY;
+
+  if (!isAuthorized) {
+    return (
+      <>
+        <Header />
+        <Sidebar />
+        <main
+          className={cn(
+            "min-h-screen pt-20 pb-20 lg:pb-8 transition-all duration-300",
+            isCollapsed ? "lg:pl-16" : "lg:pl-64"
+          )}
+        >
+          <div className="container mx-auto px-4 py-8">
+            <Card className="p-8 text-center border-destructive/50">
+              <h1 className="text-2xl font-bold mb-4 text-destructive">
+                Access Denied
+              </h1>
+              <p className="text-gray-400 mb-4">
+                You do not have permission to access the admin panel.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Connected wallet: {publicKey?.toBase58()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Only the vault authority can access this page.
+              </p>
+            </Card>
+          </div>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Header />
@@ -383,10 +419,10 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setInitForm({ ...initForm, assetMint: e.target.value })
                     }
-                    placeholder="So11111111111111111111111111111111111111112"
+                    placeholder={TOKEN_MINTS.USDT.DEVNET.toBase58()}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Wrapped SOL by default
+                    Devnet USDT token mint address
                   </p>
                 </div>
                 <Button
@@ -439,7 +475,7 @@ export default function AdminPage() {
                         assetMint: e.target.value,
                       })
                     }
-                    placeholder="So11111111111111111111111111111111111111112"
+                    placeholder={TOKEN_MINTS.USDT.DEVNET.toBase58()}
                   />
                 </div>
                 <Button
@@ -509,7 +545,7 @@ export default function AdminPage() {
                         assetMint: e.target.value,
                       })
                     }
-                    placeholder="So11111111111111111111111111111111111111112"
+                    placeholder={TOKEN_MINTS.USDT.DEVNET.toBase58()}
                   />
                 </div>
                 <Button

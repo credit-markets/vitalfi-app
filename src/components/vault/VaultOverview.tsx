@@ -6,6 +6,8 @@ import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { getStatusColors } from "@/lib/utils/colors";
 import { formatDate, pluralize, cn } from "@/lib/utils";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 
 export interface VaultOverviewProps {
   vaultId: string;
@@ -22,6 +24,10 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
   if (!info || !computed) {
     return null;
   }
+
+  // Get token symbol for display
+  const tokenMint = info.addresses.tokenMint || NATIVE_MINT.toBase58();
+  const tokenSymbol = getTokenSymbol(tokenMint);
 
   return (
     <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
@@ -79,7 +85,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <div>
             <div className="text-muted-foreground mb-1">Min Investment</div>
             <div className="font-semibold">
-              {formatCompactCurrency(info.minInvestmentSol)} SOL
+              {formatCompactCurrency(info.minInvestmentSol)} {tokenSymbol}
             </div>
           </div>
           <div>
@@ -89,7 +95,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <div>
             <div className="text-muted-foreground mb-1">Total Cap</div>
             <div className="font-semibold">
-              {formatCompactCurrency(info.capSol)} SOL
+              {formatCompactCurrency(info.capSol)} {tokenSymbol}
             </div>
           </div>
         </div>

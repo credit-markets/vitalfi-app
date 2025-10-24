@@ -5,6 +5,8 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
 import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 
 export interface KpiStripProps {
   vaultId: string;
@@ -22,11 +24,15 @@ export function KpiStrip({ vaultId }: KpiStripProps) {
     return null;
   }
 
+  // Get token symbol for display
+  const tokenMint = info.addresses.tokenMint || NATIVE_MINT.toBase58();
+  const tokenSymbol = getTokenSymbol(tokenMint);
+
   const kpis = [
     {
       label: "TVL",
       value: formatCompactCurrency(info.raisedSol),
-      tooltip: `Total Value Locked: ${formatCompactCurrency(info.raisedSol)} SOL`,
+      tooltip: `Total Value Locked: ${formatCompactCurrency(info.raisedSol)} ${tokenSymbol}`,
       icon: DollarSign,
     },
     {
