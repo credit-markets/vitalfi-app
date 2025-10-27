@@ -60,7 +60,10 @@ export default function Home() {
 
   // Calculate summary stats
   const { totalTvl, activeCount, tokenSymbol } = useMemo(() => {
-    const totalTvl = vaults.reduce((sum, v) => sum + (v.raised || 0), 0);
+    // Only count TVL for active vaults (Funding or Active status)
+    const totalTvl = vaults
+      .filter((v) => v.status === "Funding" || v.status === "Active")
+      .reduce((sum, v) => sum + (v.raised || 0), 0);
     const activeCount = vaults.filter(
       (v) => v.status === "Funding" || v.status === "Active"
     ).length;
