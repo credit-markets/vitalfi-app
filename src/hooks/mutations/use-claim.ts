@@ -49,8 +49,7 @@ export function useClaim() {
     onSuccess: (txSig) => {
       claimToast.success(txSig);
 
-      // Run retry logic in background without blocking mutation completion
-      // This allows the button to return to normal state immediately
+      // Run retry logic in background (non-blocking)
       invalidateWithRetry(queryClient, [
         { queryKey: ["vaults-api"] }, // Refetch all vaults (includes this vault)
         { queryKey: ["positions-api"] }, // Refetch positions

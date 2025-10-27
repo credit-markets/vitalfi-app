@@ -9,7 +9,6 @@ import { invalidateWithRetry } from "@/lib/utils/query-helpers";
 
 export interface FinalizeFundingParams {
   vaultId: BN;
-  authority: PublicKey;
   assetMint: PublicKey;
 }
 
@@ -19,6 +18,8 @@ export interface FinalizeFundingParams {
  * Checks if 2/3 funding threshold is met and transitions vault
  * to either Active (success) or Canceled (failure) status.
  *
+ * Note: Authority is automatically derived from the connected wallet.
+ *
  * @example
  * ```typescript
  * const finalize = useFinalizeFunding();
@@ -26,7 +27,6 @@ export interface FinalizeFundingParams {
  * const handleFinalize = async () => {
  *   await finalize.mutateAsync({
  *     vaultId: new BN(1),
- *     authority: authorityPubkey,
  *     assetMint: mintPubkey,
  *   });
  * };

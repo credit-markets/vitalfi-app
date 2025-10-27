@@ -18,6 +18,7 @@ import { copyTransactionSignature, exportSuccess } from "@/lib/toast";
 import { getTokenSymbol } from "@/lib/sdk/config";
 import { NATIVE_MINT } from "@solana/spl-token";
 import type { PortfolioActivity } from "@/hooks/vault/use-portfolio-api";
+import Link from "next/link";
 
 interface ActivityTableProps {
   activity: PortfolioActivity[];
@@ -128,7 +129,12 @@ export function ActivityTable({ activity }: ActivityTableProps) {
                         {formatDate(activityItem.date)}
                       </TableCell>
                       <TableCell className="text-sm py-4 text-center">
-                        {activityItem.vaultName}
+                        <Link
+                          href={`/vault/${activityItem.vaultId}`}
+                          className="hover:text-primary hover:underline transition-colors"
+                        >
+                          {activityItem.vaultName}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-sm py-4 text-center font-medium">
                         {formatMonetary(activityItem.amountSol, tokenSymbol)}

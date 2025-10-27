@@ -16,6 +16,7 @@ import {
   getStateLineText,
   getOutcomeTitle,
 } from "@/lib/portfolio/position-stage";
+import Link from "next/link";
 
 export interface PositionCardProps {
   position: PortfolioPosition;
@@ -76,9 +77,14 @@ export function PositionCard({
       <div className="flex flex-col gap-4 flex-1">
         {/* Header: Vault name + Stage Badge */}
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-lg font-semibold leading-tight line-clamp-2 flex-1">
-            {vaultName || `Vault #${vaultId}`}
-          </h3>
+          <Link
+            href={`/vault/${vaultId}`}
+            className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
+          >
+            <h3 className="text-lg font-semibold leading-tight line-clamp-2">
+              {vaultName || `Vault #${vaultId}`}
+            </h3>
+          </Link>
           <Badge
             variant="outline"
             className={cn("flex-shrink-0 whitespace-nowrap", getStageBadgeColors(stage))}

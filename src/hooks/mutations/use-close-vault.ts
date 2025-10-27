@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { useVaultClient } from "@/hooks/wallet/use-vault-client";
 import { closeVault } from "@/lib/toast";
@@ -9,7 +8,6 @@ import { invalidateWithRetry } from "@/lib/utils/query-helpers";
 
 export interface CloseVaultParams {
   vaultId: BN;
-  authority: PublicKey;
 }
 
 /**
@@ -18,6 +16,8 @@ export interface CloseVaultParams {
  * Closes vault and token account after all users have claimed.
  * Vault must have zero (or dust) balance and be in Matured or Canceled status.
  *
+ * Note: Authority is automatically derived from the connected wallet.
+ *
  * @example
  * ```typescript
  * const close = useCloseVault();
@@ -25,7 +25,6 @@ export interface CloseVaultParams {
  * const handleClose = async () => {
  *   await close.mutateAsync({
  *     vaultId: new BN(1),
- *     authority: authorityPubkey,
  *   });
  * };
  * ```

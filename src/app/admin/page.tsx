@@ -273,12 +273,11 @@ export default function AdminPage() {
 
     // Validate PublicKey format
     let assetMint: PublicKey;
-    let authority: PublicKey;
     try {
       assetMint = new PublicKey(selectedVault.assetMint);
-      authority = new PublicKey(selectedVault.authority);
+      // Authority is automatically derived from connected wallet
     } catch {
-      validationError("Invalid asset mint or authority address in vault");
+      validationError("Invalid asset mint address in vault");
       return;
     }
 
@@ -288,7 +287,6 @@ export default function AdminPage() {
 
       await finalizeFunding.mutateAsync({
         vaultId,
-        authority,
         assetMint,
       });
     } catch (error) {
@@ -330,12 +328,11 @@ export default function AdminPage() {
 
     // Validate PublicKey format
     let assetMint: PublicKey;
-    let authority: PublicKey;
     try {
       assetMint = new PublicKey(selectedVault.assetMint);
-      authority = new PublicKey(selectedVault.authority);
+      // Authority is automatically derived from connected wallet
     } catch {
-      validationError("Invalid asset mint or authority address in vault");
+      validationError("Invalid asset mint address in vault");
       return;
     }
 
@@ -349,7 +346,6 @@ export default function AdminPage() {
 
       await matureVault.mutateAsync({
         vaultId,
-        authority,
         returnAmount,
         assetMint,
       });
@@ -384,14 +380,7 @@ export default function AdminPage() {
       return;
     }
 
-    // Validate PublicKey format
-    let authority: PublicKey;
-    try {
-      authority = new PublicKey(selectedVault.authority);
-    } catch {
-      validationError("Invalid authority address in vault");
-      return;
-    }
+    // Authority is automatically derived from connected wallet
 
     setLoading("close");
     try {
@@ -399,7 +388,6 @@ export default function AdminPage() {
 
       await closeVault.mutateAsync({
         vaultId,
-        authority,
       });
     } catch (error) {
       // Error already handled by mutation hook

@@ -8,6 +8,18 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 /**
+ * Retry delay schedule in milliseconds
+ * Total: ~65 seconds to accommodate Helius webhook processing delays
+ * Schedule: 2s, 3s, 5s, 5s, 10s, 10s, 15s, 15s
+ */
+const RETRY_DELAYS = [2000, 3000, 5000, 5000, 10000, 10000, 15000, 15000];
+
+/**
+ * Default number of retry attempts
+ */
+const DEFAULT_MAX_ATTEMPTS = RETRY_DELAYS.length;
+
+/**
  * Clear ETag cache from localStorage to force fresh fetch
  * This prevents 304 responses from returning stale cached data
  */
@@ -45,23 +57,16 @@ export async function invalidateWithRetry(
   queryKeys: Array<{ queryKey: unknown[] }>,
   options?: {
     maxAttempts?: number;
-    initialDelay?: number;
   }
 ) {
-  const maxAttempts = options?.maxAttempts ?? 8; // 8 attempts
+  const maxAttempts = options?.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
 
   // Clear ETag cache to prevent 304 responses with stale data
   clearETagCache();
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    // Custom retry delays: 2s, 3s, 5s, 5s, 10s, 10s, 15s, 15s
-    // Total: ~65 seconds
-    let delay: number;
-    if (attempt === 0) delay = 2000;
-    else if (attempt === 1) delay = 3000;
-    else if (attempt === 2 || attempt === 3) delay = 5000;
-    else if (attempt === 4 || attempt === 5) delay = 10000;
-    else delay = 15000;
+    // Get delay from schedule or use last delay if beyond schedule
+    const delay = RETRY_DELAYS[attempt] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1];
 
     await new Promise((resolve) => setTimeout(resolve, delay));
 

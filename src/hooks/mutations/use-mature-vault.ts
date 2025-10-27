@@ -9,7 +9,6 @@ import { invalidateWithRetry } from "@/lib/utils/query-helpers";
 
 export interface MatureVaultParams {
   vaultId: BN;
-  authority: PublicKey;
   returnAmount: BN;
   assetMint: PublicKey;
 }
@@ -20,6 +19,8 @@ export interface MatureVaultParams {
  * Returns principal + yield to the vault and sets the payout ratio
  * for user claims. Transitions vault to Matured status.
  *
+ * Note: Authority is automatically derived from the connected wallet.
+ *
  * @example
  * ```typescript
  * const mature = useMatureVault();
@@ -27,7 +28,6 @@ export interface MatureVaultParams {
  * const handleMature = async () => {
  *   await mature.mutateAsync({
  *     vaultId: new BN(1),
- *     authority: authorityPubkey,
  *     returnAmount: new BN(1100000000), // 1100 tokens with 9 decimals
  *     assetMint: mintPubkey,
  *   });
