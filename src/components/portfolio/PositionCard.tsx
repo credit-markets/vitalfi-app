@@ -104,7 +104,7 @@ export function PositionCard({
               {stage === 'matured-claimable' || stage === 'matured-claimed' ? 'Final APR' : 'Expected APR'}
             </div>
             <div className="font-semibold">
-              {stage === 'canceled-refundable' || stage === 'canceled-refunded'
+              {stage === 'canceled-refundable' || stage === 'canceled-refunded' || stage === 'closed'
                 ? '—'
                 : stage === 'matured-claimable' || stage === 'matured-claimed'
                 ? `${(realizedApyPct ?? expectedApyPct).toFixed(1)}% p.y.`
@@ -114,7 +114,7 @@ export function PositionCard({
           <div>
             <div className="text-muted-foreground mb-1">Maturity</div>
             <div className="font-semibold">
-              {stage === 'canceled-refundable' || stage === 'canceled-refunded'
+              {stage === 'canceled-refundable' || stage === 'canceled-refunded' || stage === 'closed'
                 ? '—'
                 : formatDate(maturityAt)}
             </div>
@@ -168,14 +168,14 @@ export function PositionCard({
               <span
                 className="font-bold text-accent text-right"
                 title={formatMonetaryPrecise(
-                  stage === 'canceled-refundable' || stage === 'canceled-refunded'
+                  stage === 'canceled-refundable' || stage === 'canceled-refunded' || stage === 'closed'
                     ? depositedSol
                     : realizedTotalSol ?? expectedTotal,
                   tokenSymbol
                 )}
               >
                 {formatMonetary(
-                  stage === 'canceled-refundable' || stage === 'canceled-refunded'
+                  stage === 'canceled-refundable' || stage === 'canceled-refunded' || stage === 'closed'
                     ? depositedSol
                     : realizedTotalSol ?? expectedTotal,
                   tokenSymbol
@@ -245,6 +245,24 @@ export function PositionCard({
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-md">
                 <Check className="w-4 h-4 text-green-500" />
                 <span className="text-sm text-green-500 font-medium">Refunded</span>
+              </div>
+              {onViewVault && (
+                <button
+                  onClick={() => onViewVault(vaultId)}
+                  className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors"
+                >
+                  View Vault <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Closed: Closed tag + View link */}
+          {stage === 'closed' && (
+            <>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 border border-border/50 rounded-md">
+                <Check className="w-4 h-4 text-muted-foreground/70" />
+                <span className="text-sm text-muted-foreground/70 font-medium">Closed</span>
               </div>
               {onViewVault && (
                 <button

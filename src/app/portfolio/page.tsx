@@ -27,6 +27,7 @@ export default function PortfolioPage() {
 
   const [stageFilter, setStageFilter] = useState<StageFilter>(["Matured"]);
   const [highlightedVault, setHighlightedVault] = useState<string | null>(null);
+  const [claimingVaultId, setClaimingVaultId] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const claim = useClaim();
@@ -45,6 +46,9 @@ export default function PortfolioPage() {
     if (claim.isPending) return;
 
     try {
+      // Track which vault is being claimed
+      setClaimingVaultId(vaultId);
+
       // Find vault to get assetMint
       const vault = vaults.find(v => v.vaultId === vaultId);
       if (!vault) {
@@ -71,6 +75,9 @@ export default function PortfolioPage() {
     } catch (error) {
       // Error toast is automatic
       console.error("Claim failed:", error);
+    } finally {
+      // Clear claiming state
+      setClaimingVaultId(null);
     }
   };
 
@@ -159,7 +166,7 @@ export default function PortfolioPage() {
           {positions.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground mr-2">Filter by stage:</span>
-              {(["Matured", "Funding", "Active", "Canceled"] as VaultStatus[]).map((stage) => {
+              {(["Matured", "Funding", "Active", "Canceled", "Closed"] as VaultStatus[]).map((stage) => {
                 const isSelected = stageFilter.includes(stage);
                 return (
                   <button
@@ -203,7 +210,8 @@ export default function PortfolioPage() {
                   <PositionCard
                     position={position}
                     onClaim={handleClaim}
-                    claimPending={claim.isPending}
+                    onRefund={handleClaim}
+                    claimPending={claim.isPending && claimingVaultId === position.vaultId}
                   />
                 </div>
               ))}
