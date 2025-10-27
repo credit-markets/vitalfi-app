@@ -56,11 +56,12 @@ export interface VaultSummary {
   id: string;
   title: string;
   status: VaultStatus;
-  raised: number;       // SOL
-  cap: number;          // SOL
+  raised: number;       // Token amount (USDT/USDC/wSOL)
+  cap: number;          // Token amount (USDT/USDC/wSOL)
   targetApy: number;    // annualized, e.g., 0.12 for 12%
   maturityDate: string; // ISO
   originator: OriginatorInfo;
+  assetMint?: string;   // Token mint address
 }
 
 export type ReceivableStatus = 'Performing' | 'Matured' | 'Repaid' | 'Disputed';

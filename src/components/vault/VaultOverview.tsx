@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
-import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { formatCompactNumber } from "@/lib/utils/formatters";
 import { getStatusColors } from "@/lib/utils/colors";
 import { formatDate, pluralize, cn } from "@/lib/utils";
 import { getTokenSymbol } from "@/lib/sdk/config";
@@ -61,11 +61,11 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              Raised: {formatCompactCurrency(info.raisedSol)} (
+              Raised: {formatCompactNumber(info.raisedSol)} {tokenSymbol} (
               {computed.progressPct.toFixed(1)}%)
             </span>
             <span>
-              Remaining: {formatCompactCurrency(computed.capRemainingSol)} (
+              Remaining: {formatCompactNumber(computed.capRemainingSol)} {tokenSymbol} (
               {(100 - computed.progressPct).toFixed(1)}%)
             </span>
           </div>
@@ -85,7 +85,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <div>
             <div className="text-muted-foreground mb-1">Min Investment</div>
             <div className="font-semibold">
-              {formatCompactCurrency(info.minInvestmentSol)} {tokenSymbol}
+              {formatCompactNumber(info.minInvestmentSol)} {tokenSymbol}
             </div>
           </div>
           <div>
@@ -95,7 +95,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <div>
             <div className="text-muted-foreground mb-1">Total Cap</div>
             <div className="font-semibold">
-              {formatCompactCurrency(info.capSol)} {tokenSymbol}
+              {formatCompactNumber(info.capSol)} {tokenSymbol}
             </div>
           </div>
         </div>

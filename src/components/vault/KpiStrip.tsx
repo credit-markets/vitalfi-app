@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
-import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { formatCompactNumber } from "@/lib/utils/formatters";
 import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 import { getTokenSymbol } from "@/lib/sdk/config";
 import { NATIVE_MINT } from "@solana/spl-token";
@@ -31,8 +31,8 @@ export function KpiStrip({ vaultId }: KpiStripProps) {
   const kpis = [
     {
       label: "TVL",
-      value: formatCompactCurrency(info.raisedSol),
-      tooltip: `Total Value Locked: ${formatCompactCurrency(info.raisedSol)} ${tokenSymbol}`,
+      value: `${formatCompactNumber(info.raisedSol)} ${tokenSymbol}`,
+      tooltip: `Total Value Locked: ${formatCompactNumber(info.raisedSol)} ${tokenSymbol}`,
       icon: DollarSign,
     },
     {
@@ -43,8 +43,8 @@ export function KpiStrip({ vaultId }: KpiStripProps) {
     },
     {
       label: "Cap Remaining",
-      value: formatCompactCurrency(computed.capRemainingSol),
-      tooltip: `Available capacity: ${formatCompactCurrency(computed.capRemainingSol)} of ${formatCompactCurrency(info.capSol)} total`,
+      value: `${formatCompactNumber(computed.capRemainingSol)} ${tokenSymbol}`,
+      tooltip: `Available capacity: ${formatCompactNumber(computed.capRemainingSol)} of ${formatCompactNumber(info.capSol)} ${tokenSymbol} total`,
       icon: Users,
     },
     {

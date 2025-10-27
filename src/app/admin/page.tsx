@@ -1,24 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useVaultClient } from "@/hooks/wallet/use-vault-client";
+import { useVaultsAPI } from "@/hooks/api/use-vaults-api";
+import { useTokenBalance } from "@/hooks/wallet/use-token-balance";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSidebar } from "@/providers/SidebarContext";
 import { cn } from "@/lib/utils";
-import { TOKEN_MINTS } from "@/lib/sdk/config";
+import { TOKEN_MINTS, getTokenSymbol, getTokenDecimals } from "@/lib/sdk/config";
+import { env } from "@/lib/env";
+import type { VaultDTO } from "@/lib/api/backend";
+
+// Time constants for default vault configuration
+const FUNDING_DURATION_SECONDS = 10 * 60; // 10 minutes
+const MATURITY_DURATION_SECONDS = 20 * 60; // 20 minutes from now (10 min after funding)
+
+// Helper to format token amount with correct symbol and decimals
+function formatTokenAmount(amountStr: string | null, mintAddress: string | null): string {
+  if (!amountStr || !mintAddress) return '0';
+  const decimals = getTokenDecimals(mintAddress);
+  const symbol = getTokenSymbol(mintAddress);
+  const amount = parseInt(amountStr) / Math.pow(10, decimals);
+  return `${amount.toFixed(2)} ${symbol}`;
+}
 
 export default function AdminPage() {
   const { publicKey, connected } = useWallet();
   const vaultClient = useVaultClient();
   const { isCollapsed } = useSidebar();
+
+  // Fetch all vaults for the authority
+  const { data: vaultsResponse, isLoading: vaultsLoading } = useVaultsAPI({
+    authority: env.vaultAuthority,
+    enabled: connected && !!env.vaultAuthority,
+  });
+
+  const vaults = vaultsResponse?.items || [];
+
+  // Mature Vault Form State
+  const [matureForm, setMatureForm] = useState({
+    vaultPda: "",
+    returnAmount: "1100",
+  });
+
+  // Get selected vault for mature form to fetch token balance
+  const selectedMatureVault = getSelectedVault(matureForm.vaultPda);
+  const matureVaultTokenMint = selectedMatureVault?.assetMint || null;
+
+  // Fetch token balance for the selected vault's token
+  const { data: tokenBalance = 0, isLoading: balanceLoading } = useTokenBalance(matureVaultTokenMint);
+
+  // Helper function moved before usage
+  function getSelectedVault(vaultPda: string): VaultDTO | undefined {
+    return vaults.find((v) => v.vaultPda === vaultPda);
+  }
 
   // Initialize Vault Form State
   const [initForm, setInitForm] = useState({
@@ -33,20 +78,12 @@ export default function AdminPage() {
 
   // Finalize Funding Form State
   const [finalizeForm, setFinalizeForm] = useState({
-    vaultId: "1",
-    assetMint: TOKEN_MINTS.USDT.DEVNET.toBase58(),
-  });
-
-  // Mature Vault Form State
-  const [matureForm, setMatureForm] = useState({
-    vaultId: "1",
-    returnAmount: "1100",
-    assetMint: TOKEN_MINTS.USDT.DEVNET.toBase58(),
+    vaultPda: "",
   });
 
   // Close Vault Form State
   const [closeForm, setCloseForm] = useState({
-    vaultId: "1",
+    vaultPda: "",
   });
 
   const [loading, setLoading] = useState<string | null>(null);
@@ -54,12 +91,12 @@ export default function AdminPage() {
   // Set default timestamps (10 minutes and 20 minutes from now)
   const getDefaultFundingEnd = () => {
     const now = Math.floor(Date.now() / 1000);
-    return (now + 600).toString(); // 10 minutes from now
+    return (now + FUNDING_DURATION_SECONDS).toString();
   };
 
   const getDefaultMaturity = () => {
     const now = Math.floor(Date.now() / 1000);
-    return (now + 1200).toString(); // 20 minutes from now
+    return (now + MATURITY_DURATION_SECONDS).toString();
   };
 
   const handleInitializeVault = async () => {
@@ -68,25 +105,69 @@ export default function AdminPage() {
       return;
     }
 
+    // Input validation
+    const vaultIdNum = parseInt(initForm.vaultId);
+    if (isNaN(vaultIdNum) || vaultIdNum < 0) {
+      toast.error("Vault ID must be a non-negative number");
+      return;
+    }
+
+    const capSol = parseFloat(initForm.cap);
+    if (isNaN(capSol) || capSol <= 0) {
+      toast.error("Cap must be a positive number");
+      return;
+    }
+
+    const targetApyBps = parseInt(initForm.targetApyBps);
+    if (isNaN(targetApyBps) || targetApyBps < 0) {
+      toast.error("Target APY must be a non-negative number");
+      return;
+    }
+
+    const minDepositSol = parseFloat(initForm.minDeposit);
+    if (isNaN(minDepositSol) || minDepositSol <= 0) {
+      toast.error("Minimum deposit must be a positive number");
+      return;
+    }
+
+    const fundingEndTsStr = initForm.fundingEndTs || getDefaultFundingEnd();
+    const maturityTsStr = initForm.maturityTs || getDefaultMaturity();
+
+    const fundingEndTsNum = parseInt(fundingEndTsStr);
+    const maturityTsNum = parseInt(maturityTsStr);
+    const now = Math.floor(Date.now() / 1000);
+
+    if (isNaN(fundingEndTsNum) || fundingEndTsNum <= now) {
+      toast.error("Funding end timestamp must be in the future");
+      return;
+    }
+
+    if (isNaN(maturityTsNum) || maturityTsNum <= fundingEndTsNum) {
+      toast.error("Maturity timestamp must be after funding end");
+      return;
+    }
+
+    // Validate PublicKey format
+    let assetMint: PublicKey;
+    try {
+      assetMint = new PublicKey(initForm.assetMint);
+    } catch (error) {
+      toast.error("Invalid asset mint address");
+      return;
+    }
+
     setLoading("initialize");
     try {
-      const vaultId = new BN(initForm.vaultId);
+      const vaultId = new BN(vaultIdNum);
 
       // Convert SOL to lamports (multiply by 10^9)
-      const capSol = parseFloat(initForm.cap);
       const cap = new BN(Math.floor(capSol * 1_000_000_000));
 
-      const targetApyBps = parseInt(initForm.targetApyBps);
-      const fundingEndTs = new BN(
-        initForm.fundingEndTs || getDefaultFundingEnd()
-      );
-      const maturityTs = new BN(initForm.maturityTs || getDefaultMaturity());
+      const fundingEndTs = new BN(fundingEndTsNum);
+      const maturityTs = new BN(maturityTsNum);
 
       // Convert SOL to lamports (multiply by 10^9)
-      const minDepositSol = parseFloat(initForm.minDeposit);
       const minDeposit = new BN(Math.floor(minDepositSol * 1_000_000_000));
-
-      const assetMint = new PublicKey(initForm.assetMint);
 
       const txSig = await vaultClient.initializeVault(
         vaultId,
@@ -128,10 +209,35 @@ export default function AdminPage() {
       return;
     }
 
+    // Input validation
+    if (!finalizeForm.vaultPda) {
+      toast.error("Please select a vault");
+      return;
+    }
+
+    const selectedVault = getSelectedVault(finalizeForm.vaultPda);
+    if (!selectedVault) {
+      toast.error("Selected vault not found");
+      return;
+    }
+
+    if (!selectedVault.vaultId || !selectedVault.assetMint) {
+      toast.error("Vault data incomplete");
+      return;
+    }
+
+    // Validate PublicKey format
+    let assetMint: PublicKey;
+    try {
+      assetMint = new PublicKey(selectedVault.assetMint);
+    } catch (error) {
+      toast.error("Invalid asset mint address in vault");
+      return;
+    }
+
     setLoading("finalize");
     try {
-      const vaultId = new BN(finalizeForm.vaultId);
-      const assetMint = new PublicKey(finalizeForm.assetMint);
+      const vaultId = new BN(selectedVault.vaultId);
 
       const txSig = await vaultClient.finalizeFunding(vaultId, assetMint);
 
@@ -165,15 +271,44 @@ export default function AdminPage() {
       return;
     }
 
+    // Input validation
+    if (!matureForm.vaultPda) {
+      toast.error("Please select a vault");
+      return;
+    }
+
+    const selectedVault = getSelectedVault(matureForm.vaultPda);
+    if (!selectedVault) {
+      toast.error("Selected vault not found");
+      return;
+    }
+
+    if (!selectedVault.vaultId || !selectedVault.assetMint) {
+      toast.error("Vault data incomplete");
+      return;
+    }
+
+    const returnAmountSol = parseFloat(matureForm.returnAmount);
+    if (isNaN(returnAmountSol) || returnAmountSol <= 0) {
+      toast.error("Return amount must be a positive number");
+      return;
+    }
+
+    // Validate PublicKey format
+    let assetMint: PublicKey;
+    try {
+      assetMint = new PublicKey(selectedVault.assetMint);
+    } catch (error) {
+      toast.error("Invalid asset mint address in vault");
+      return;
+    }
+
     setLoading("mature");
     try {
-      const vaultId = new BN(matureForm.vaultId);
+      const vaultId = new BN(selectedVault.vaultId);
 
       // Convert SOL to lamports (multiply by 10^9)
-      const returnAmountSol = parseFloat(matureForm.returnAmount);
       const returnAmount = new BN(Math.floor(returnAmountSol * 1_000_000_000));
-
-      const assetMint = new PublicKey(matureForm.assetMint);
 
       const txSig = await vaultClient.matureVault(
         vaultId,
@@ -211,9 +346,26 @@ export default function AdminPage() {
       return;
     }
 
+    // Input validation
+    if (!closeForm.vaultPda) {
+      toast.error("Please select a vault");
+      return;
+    }
+
+    const selectedVault = getSelectedVault(closeForm.vaultPda);
+    if (!selectedVault) {
+      toast.error("Selected vault not found");
+      return;
+    }
+
+    if (!selectedVault.vaultId) {
+      toast.error("Vault data incomplete");
+      return;
+    }
+
     setLoading("close");
     try {
-      const vaultId = new BN(closeForm.vaultId);
+      const vaultId = new BN(selectedVault.vaultId);
 
       const txSig = await vaultClient.closeVault(vaultId);
 
@@ -265,7 +417,24 @@ export default function AdminPage() {
     );
   }
 
-  // Check if connected wallet is the vault authority
+  /**
+   * Client-side authorization check for UI access control.
+   *
+   * SECURITY NOTE: This check only controls UI visibility. The NEXT_PUBLIC_* variable
+   * is embedded in the client bundle and visible to anyone. An attacker could bypass
+   * this check using browser DevTools to access the UI.
+   *
+   * However, this is acceptable because:
+   * 1. All actual vault operations require signing transactions with the authority's private key
+   * 2. The Solana program enforces on-chain authorization checks
+   * 3. An attacker without the private key cannot execute any privileged operations
+   * 4. This UI check provides a clean UX for legitimate users
+   *
+   * For production, consider:
+   * - Moving authorization to server-side API routes with session/JWT validation
+   * - Using NextAuth or similar for proper admin authentication
+   * - Rate limiting on sensitive endpoints
+   */
   const isAuthorized = publicKey?.toBase58() === process.env.NEXT_PUBLIC_VAULT_AUTHORITY;
 
   if (!isAuthorized) {
@@ -449,38 +618,45 @@ export default function AdminPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Vault ID
+                    Select Vault (Funding status)
                   </label>
-                  <Input
-                    type="number"
-                    value={finalizeForm.vaultId}
+                  <Select
+                    value={finalizeForm.vaultPda}
                     onChange={(e) =>
                       setFinalizeForm({
                         ...finalizeForm,
-                        vaultId: e.target.value,
+                        vaultPda: e.target.value,
                       })
                     }
-                    placeholder="1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Asset Mint
-                  </label>
-                  <Input
-                    value={finalizeForm.assetMint}
-                    onChange={(e) =>
-                      setFinalizeForm({
-                        ...finalizeForm,
-                        assetMint: e.target.value,
-                      })
-                    }
-                    placeholder={TOKEN_MINTS.USDT.DEVNET.toBase58()}
-                  />
+                    disabled={vaultsLoading}
+                  >
+                    <option value="">
+                      {vaultsLoading ? "Loading vaults..." : "Select a vault"}
+                    </option>
+                    {vaults
+                      .filter((v) => v.status === "Funding")
+                      .map((vault) => (
+                        <option key={vault.vaultPda} value={vault.vaultPda}>
+                          Vault #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} / {formatTokenAmount(vault.cap, vault.assetMint)}
+                        </option>
+                      ))}
+                  </Select>
+                  {finalizeForm.vaultPda && getSelectedVault(finalizeForm.vaultPda) && (
+                    <div className="mt-3 p-3 bg-card border border-border/50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs">
+                          {getSelectedVault(finalizeForm.vaultPda)?.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          PDA: {finalizeForm.vaultPda.slice(0, 8)}...
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <Button
                   onClick={handleFinalizeFunding}
-                  disabled={loading === "finalize"}
+                  disabled={loading === "finalize" || !finalizeForm.vaultPda}
                   className="w-full"
                 >
                   {loading === "finalize"
@@ -502,21 +678,74 @@ export default function AdminPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Vault ID
+                    Select Vault (Active status)
                   </label>
-                  <Input
-                    type="number"
-                    value={matureForm.vaultId}
+                  <Select
+                    value={matureForm.vaultPda}
                     onChange={(e) =>
-                      setMatureForm({ ...matureForm, vaultId: e.target.value })
+                      setMatureForm({
+                        ...matureForm,
+                        vaultPda: e.target.value,
+                      })
                     }
-                    placeholder="1"
-                  />
+                    disabled={vaultsLoading}
+                  >
+                    <option value="">
+                      {vaultsLoading ? "Loading vaults..." : "Select a vault"}
+                    </option>
+                    {vaults
+                      .filter((v) => v.status === "Active")
+                      .map((vault) => (
+                        <option key={vault.vaultPda} value={vault.vaultPda}>
+                          Vault #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} deposited
+                        </option>
+                      ))}
+                  </Select>
+                  {matureForm.vaultPda && getSelectedVault(matureForm.vaultPda) && (
+                    <div className="mt-3 p-3 bg-card border border-border/50 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {getSelectedVault(matureForm.vaultPda)?.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          PDA: {matureForm.vaultPda.slice(0, 8)}...
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Deposited: <span className="font-medium text-foreground">{formatTokenAmount(getSelectedVault(matureForm.vaultPda)?.totalDeposited || null, getSelectedVault(matureForm.vaultPda)?.assetMint || null)}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Return Amount (SOL)
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium">
+                      Return Amount {matureForm.vaultPda && selectedMatureVault && `(${getTokenSymbol(selectedMatureVault.assetMint || '')})`}
+                    </label>
+                    {matureForm.vaultPda && selectedMatureVault && (
+                      <div className="text-xs text-muted-foreground">
+                        {balanceLoading ? (
+                          "Loading balance..."
+                        ) : (
+                          <>
+                            Balance:{" "}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setMatureForm({
+                                  ...matureForm,
+                                  returnAmount: tokenBalance.toFixed(2),
+                                })
+                              }
+                              className="font-medium text-foreground hover:text-primary hover:underline transition-colors cursor-pointer"
+                            >
+                              {tokenBalance.toFixed(2)} {getTokenSymbol(selectedMatureVault.assetMint || '')}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <Input
                     type="number"
                     step="0.01"
@@ -533,24 +762,9 @@ export default function AdminPage() {
                     Principal + yield (e.g., 1000 + 100 = 1100)
                   </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Asset Mint
-                  </label>
-                  <Input
-                    value={matureForm.assetMint}
-                    onChange={(e) =>
-                      setMatureForm({
-                        ...matureForm,
-                        assetMint: e.target.value,
-                      })
-                    }
-                    placeholder={TOKEN_MINTS.USDT.DEVNET.toBase58()}
-                  />
-                </div>
                 <Button
                   onClick={handleMatureVault}
-                  disabled={loading === "mature"}
+                  disabled={loading === "mature" || !matureForm.vaultPda}
                   className="w-full"
                 >
                   {loading === "mature" ? "Maturing..." : "Mature Vault"}
@@ -570,20 +784,46 @@ export default function AdminPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Vault ID
+                    Select Vault (Matured/Canceled status)
                   </label>
-                  <Input
-                    type="number"
-                    value={closeForm.vaultId}
+                  <Select
+                    value={closeForm.vaultPda}
                     onChange={(e) =>
-                      setCloseForm({ ...closeForm, vaultId: e.target.value })
+                      setCloseForm({ ...closeForm, vaultPda: e.target.value })
                     }
-                    placeholder="1"
-                  />
+                    disabled={vaultsLoading}
+                  >
+                    <option value="">
+                      {vaultsLoading ? "Loading vaults..." : "Select a vault"}
+                    </option>
+                    {vaults
+                      .filter((v) => v.status === "Matured" || v.status === "Canceled")
+                      .map((vault) => (
+                        <option key={vault.vaultPda} value={vault.vaultPda}>
+                          Vault #{vault.vaultId} - {vault.status} - Claimed: {formatTokenAmount(vault.totalClaimed, vault.assetMint)}
+                        </option>
+                      ))}
+                  </Select>
+                  {closeForm.vaultPda && getSelectedVault(closeForm.vaultPda) && (
+                    <div className="mt-3 p-3 bg-card border border-border/50 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {getSelectedVault(closeForm.vaultPda)?.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          PDA: {closeForm.vaultPda.slice(0, 8)}...
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div>Total Deposited: <span className="font-medium text-foreground">{formatTokenAmount(getSelectedVault(closeForm.vaultPda)?.totalDeposited || null, getSelectedVault(closeForm.vaultPda)?.assetMint || null)}</span></div>
+                        <div>Total Claimed: <span className="font-medium text-foreground">{formatTokenAmount(getSelectedVault(closeForm.vaultPda)?.totalClaimed || null, getSelectedVault(closeForm.vaultPda)?.assetMint || null)}</span></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <Button
                   onClick={handleCloseVault}
-                  disabled={loading === "close"}
+                  disabled={loading === "close" || !closeForm.vaultPda}
                   className="w-full bg-red-600 hover:bg-red-700"
                 >
                   {loading === "close" ? "Closing..." : "Close Vault"}

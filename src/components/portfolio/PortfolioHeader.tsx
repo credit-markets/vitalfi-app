@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
-import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { formatCompactNumber } from "@/lib/utils/formatters";
 import { DollarSign, TrendingUp, Target, Calendar } from "lucide-react";
 import type { PortfolioSummary, PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 import { getNextMaturity, getStageBreakdown } from "@/lib/portfolio/selectors";
@@ -25,19 +25,19 @@ export function PortfolioHeader({ summary, positions }: PortfolioHeaderProps) {
   const kpis = useMemo(() => [
     {
       label: "Invested Amount",
-      value: formatCompactCurrency(summary.totalDepositedSol),
+      value: formatCompactNumber(summary.totalDepositedSol),
       icon: DollarSign,
       tooltip: "Total amount deposited across all positions",
     },
     {
       label: "Expected Yield",
-      value: formatCompactCurrency(summary.totalExpectedYieldSol),
+      value: formatCompactNumber(summary.totalExpectedYieldSol),
       icon: TrendingUp,
       tooltip: "Expected yield across active positions at maturity",
     },
     {
       label: "Expected Value at Maturity",
-      value: formatCompactCurrency(summary.totalAtMaturitySol),
+      value: formatCompactNumber(summary.totalAtMaturitySol),
       icon: Target,
       tooltip: "Total principal + expected yield",
     },

@@ -6,7 +6,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
-import { formatCurrency, shortenAddress } from "@/lib/utils";
+import { formatNumber, shortenAddress } from "@/lib/utils";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 import { Copy, ExternalLink, TrendingUp, DollarSign, LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { EventTag } from "@/types/vault";
@@ -43,6 +45,8 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
   if (!info) {
     return null;
   }
+
+  const tokenSymbol = getTokenSymbol(info.addresses.tokenMint || NATIVE_MINT.toBase58());
 
   const filteredActivity = filter === "all"
     ? events
@@ -81,7 +85,7 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
               <TableRow>
                 <TableHead className="min-w-[100px]">Time</TableHead>
                 <TableHead className="min-w-[80px]">Type</TableHead>
-                <TableHead className="min-w-[120px] text-right">Amount (SOL)</TableHead>
+                <TableHead className="min-w-[120px] text-right">Amount ({tokenSymbol})</TableHead>
                 <TableHead className="min-w-[120px]">Wallet</TableHead>
                 <TableHead className="min-w-[80px]">Tx</TableHead>
               </TableRow>
@@ -114,7 +118,7 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
                         </div>
                       </TableCell>
                       <TableCell className="font-medium text-right">
-                        {formatCurrency(event.amountSol)}
+                        {formatNumber(event.amountSol)} {tokenSymbol}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

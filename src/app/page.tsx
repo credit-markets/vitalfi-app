@@ -7,7 +7,7 @@ import { VaultsClientWrapper } from "@/components/vault/VaultsClientWrapper";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/providers/SidebarContext";
 import { useVaultsAPI } from "@/hooks/api";
-import { formatCurrency } from "@/lib/utils/formatters";
+import { formatCompactNumber } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { fromBaseUnits, parseTimestamp } from "@/lib/api/formatters";
 import { getTokenDecimals } from "@/lib/sdk/config";
@@ -53,6 +53,7 @@ export default function Home() {
         targetApy: vault.targetApyBps ? vault.targetApyBps / 10000 : 0,
         maturityDate: parseTimestamp(vault.maturityTs)?.toISOString() || "",
         originator: DEFAULT_ORIGINATOR,
+        assetMint: vault.assetMint || undefined,
       };
     });
   }, [vaultsResponse]);
@@ -125,7 +126,7 @@ export default function Home() {
           ) : (
             <VaultsClientWrapper
               vaults={vaults}
-              totalTvl={formatCurrency(totalTvl, "SOL")}
+              totalTvl={formatCompactNumber(totalTvl)}
               activeCount={activeCount}
             />
           )}

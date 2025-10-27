@@ -3,8 +3,10 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { formatCompactNumber } from "@/lib/utils/formatters";
 import { getStatusColors } from "@/lib/utils/colors";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 import { ArrowRight, Calendar, Target, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -18,6 +20,7 @@ export function VaultCard({ vault }: VaultCardProps) {
   const progress = (vault.raised / vault.cap) * 100;
   const maturityDate = new Date(vault.maturityDate);
   const daysToMaturity = Math.floor((maturityDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const tokenSymbol = getTokenSymbol(vault.assetMint || NATIVE_MINT.toBase58());
 
   return (
     <Card className="p-4 sm:p-5 lg:p-6 bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg flex flex-col h-full">
@@ -50,7 +53,7 @@ export function VaultCard({ vault }: VaultCardProps) {
             <span>Raised / Cap</span>
           </div>
           <div className="text-sm font-semibold text-foreground">
-            {formatCompactCurrency(vault.raised)} / {formatCompactCurrency(vault.cap)}
+            {formatCompactNumber(vault.raised)} {tokenSymbol} / {formatCompactNumber(vault.cap)} {tokenSymbol}
           </div>
           {/* Progress bar */}
           <div className="mt-1.5 h-1 bg-muted rounded-full overflow-hidden">
