@@ -38,7 +38,7 @@ export function VaultInfoCard({ vaultId }: VaultInfoCardProps) {
   ];
 
   return (
-    <Card className="p-4 sm:p-6 bg-card border border-border space-y-4 sm:space-y-6">
+    <Card className="p-4 sm:p-5 bg-card border border-border space-y-3 sm:space-y-4">
       <div className="flex items-center gap-2">
         <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
         <h3 className="text-base sm:text-lg font-semibold">Vault Info</h3>

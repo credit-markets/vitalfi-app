@@ -73,21 +73,21 @@ export function PositionCard({
   const fundingEndsInDays = status === 'Funding' || status === 'Active' ? daysUntil(fundingEndAt) : undefined;
 
   return (
-    <Card className={cn("p-5 flex flex-col min-h-[400px] bg-gradient-card border-border/50", className)}>
-      <div className="flex flex-col gap-4 flex-1">
+    <Card className={cn("p-4 sm:p-5 flex flex-col min-h-[380px] sm:min-h-[400px] bg-gradient-card border-border/50", className)}>
+      <div className="flex flex-col gap-3 sm:gap-4 flex-1">
         {/* Header: Vault name + Stage Badge */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-2 sm:gap-3">
           <Link
             href={`/vault/${vaultId}`}
-            className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
+            className="flex-1 min-w-0 hover:opacity-80 transition-opacity touch-manipulation"
           >
-            <h3 className="text-lg font-semibold leading-tight line-clamp-2">
+            <h3 className="text-base sm:text-lg font-semibold leading-tight line-clamp-2">
               {vaultName || `Vault #${vaultId}`}
             </h3>
           </Link>
           <Badge
             variant="outline"
-            className={cn("flex-shrink-0 whitespace-nowrap", getStageBadgeColors(stage))}
+            className={cn("flex-shrink-0 whitespace-nowrap text-xs", getStageBadgeColors(stage))}
             aria-label={`Stage: ${getStageBadgeText(stage)}`}
           >
             {getStageBadgeText(stage)}
@@ -95,31 +95,31 @@ export function PositionCard({
         </div>
 
         {/* Key Stats (3 columns) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 text-sm">
           <div>
-            <div className="text-muted-foreground mb-1">Deposited</div>
+            <div className="text-muted-foreground mb-1 text-xs sm:text-sm">Deposited</div>
             <div
-              className="font-semibold"
+              className="font-semibold text-xs sm:text-sm"
               title={formatMonetaryPrecise(depositedSol, tokenSymbol)}
             >
               {formatMonetary(depositedSol, tokenSymbol)}
             </div>
           </div>
           <div>
-            <div className="text-muted-foreground mb-1">
-              {stage === 'matured-claimable' || stage === 'matured-claimed' ? 'Final APR' : 'Expected APR'}
+            <div className="text-muted-foreground mb-1 text-xs sm:text-sm">
+              {stage === 'matured-claimable' || stage === 'matured-claimed' ? 'APR' : 'APR'}
             </div>
-            <div className="font-semibold">
+            <div className="font-semibold text-xs sm:text-sm">
               {stage === 'canceled-refundable' || stage === 'canceled-refunded' || stage === 'closed'
                 ? '—'
                 : stage === 'matured-claimable' || stage === 'matured-claimed'
-                ? `${(realizedApyPct ?? expectedApyPct).toFixed(1)}% p.y.`
-                : `${expectedApyPct.toFixed(1)}% p.y.`}
+                ? `${(realizedApyPct ?? expectedApyPct).toFixed(1)}%`
+                : `${expectedApyPct.toFixed(1)}%`}
             </div>
           </div>
           <div>
-            <div className="text-muted-foreground mb-1">Maturity</div>
-            <div className="font-semibold">
+            <div className="text-muted-foreground mb-1 text-xs sm:text-sm">Maturity</div>
+            <div className="font-semibold text-xs sm:text-sm truncate">
               {stage === 'canceled-refundable' || stage === 'canceled-refunded' || stage === 'closed'
                 ? '—'
                 : formatDate(maturityAt)}
@@ -131,12 +131,12 @@ export function PositionCard({
         <div className="border-t border-border" />
 
         {/* State Line */}
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs sm:text-sm text-muted-foreground">
           {getStateLineText(stage, fundingEndsInDays)}
         </div>
 
         {/* Outcome Summary (Financial Panel) */}
-        <div className="border border-border rounded-2xl p-4 bg-muted/10">
+        <div className="border border-border rounded-2xl p-3 sm:p-4 bg-muted/10">
           <div className="text-sm font-semibold mb-3">{getOutcomeTitle(stage)}</div>
           <div className="space-y-2 text-sm">
             <div className="grid grid-cols-2 gap-2">
@@ -192,14 +192,14 @@ export function PositionCard({
         </div>
 
         {/* Action Row (bottom-aligned) */}
-        <div className="flex items-center justify-end gap-3 mt-auto pt-2">
+        <div className="flex items-center justify-end gap-2 sm:gap-3 mt-auto pt-2">
           {/* Funding: only "View Vault" link */}
           {stage === 'funding' && onViewVault && (
             <button
               onClick={() => onViewVault(vaultId)}
-              className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors"
+              className="flex items-center gap-1 text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors touch-manipulation"
             >
-              View Vault <ArrowRight className="w-4 h-4" />
+              View Vault <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           )}
 
@@ -208,7 +208,7 @@ export function PositionCard({
             <Button
               onClick={() => onClaim?.(vaultId)}
               disabled={claimPending}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none touch-manipulation h-11"
               aria-label={`Claim funds for ${vaultName || vaultId}`}
             >
               {claimPending ? 'Processing...' : 'Claim'}
@@ -218,16 +218,16 @@ export function PositionCard({
           {/* Matured Claimed: Claimed tag + View link */}
           {stage === 'matured-claimed' && (
             <>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-md">
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-500 font-medium">Claimed</span>
+              <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-md">
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
+                <span className="text-xs sm:text-sm text-green-500 font-medium">Claimed</span>
               </div>
               {onViewVault && (
                 <button
                   onClick={() => onViewVault(vaultId)}
-                  className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors"
+                  className="flex items-center gap-1 text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors touch-manipulation"
                 >
-                  View Vault <ArrowRight className="w-4 h-4" />
+                  View <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
             </>
@@ -238,7 +238,7 @@ export function PositionCard({
             <Button
               onClick={() => onRefund?.(vaultId)}
               disabled={claimPending}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none touch-manipulation h-11"
               aria-label={`Refund deposit for ${vaultName || vaultId}`}
             >
               {claimPending ? 'Processing...' : 'Refund'}
@@ -248,16 +248,16 @@ export function PositionCard({
           {/* Canceled Refunded: Refunded tag + View link */}
           {stage === 'canceled-refunded' && (
             <>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-md">
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-500 font-medium">Refunded</span>
+              <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-md">
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
+                <span className="text-xs sm:text-sm text-green-500 font-medium">Refunded</span>
               </div>
               {onViewVault && (
                 <button
                   onClick={() => onViewVault(vaultId)}
-                  className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors"
+                  className="flex items-center gap-1 text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors touch-manipulation"
                 >
-                  View Vault <ArrowRight className="w-4 h-4" />
+                  View <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
             </>
@@ -266,16 +266,16 @@ export function PositionCard({
           {/* Closed: Closed tag + View link */}
           {stage === 'closed' && (
             <>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 border border-border/50 rounded-md">
-                <Check className="w-4 h-4 text-muted-foreground/70" />
-                <span className="text-sm text-muted-foreground/70 font-medium">Closed</span>
+              <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-muted/50 border border-border/50 rounded-md">
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/70" />
+                <span className="text-xs sm:text-sm text-muted-foreground/70 font-medium">Closed</span>
               </div>
               {onViewVault && (
                 <button
                   onClick={() => onViewVault(vaultId)}
-                  className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors"
+                  className="flex items-center gap-1 text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors touch-manipulation"
                 >
-                  View Vault <ArrowRight className="w-4 h-4" />
+                  View <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
             </>

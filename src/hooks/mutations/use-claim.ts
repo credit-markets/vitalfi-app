@@ -5,7 +5,7 @@ import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { useVaultClient } from "@/hooks/wallet/use-vault-client";
 import { claim as claimToast } from "@/lib/toast";
-import { invalidateWithRetry } from "@/lib/utils/query-helpers";
+import { invalidateWithPolling } from "@/lib/utils/query-helpers";
 
 export interface ClaimParams {
   vaultId: BN;
@@ -49,16 +49,15 @@ export function useClaim() {
     onSuccess: (txSig) => {
       claimToast.success(txSig);
 
-      // Run retry logic in background (non-blocking)
-      invalidateWithRetry(queryClient, [
+      // Start aggressive polling for 45 seconds (every 2s)
+      // This catches backend webhook updates much faster than exponential backoff
+      invalidateWithPolling(queryClient, [
         { queryKey: ["vaults-api"] }, // Refetch all vaults (includes this vault)
         { queryKey: ["positions-api"] }, // Refetch positions
         { queryKey: ["activity-api"] }, // Refetch activity feed
         { queryKey: ["activity-infinite"] }, // Refetch infinite scroll activity
         { queryKey: ["portfolio-api"] }, // Refetch portfolio data
-      ]).catch((error) => {
-        console.error('[useClaim] Background retry failed:', error);
-      });
+      ]);
     },
     onError: (error: Error) => {
       console.error("Claim error:", error);

@@ -87,28 +87,30 @@ export function CollateralSection({ analytics, receivables, onExportCsv }: Colla
 
         {/* Concentration Pills */}
         {(analytics.topOriginatorPct || analytics.topPayerPct) && (
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border">
-            <span className="text-xs text-muted-foreground">Concentration:</span>
-            {analytics.topOriginatorPct && (
-              <Tooltip content="Largest originator as % of total face value">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
-                  <PieChart className="w-3 h-3 text-primary" />
-                  <span className="text-xs font-medium text-primary">
-                    Top Originator: {(analytics.topOriginatorPct * 100).toFixed(1)}%
-                  </span>
-                </div>
-              </Tooltip>
-            )}
-            {analytics.topPayerPct && (
-              <Tooltip content="Largest payer as % of total face value">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/10 border border-secondary/20">
-                  <PieChart className="w-3 h-3 text-secondary" />
-                  <span className="text-xs font-medium text-secondary">
-                    Top Payer: {(analytics.topPayerPct * 100).toFixed(1)}%
-                  </span>
-                </div>
-              </Tooltip>
-            )}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-4 pt-4 border-t border-border">
+            <span className="text-xs text-muted-foreground flex-shrink-0">Concentration:</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {analytics.topOriginatorPct && (
+                <Tooltip content="Largest originator as % of total face value">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
+                    <PieChart className="w-3 h-3 text-primary flex-shrink-0" />
+                    <span className="text-xs font-medium text-primary whitespace-nowrap">
+                      Top Originator: {(analytics.topOriginatorPct * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </Tooltip>
+              )}
+              {analytics.topPayerPct && (
+                <Tooltip content="Largest payer as % of total face value">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/10 border border-secondary/20">
+                    <PieChart className="w-3 h-3 text-secondary flex-shrink-0" />
+                    <span className="text-xs font-medium text-secondary whitespace-nowrap">
+                      Top Payer: {(analytics.topPayerPct * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </Tooltip>
+              )}
+            </div>
           </div>
         )}
       </Card>

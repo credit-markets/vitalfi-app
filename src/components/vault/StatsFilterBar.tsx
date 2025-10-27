@@ -25,23 +25,23 @@ export function StatsFilterBar({
   counts
 }: StatsFilterBarProps) {
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
       {/* Stats Section */}
-      <div className="flex items-center gap-6 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground/70 uppercase tracking-wide text-xs font-medium">
+      <div className="flex items-center gap-4 sm:gap-6 text-sm">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground/70 uppercase tracking-wide text-[10px] sm:text-xs font-medium whitespace-nowrap">
             Total TVL
           </span>
-          <span className="text-foreground font-bold text-base">
+          <span className="text-foreground font-bold text-sm sm:text-base whitespace-nowrap">
             {totalTvl}
           </span>
         </div>
-        <div className="h-4 w-px bg-border/60" />
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground/70 uppercase tracking-wide text-xs font-medium">
+        <div className="h-8 w-px bg-border/60" />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground/70 uppercase tracking-wide text-[10px] sm:text-xs font-medium whitespace-nowrap">
             Active Vaults
           </span>
-          <span className="text-foreground font-bold text-base">
+          <span className="text-foreground font-bold text-sm sm:text-base whitespace-nowrap">
             {activeCount}
           </span>
         </div>

@@ -27,7 +27,7 @@ interface ActivityTableProps {
 const ITEMS_PER_PAGE = 10;
 
 /**
- * Activity table with pagination
+ * Activity table with pagination - responsive with card view on mobile
  */
 export function ActivityTable({ activity }: ActivityTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,13 +85,13 @@ export function ActivityTable({ activity }: ActivityTableProps) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h3 className="text-lg font-semibold">Activity</h3>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={exportCSV}>
+          <Button variant="outline" size="sm" onClick={exportCSV} className="touch-manipulation">
             Export CSV
           </Button>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table View (all screens with horizontal scroll on mobile) */}
       <div className="border border-border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
@@ -180,44 +180,33 @@ export function ActivityTable({ activity }: ActivityTableProps) {
       </div>
 
       {/* Pagination */}
-      {activity.length > 0 && (
-        <nav className="flex items-center justify-end" aria-label="Pagination">
-          {totalPages > 1 ? (
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-muted-foreground" role="status" aria-live="polite">
-                Showing {paginatedActivity.length} of {sortedActivity.length}{" "}
-                {sortedActivity.length === 1 ? "transaction" : "transactions"}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-                aria-label="Go to previous page"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
-              </Button>
-              <div className="text-sm text-muted-foreground" aria-current="page">
-                Page {currentPage} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-                aria-label="Go to next page"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground" role="status">
-              Showing {paginatedActivity.length} of {sortedActivity.length}{" "}
-              {sortedActivity.length === 1 ? "transaction" : "transactions"}
-            </div>
-          )}
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-center gap-2" aria-label="Pagination">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+            aria-label="Go to previous page"
+            className="touch-manipulation h-9"
+          >
+            <ChevronLeft className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Previous</span>
+          </Button>
+          <div className="text-xs sm:text-sm text-muted-foreground px-2" aria-current="page">
+            Page {currentPage} of {totalPages}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+            aria-label="Go to next page"
+            className="touch-manipulation h-9"
+          >
+            <span className="hidden sm:inline">Next</span>
+            <ChevronRight className="w-4 h-4 sm:ml-1" />
+          </Button>
         </nav>
       )}
     </div>

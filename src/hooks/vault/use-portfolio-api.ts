@@ -205,13 +205,18 @@ export function usePortfolioAPI() {
 
   // Calculate summary
   const summary = useMemo<PortfolioSummary>(() => {
-    const totalDepositedSol = positions.reduce(
-      (sum, p) => sum + p.depositedSol,
-      0
-    );
+    // Only count deposited amount for positions that haven't been fully claimed/refunded
+    const totalDepositedSol = positions
+      .filter((p) => {
+        // Exclude positions that have been claimed (Matured/Canceled/Closed with no claimable balance)
+        if (p.status === "Closed") return false;
+        if ((p.status === "Matured" || p.status === "Canceled") && !p.canClaim) return false;
+        return true;
+      })
+      .reduce((sum, p) => sum + p.depositedSol, 0);
 
     const totalExpectedYieldSol = positions
-      .filter((p) => p.status !== "Matured") // Only count active positions
+      .filter((p) => p.status !== "Matured" && p.status !== "Canceled" && p.status !== "Closed") // Only count active positions
       .reduce((sum, p) => {
         if (!p.maturityAt || !p.fundingEndAt) return sum;
         return (

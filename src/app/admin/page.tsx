@@ -484,20 +484,23 @@ export default function AdminPage() {
         )}
       >
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-8">Vault Admin Panel</h1>
-          <p className="text-gray-400 mb-8">
-            Connected as: {publicKey?.toBase58()}
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Vault Admin Panel</h1>
+          <div className="mb-6 sm:mb-8">
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">Connected as:</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-mono break-all">
+              {publicKey?.toBase58()}
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Initialize Vault */}
-            <Card className="p-6">
+            <Card className="p-4 sm:p-6">
               <h2 className="text-xl font-bold mb-4 text-primary">
                 1. Initialize Vault
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
                     Vault ID
                   </label>
                   <Input
@@ -507,11 +510,12 @@ export default function AdminPage() {
                       setInitForm({ ...initForm, vaultId: e.target.value })
                     }
                     placeholder="1"
+                    className="h-11 touch-manipulation"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Cap (SOL)
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+                    Cap
                   </label>
                   <Input
                     type="number"
@@ -520,12 +524,13 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setInitForm({ ...initForm, cap: e.target.value })
                     }
-                    placeholder="1"
+                    placeholder="100"
+                    className="h-11 touch-manipulation"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Target APY (basis points)
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+                    APY (bps)
                   </label>
                   <Input
                     type="number"
@@ -534,12 +539,13 @@ export default function AdminPage() {
                       setInitForm({ ...initForm, targetApyBps: e.target.value })
                     }
                     placeholder="1200"
+                    className="h-11 touch-manipulation"
                   />
                   <p className="text-xs text-gray-500 mt-1">1200 = 12% APY</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Funding End (Unix timestamp)
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+                    Funding End
                   </label>
                   <Input
                     type="number"
@@ -548,14 +554,15 @@ export default function AdminPage() {
                       setInitForm({ ...initForm, fundingEndTs: e.target.value })
                     }
                     placeholder={getDefaultFundingEnd()}
+                    className="h-11 touch-manipulation"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Leave empty for 10 minutes from now
+                    Empty = 10min from now
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Maturity (Unix timestamp)
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+                    Maturity
                   </label>
                   <Input
                     type="number"
@@ -564,14 +571,15 @@ export default function AdminPage() {
                       setInitForm({ ...initForm, maturityTs: e.target.value })
                     }
                     placeholder={getDefaultMaturity()}
+                    className="h-11 touch-manipulation"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Leave empty for 20 minutes from now
+                    Empty = 20min from now
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Min Deposit (SOL)
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+                    Min Deposit
                   </label>
                   <Input
                     type="number"
@@ -580,11 +588,12 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setInitForm({ ...initForm, minDeposit: e.target.value })
                     }
-                    placeholder="0.1"
+                    placeholder="1"
+                    className="h-11 touch-manipulation"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
                     Asset Mint
                   </label>
                   <Input
@@ -593,15 +602,16 @@ export default function AdminPage() {
                       setInitForm({ ...initForm, assetMint: e.target.value })
                     }
                     placeholder={TOKEN_MINTS.USDT.DEVNET.toBase58()}
+                    className="h-11 touch-manipulation font-mono text-xs"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Devnet USDT token mint address
+                    Devnet USDT mint
                   </p>
                 </div>
                 <Button
                   onClick={handleInitializeVault}
                   disabled={loading === "initialize"}
-                  className="w-full"
+                  className="w-full h-11 touch-manipulation"
                 >
                   {loading === "initialize"
                     ? "Initializing..."
@@ -611,18 +621,17 @@ export default function AdminPage() {
             </Card>
 
             {/* Finalize Funding */}
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4 text-primary">
+            <Card className="p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-primary">
                 2. Finalize Funding
               </h2>
-              <p className="text-sm text-gray-400 mb-4">
-                Call after funding period ends. If 2/3 funded, vault activates
-                and funds are sent to authority.
+              <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">
+                Call after funding period ends. If 2/3 funded, vault activates.
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Select Vault (Funding status)
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+                    Select Vault
                   </label>
                   <Select
                     value={finalizeForm.vaultPda}
@@ -633,13 +642,14 @@ export default function AdminPage() {
                       })
                     }
                     disabled={vaultsLoading}
+                    className="h-11 touch-manipulation"
                   >
                     <option value="">
-                      {vaultsLoading ? "Loading vaults..." : "Select a vault"}
+                      {vaultsLoading ? "Loading..." : "Select vault"}
                     </option>
                     {fundingVaults.map((vault) => (
                       <option key={vault.vaultPda} value={vault.vaultPda}>
-                        Vault #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} / {formatTokenAmount(vault.cap, vault.assetMint)}
+                        #{vault.vaultId} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} / {formatTokenAmount(vault.cap, vault.assetMint)}
                       </option>
                     ))}
                   </Select>
@@ -659,7 +669,7 @@ export default function AdminPage() {
                 <Button
                   onClick={handleFinalizeFunding}
                   disabled={loading === "finalize" || !finalizeForm.vaultPda}
-                  className="w-full"
+                  className="w-full h-11 touch-manipulation"
                 >
                   {loading === "finalize"
                     ? "Finalizing..."
@@ -669,18 +679,17 @@ export default function AdminPage() {
             </Card>
 
             {/* Mature Vault */}
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4 text-primary">
+            <Card className="p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-primary">
                 3. Mature Vault
               </h2>
-              <p className="text-sm text-gray-400 mb-4">
-                Return principal + yield to the vault. This sets the payout
-                ratio for user claims.
+              <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">
+                Return principal + yield. Sets payout ratio for claims.
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Select Vault (Active status)
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+                    Select Vault
                   </label>
                   <Select
                     value={matureForm.vaultPda}
@@ -691,13 +700,14 @@ export default function AdminPage() {
                       })
                     }
                     disabled={vaultsLoading}
+                    className="h-11 touch-manipulation"
                   >
                     <option value="">
-                      {vaultsLoading ? "Loading vaults..." : "Select a vault"}
+                      {vaultsLoading ? "Loading..." : "Select vault"}
                     </option>
                     {activeVaults.map((vault) => (
                       <option key={vault.vaultPda} value={vault.vaultPda}>
-                        Vault #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} deposited
+                        #{vault.vaultId} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)}
                       </option>
                     ))}
                   </Select>
@@ -718,17 +728,17 @@ export default function AdminPage() {
                   )}
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium">
-                      Return Amount {matureForm.vaultPda && selectedMatureVault && `(${getTokenSymbol(selectedMatureVault.assetMint || '')})`}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1.5 sm:mb-2">
+                    <label className="block text-xs sm:text-sm font-medium">
+                      Amount {matureForm.vaultPda && selectedMatureVault && `(${getTokenSymbol(selectedMatureVault.assetMint || '')})`}
                     </label>
                     {matureForm.vaultPda && selectedMatureVault && (
                       <div className="text-xs text-muted-foreground">
                         {balanceLoading ? (
-                          "Loading balance..."
+                          "Loading..."
                         ) : (
                           <>
-                            Balance:{" "}
+                            Bal:{" "}
                             <button
                               type="button"
                               onClick={() =>
@@ -737,9 +747,9 @@ export default function AdminPage() {
                                   returnAmount: tokenBalance.toFixed(2),
                                 })
                               }
-                              className="font-medium text-foreground hover:text-primary hover:underline transition-colors cursor-pointer"
+                              className="font-medium text-foreground hover:text-primary hover:underline transition-colors cursor-pointer touch-manipulation"
                             >
-                              {tokenBalance.toFixed(2)} {getTokenSymbol(selectedMatureVault.assetMint || '')}
+                              {tokenBalance.toFixed(2)}
                             </button>
                           </>
                         )}
@@ -757,15 +767,16 @@ export default function AdminPage() {
                       })
                     }
                     placeholder="1100"
+                    className="h-11 touch-manipulation"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Principal + yield (e.g., 1000 + 100 = 1100)
+                    Principal + yield
                   </p>
                 </div>
                 <Button
                   onClick={handleMatureVault}
                   disabled={loading === "mature" || !matureForm.vaultPda}
-                  className="w-full"
+                  className="w-full h-11 touch-manipulation"
                 >
                   {loading === "mature" ? "Maturing..." : "Mature Vault"}
                 </Button>
@@ -773,18 +784,17 @@ export default function AdminPage() {
             </Card>
 
             {/* Close Vault */}
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4 text-primary">
+            <Card className="p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-primary">
                 4. Close Vault
               </h2>
-              <p className="text-sm text-gray-400 mb-4">
-                Reclaim rent after all users have claimed. Vault must have zero
-                (or dust) balance.
+              <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">
+                Reclaim rent after claims. Must have zero (or dust) balance.
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Select Vault (Matured/Canceled status)
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+                    Select Vault
                   </label>
                   <Select
                     value={closeForm.vaultPda}
@@ -792,13 +802,14 @@ export default function AdminPage() {
                       setCloseForm({ ...closeForm, vaultPda: e.target.value })
                     }
                     disabled={vaultsLoading}
+                    className="h-11 touch-manipulation"
                   >
                     <option value="">
-                      {vaultsLoading ? "Loading vaults..." : "Select a vault"}
+                      {vaultsLoading ? "Loading..." : "Select vault"}
                     </option>
                     {closableVaults.map((vault) => (
                       <option key={vault.vaultPda} value={vault.vaultPda}>
-                        Vault #{vault.vaultId} - {vault.status} - Claimed: {formatTokenAmount(vault.totalClaimed, vault.assetMint)}
+                        #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalClaimed, vault.assetMint)}
                       </option>
                     ))}
                   </Select>
@@ -822,7 +833,7 @@ export default function AdminPage() {
                 <Button
                   onClick={handleCloseVault}
                   disabled={loading === "close" || !closeForm.vaultPda}
-                  className="w-full bg-red-600 hover:bg-red-700"
+                  className="w-full h-11 bg-red-600 hover:bg-red-700 touch-manipulation"
                 >
                   {loading === "close" ? "Closing..." : "Close Vault"}
                 </Button>
