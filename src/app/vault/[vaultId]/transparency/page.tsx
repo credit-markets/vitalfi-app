@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -34,6 +34,14 @@ export default function VaultTransparencyDetail() {
   const { isCollapsed } = useSidebar();
   const vaultId = params.vaultId as string;
   const [activeTab, setActiveTab] = useState("collateral");
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      cleanupRef.current?.();
+    };
+  }, []);
 
   // Fetch vault data from backend API
   const { info: vaultInfo, error: vaultError } = useVaultAPI(vaultId);
@@ -85,14 +93,16 @@ export default function VaultTransparencyDetail() {
       link.click();
       document.body.removeChild(link);
 
-      // Store timeout ID for cleanup
-      const timeoutId = setTimeout(
-        () => window.URL.revokeObjectURL(url),
-        SAFARI_DOWNLOAD_DELAY_MS
-      );
+      // Clean up previous export if any
+      cleanupRef.current?.();
 
-      // Return cleanup function
-      return () => {
+      // Store timeout ID for cleanup
+      const timeoutId = setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        cleanupRef.current = null;
+      }, SAFARI_DOWNLOAD_DELAY_MS);
+
+      cleanupRef.current = () => {
         clearTimeout(timeoutId);
         window.URL.revokeObjectURL(url);
       };

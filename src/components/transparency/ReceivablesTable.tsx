@@ -266,8 +266,8 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2">
-          <div className="text-sm text-muted-foreground">
+        <nav className="flex items-center justify-between px-2" aria-label="Pagination">
+          <div className="text-sm text-muted-foreground" role="status" aria-live="polite">
             Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to{' '}
             {Math.min(currentPage * ITEMS_PER_PAGE, filteredReceivables.length)} of{' '}
             {filteredReceivables.length} receivables
@@ -278,11 +278,12 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
               size="sm"
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
+              aria-label="Go to previous page"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
               Previous
             </Button>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground" aria-current="page">
               Page {currentPage} of {totalPages}
             </div>
             <Button
@@ -290,12 +291,13 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
               size="sm"
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
+              aria-label="Go to next page"
             >
               Next
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
-        </div>
+        </nav>
       )}
     </div>
   );

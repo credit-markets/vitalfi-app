@@ -169,10 +169,10 @@ export function ActivityTable({ activity }: ActivityTableProps) {
 
       {/* Pagination */}
       {activity.length > 0 && (
-        <div className="flex items-center justify-end">
+        <nav className="flex items-center justify-end" aria-label="Pagination">
           {totalPages > 1 ? (
             <div className="flex items-center gap-2">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground" role="status" aria-live="polite">
                 Showing {paginatedActivity.length} of {activity.length}{" "}
                 {activity.length === 1 ? "transaction" : "transactions"}
               </div>
@@ -181,11 +181,12 @@ export function ActivityTable({ activity }: ActivityTableProps) {
                 size="sm"
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}
+                aria-label="Go to previous page"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Previous
               </Button>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground" aria-current="page">
                 Page {currentPage} of {totalPages}
               </div>
               <Button
@@ -193,18 +194,19 @@ export function ActivityTable({ activity }: ActivityTableProps) {
                 size="sm"
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}
+                aria-label="Go to next page"
               >
                 Next
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground" role="status">
               Showing {paginatedActivity.length} of {activity.length}{" "}
               {activity.length === 1 ? "transaction" : "transactions"}
             </div>
           )}
-        </div>
+        </nav>
       )}
     </div>
   );
