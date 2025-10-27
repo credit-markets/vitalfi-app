@@ -12,7 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { useVaultClient } from "@/hooks/wallet/use-vault-client";
 import { useVaultsAPI } from "@/hooks/api/use-vaults-api";
 import { useTokenBalance } from "@/hooks/wallet/use-token-balance";
-import { toast } from "sonner";
+import {
+  validationError,
+  walletConnectionError,
+  vaultInit,
+  finalizeFunding,
+  matureVault,
+  closeVault,
+} from "@/lib/toast";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSidebar } from "@/providers/SidebarContext";
@@ -69,7 +76,8 @@ export default function AdminPage() {
     enabled: connected && !!env.vaultAuthority,
   });
 
-  const vaults = vaultsResponse?.items || [];
+  // Memoize vaults array to stabilize dependencies
+  const vaults = useMemo(() => vaultsResponse?.items || [], [vaultsResponse?.items]);
 
   // Memoize filtered vault lists to avoid unnecessary re-renders
   const fundingVaults = useMemo(() => vaults.filter((v) => v.status === "Funding"), [vaults]);
@@ -132,7 +140,7 @@ export default function AdminPage() {
 
   const handleInitializeVault = async () => {
     if (!vaultClient || !publicKey) {
-      toast.error("Please connect your wallet");
+      walletConnectionError();
       return;
     }
 
@@ -140,31 +148,31 @@ export default function AdminPage() {
     // Reject scientific notation
     if (/[eE]/.test(initForm.vaultId) || /[eE]/.test(initForm.cap) ||
         /[eE]/.test(initForm.targetApyBps) || /[eE]/.test(initForm.minDeposit)) {
-      toast.error("Scientific notation is not allowed");
+      validationError("Scientific notation is not allowed");
       return;
     }
 
     const vaultIdNum = parseInt(initForm.vaultId);
     if (isNaN(vaultIdNum) || vaultIdNum < 0 || vaultIdNum > MAX_VAULT_ID) {
-      toast.error(`Vault ID must be between 0 and ${MAX_VAULT_ID}`);
+      validationError(`Vault ID must be between 0 and ${MAX_VAULT_ID}`);
       return;
     }
 
     const capSol = parseFloat(initForm.cap);
     if (isNaN(capSol) || capSol <= 0 || capSol > MAX_CAP_SOL) {
-      toast.error(`Cap must be between 0 and ${MAX_CAP_SOL}`);
+      validationError(`Cap must be between 0 and ${MAX_CAP_SOL}`);
       return;
     }
 
     const targetApyBps = parseInt(initForm.targetApyBps);
     if (isNaN(targetApyBps) || targetApyBps < 0 || targetApyBps > MAX_APY_BPS) {
-      toast.error(`Target APY must be between 0 and ${MAX_APY_BPS} basis points`);
+      validationError(`Target APY must be between 0 and ${MAX_APY_BPS} basis points`);
       return;
     }
 
     const minDepositSol = parseFloat(initForm.minDeposit);
     if (isNaN(minDepositSol) || minDepositSol <= 0 || minDepositSol > MAX_MIN_DEPOSIT) {
-      toast.error(`Minimum deposit must be between 0 and ${MAX_MIN_DEPOSIT}`);
+      validationError(`Minimum deposit must be between 0 and ${MAX_MIN_DEPOSIT}`);
       return;
     }
 
@@ -176,24 +184,24 @@ export default function AdminPage() {
     const now = Math.floor(Date.now() / 1000);
 
     if (isNaN(fundingEndTsNum) || fundingEndTsNum <= now) {
-      toast.error("Funding end timestamp must be in the future");
+      validationError("Funding end timestamp must be in the future");
       return;
     }
 
     const fundingDuration = fundingEndTsNum - now;
     if (fundingDuration < MIN_FUNDING_DURATION || fundingDuration > MAX_FUNDING_DURATION) {
-      toast.error(`Funding duration must be between ${MIN_FUNDING_DURATION}s and ${MAX_FUNDING_DURATION}s`);
+      validationError(`Funding duration must be between ${MIN_FUNDING_DURATION}s and ${MAX_FUNDING_DURATION}s`);
       return;
     }
 
     if (isNaN(maturityTsNum) || maturityTsNum <= fundingEndTsNum) {
-      toast.error("Maturity timestamp must be after funding end");
+      validationError("Maturity timestamp must be after funding end");
       return;
     }
 
     const maturityDuration = maturityTsNum - fundingEndTsNum;
     if (maturityDuration < MIN_FUNDING_DURATION || maturityDuration > MAX_FUNDING_DURATION) {
-      toast.error(`Maturity duration must be between ${MIN_FUNDING_DURATION}s and ${MAX_FUNDING_DURATION}s`);
+      validationError(`Maturity duration must be between ${MIN_FUNDING_DURATION}s and ${MAX_FUNDING_DURATION}s`);
       return;
     }
 
@@ -201,12 +209,13 @@ export default function AdminPage() {
     let assetMint: PublicKey;
     try {
       assetMint = new PublicKey(initForm.assetMint);
-    } catch (error) {
-      toast.error("Invalid asset mint address");
+    } catch {
+      validationError("Invalid asset mint address");
       return;
     }
 
     setLoading("initialize");
+    vaultInit.loading();
     try {
       const vaultId = new BN(vaultIdNum);
 
@@ -230,25 +239,10 @@ export default function AdminPage() {
         assetMint
       );
 
-      toast.success(
-        <div>
-          Vault initialized!
-          <br />
-          <a
-            href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-cyan-400"
-          >
-            View Transaction
-          </a>
-        </div>
-      );
+      vaultInit.success(txSig, vaultIdNum.toString());
     } catch (error) {
       console.error("Failed to initialize vault:", error);
-      toast.error(
-        `Failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      vaultInit.error(error instanceof Error ? error : "Unknown error");
     } finally {
       setLoading(null);
     }
@@ -256,24 +250,24 @@ export default function AdminPage() {
 
   const handleFinalizeFunding = async () => {
     if (!vaultClient || !publicKey) {
-      toast.error("Please connect your wallet");
+      walletConnectionError();
       return;
     }
 
     // Input validation
     if (!finalizeForm.vaultPda) {
-      toast.error("Please select a vault");
+      validationError("Please select a vault");
       return;
     }
 
     const selectedVault = getSelectedVault(finalizeForm.vaultPda);
     if (!selectedVault) {
-      toast.error("Selected vault not found");
+      validationError("Selected vault not found");
       return;
     }
 
     if (!selectedVault.vaultId || !selectedVault.assetMint) {
-      toast.error("Vault data incomplete");
+      validationError("Vault data incomplete");
       return;
     }
 
@@ -281,36 +275,22 @@ export default function AdminPage() {
     let assetMint: PublicKey;
     try {
       assetMint = new PublicKey(selectedVault.assetMint);
-    } catch (error) {
-      toast.error("Invalid asset mint address in vault");
+    } catch {
+      validationError("Invalid asset mint address in vault");
       return;
     }
 
     setLoading("finalize");
+    finalizeFunding.loading();
     try {
       const vaultId = new BN(selectedVault.vaultId);
 
       const txSig = await vaultClient.finalizeFunding(vaultId, assetMint);
 
-      toast.success(
-        <div>
-          Funding finalized!
-          <br />
-          <a
-            href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-cyan-400"
-          >
-            View Transaction
-          </a>
-        </div>
-      );
+      finalizeFunding.success(txSig);
     } catch (error) {
       console.error("Failed to finalize funding:", error);
-      toast.error(
-        `Failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      finalizeFunding.error(error instanceof Error ? error : "Unknown error");
     } finally {
       setLoading(null);
     }
@@ -318,30 +298,30 @@ export default function AdminPage() {
 
   const handleMatureVault = async () => {
     if (!vaultClient || !publicKey) {
-      toast.error("Please connect your wallet");
+      walletConnectionError();
       return;
     }
 
     // Input validation
     if (!matureForm.vaultPda) {
-      toast.error("Please select a vault");
+      validationError("Please select a vault");
       return;
     }
 
     const selectedVault = getSelectedVault(matureForm.vaultPda);
     if (!selectedVault) {
-      toast.error("Selected vault not found");
+      validationError("Selected vault not found");
       return;
     }
 
     if (!selectedVault.vaultId || !selectedVault.assetMint) {
-      toast.error("Vault data incomplete");
+      validationError("Vault data incomplete");
       return;
     }
 
     const returnAmountSol = parseFloat(matureForm.returnAmount);
     if (isNaN(returnAmountSol) || returnAmountSol <= 0) {
-      toast.error("Return amount must be a positive number");
+      validationError("Return amount must be a positive number");
       return;
     }
 
@@ -349,12 +329,13 @@ export default function AdminPage() {
     let assetMint: PublicKey;
     try {
       assetMint = new PublicKey(selectedVault.assetMint);
-    } catch (error) {
-      toast.error("Invalid asset mint address in vault");
+    } catch {
+      validationError("Invalid asset mint address in vault");
       return;
     }
 
     setLoading("mature");
+    matureVault.loading();
     try {
       const vaultId = new BN(selectedVault.vaultId);
 
@@ -368,25 +349,10 @@ export default function AdminPage() {
         assetMint
       );
 
-      toast.success(
-        <div>
-          Vault matured!
-          <br />
-          <a
-            href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-cyan-400"
-          >
-            View Transaction
-          </a>
-        </div>
-      );
+      matureVault.success(txSig);
     } catch (error) {
       console.error("Failed to mature vault:", error);
-      toast.error(
-        `Failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      matureVault.error(error instanceof Error ? error : "Unknown error");
     } finally {
       setLoading(null);
     }
@@ -394,52 +360,38 @@ export default function AdminPage() {
 
   const handleCloseVault = async () => {
     if (!vaultClient || !publicKey) {
-      toast.error("Please connect your wallet");
+      walletConnectionError();
       return;
     }
 
     // Input validation
     if (!closeForm.vaultPda) {
-      toast.error("Please select a vault");
+      validationError("Please select a vault");
       return;
     }
 
     const selectedVault = getSelectedVault(closeForm.vaultPda);
     if (!selectedVault) {
-      toast.error("Selected vault not found");
+      validationError("Selected vault not found");
       return;
     }
 
     if (!selectedVault.vaultId) {
-      toast.error("Vault data incomplete");
+      validationError("Vault data incomplete");
       return;
     }
 
     setLoading("close");
+    closeVault.loading();
     try {
       const vaultId = new BN(selectedVault.vaultId);
 
       const txSig = await vaultClient.closeVault(vaultId);
 
-      toast.success(
-        <div>
-          Vault closed!
-          <br />
-          <a
-            href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-cyan-400"
-          >
-            View Transaction
-          </a>
-        </div>
-      );
+      closeVault.success(txSig);
     } catch (error) {
       console.error("Failed to close vault:", error);
-      toast.error(
-        `Failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      closeVault.error(error instanceof Error ? error : "Unknown error");
     } finally {
       setLoading(null);
     }

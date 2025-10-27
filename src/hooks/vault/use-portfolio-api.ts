@@ -144,6 +144,9 @@ export function usePortfolioAPI() {
           realizedYieldSol = 0;
           canClaim = claimedSol < depositedSol;
         }
+      } else if (vault.status === "Canceled") {
+        // For canceled vaults, users can claim full refund of their deposit
+        canClaim = claimedSol < depositedSol;
       }
 
       const fundingEndDate = parseTimestamp(vault.fundingEndTs);

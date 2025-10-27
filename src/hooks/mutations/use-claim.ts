@@ -4,8 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { useVaultClient } from "@/hooks/wallet/use-vault-client";
-import { getCurrentNetwork } from "@/lib/sdk";
-import { toast } from "sonner";
+import { claim as claimToast } from "@/lib/toast";
 
 export interface ClaimParams {
   vaultId: BN;
@@ -44,7 +43,7 @@ export function useClaim() {
     },
     onMutate: async () => {
       // Show loading toast
-      toast.loading("Claiming...", { id: "claim" });
+      claimToast.loading();
     },
     onSuccess: (txSig, params) => {
       // Invalidate relevant queries to refetch
@@ -58,27 +57,11 @@ export function useClaim() {
         queryKey: ["user-positions"],
       });
 
-      toast.success("Claim successful!", {
-        id: "claim",
-        description: `Transaction: ${txSig.slice(0, 8)}...`,
-        action: {
-          label: "View",
-          onClick: () => {
-            const cluster = getCurrentNetwork();
-            window.open(
-              `https://explorer.solana.com/tx/${txSig}?cluster=${cluster}`,
-              "_blank"
-            );
-          },
-        },
-      });
+      claimToast.success(txSig);
     },
     onError: (error: Error) => {
       console.error("Claim error:", error);
-      toast.error("Claim failed", {
-        id: "claim",
-        description: error.message || "Transaction failed. Please try again.",
-      });
+      claimToast.error(error);
     },
   });
 }

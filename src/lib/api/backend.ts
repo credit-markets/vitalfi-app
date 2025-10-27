@@ -233,7 +233,7 @@ function normalizeEndpoint(endpoint: string): string {
   return `${path}?${new URLSearchParams(sorted).toString()}`;
 }
 
-async function apiFetch<T>(
+export async function apiFetch<T>(
   endpoint: string,
   options?: ApiFetchOptions
 ): Promise<T> {

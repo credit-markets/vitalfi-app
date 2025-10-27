@@ -10,7 +10,8 @@ export type PositionStage =
   | 'matured-claimable'
   | 'matured-claimed'
   | 'canceled-refundable'
-  | 'canceled-refunded';
+  | 'canceled-refunded'
+  | 'closed';
 
 /**
  * Determine position stage from vault status and claim state
@@ -31,8 +32,8 @@ export function getPositionStage(
       return hasClaimed ? 'canceled-refunded' : 'canceled-refundable';
 
     case 'Closed':
-      // Closed vaults should have been claimed
-      return 'canceled-refunded';
+      // Vault has been closed by authority (all funds claimed)
+      return 'closed';
 
     default:
       return 'funding';
@@ -54,6 +55,10 @@ export function getStageBadgeText(stage: PositionStage): string {
       return 'Canceled';
     case 'canceled-refunded':
       return 'Canceled • Refunded';
+    case 'closed':
+      return 'Closed';
+    default:
+      return 'Unknown';
   }
 }
 
@@ -69,6 +74,10 @@ export function getStageBadgeColors(stage: PositionStage): string {
       return 'bg-green-500/10 text-green-500 border-green-500/20';
     case 'canceled-refundable':
     case 'canceled-refunded':
+      return 'bg-muted text-muted-foreground border-border';
+    case 'closed':
+      return 'bg-muted/50 text-muted-foreground/70 border-border/50';
+    default:
       return 'bg-muted text-muted-foreground border-border';
   }
 }
@@ -93,6 +102,10 @@ export function getStateLineText(
       return 'Vault canceled — deposit refundable';
     case 'canceled-refunded':
       return 'Vault canceled — refunded';
+    case 'closed':
+      return 'Vault closed — all operations complete';
+    default:
+      return 'Status unknown';
   }
 }
 
@@ -109,5 +122,9 @@ export function getOutcomeTitle(stage: PositionStage): string {
     case 'canceled-refundable':
     case 'canceled-refunded':
       return 'Refund';
+    case 'closed':
+      return 'Final Settlement';
+    default:
+      return 'Outcome';
   }
 }

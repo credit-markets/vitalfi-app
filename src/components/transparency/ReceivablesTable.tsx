@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -18,24 +18,29 @@ import {
   ExternalLink,
   Filter,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { Receivable, ReceivableStatus, ReceivableFilters } from "@/types/vault";
-import { filterReceivables } from "@/lib/transparency/api";
+import { filterReceivables } from "@/lib/transparency/utils";
 
 interface ReceivablesTableProps {
   receivables: Receivable[];
   onExportCsv: (filtered: Receivable[]) => void;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableProps) {
   const [filters, setFilters] = useState<ReceivableFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // TODO: Implement filter UI with originators and payers dropdowns
   // For now, only search is active
 
-  // Apply filters and search
+  // Apply filters, search, and sort by maturity date
   const filteredReceivables = useMemo(() => {
     let result = filterReceivables(receivables, filters);
 
@@ -50,8 +55,26 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
       );
     }
 
+    // Sort by maturity date (nearest maturity first)
+    result.sort((a, b) =>
+      new Date(a.maturityDate).getTime() - new Date(b.maturityDate).getTime()
+    );
+
     return result;
   }, [receivables, filters, searchTerm]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredReceivables.length / ITEMS_PER_PAGE);
+  const paginatedReceivables = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredReceivables.slice(startIndex, endIndex);
+  }, [filteredReceivables, currentPage]);
+
+  // Reset to page 1 when filters or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredReceivables.length]);
 
   const getStatusBadge = (status: ReceivableStatus) => {
     const variants = {
@@ -179,7 +202,7 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredReceivables.map(r => (
+                paginatedReceivables.map(r => (
                   <TableRow key={r.id} className="hover:bg-muted/20">
                     <TableCell className="font-mono text-sm">{r.id}</TableCell>
                     <TableCell className="text-sm">{r.originator}</TableCell>
@@ -245,6 +268,42 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
           </Table>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-between px-2" aria-label="Pagination">
+          <div className="text-sm text-muted-foreground" role="status" aria-live="polite">
+            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to{' '}
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredReceivables.length)} of{' '}
+            {filteredReceivables.length} receivables
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              aria-label="Go to previous page"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+            <div className="text-sm text-muted-foreground" aria-current="page">
+              Page {currentPage} of {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              aria-label="Go to next page"
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

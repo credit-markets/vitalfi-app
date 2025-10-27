@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { formatNumber, shortenAddress } from "@/lib/utils";
 import { getTokenSymbol } from "@/lib/sdk/config";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { Copy, ExternalLink, TrendingUp, DollarSign, LucideIcon } from "lucide-react";
-import { toast } from "sonner";
+import { copyAddress as copyAddressUtil } from "@/lib/toast";
 import type { EventTag } from "@/types/vault";
 
 type ActivityFilter = "all" | "deposits" | "claims";
@@ -41,6 +41,22 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
   const [filter, setFilter] = useState<ActivityFilter>("all");
   const { events, info } = useVaultAPI(vaultId);
 
+  // Filter and sort events by timestamp (newest first)
+  const filteredActivity = useMemo(() => {
+    const filtered = filter === "all"
+      ? events
+      : events.filter(e => {
+          if (filter === "deposits") return e.tag === "Deposit";
+          if (filter === "claims") return e.tag === "Claim";
+          return true;
+        });
+
+    // Sort by timestamp (newest first)
+    return [...filtered].sort((a, b) =>
+      new Date(b.ts).getTime() - new Date(a.ts).getTime()
+    );
+  }, [events, filter]);
+
   // Early return if data not loaded (error state handled by parent)
   if (!info) {
     return null;
@@ -48,17 +64,8 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
 
   const tokenSymbol = getTokenSymbol(info.addresses.tokenMint || NATIVE_MINT.toBase58());
 
-  const filteredActivity = filter === "all"
-    ? events
-    : events.filter(e => {
-        if (filter === "deposits") return e.tag === "Deposit";
-        if (filter === "claims") return e.tag === "Claim";
-        return true;
-      });
-
-  const copyAddress = (addr: string) => {
-    navigator.clipboard.writeText(addr);
-    toast.success("Address copied!");
+  const copyAddress = async (addr: string) => {
+    await copyAddressUtil(addr);
   };
 
   return (
