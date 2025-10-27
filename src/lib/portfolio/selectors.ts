@@ -5,7 +5,7 @@ import { daysUntil } from "@/lib/utils";
  * Get the next upcoming maturity across all positions
  */
 export function getNextMaturity(positions: PortfolioPosition[]) {
-  const activePositions = positions.filter(p => p.status !== 'Matured');
+  const activePositions = positions.filter(p => p.status !== 'Matured' && p.status !== 'Canceled');
 
   if (activePositions.length === 0) {
     return null;
@@ -77,8 +77,8 @@ export function getUpcomingEvents(positions: PortfolioPosition[]) {
       });
     }
 
-    // Add maturity event if not yet matured
-    if (position.status !== 'Matured') {
+    // Add maturity event if not yet matured or canceled
+    if (position.status !== 'Matured' && position.status !== 'Canceled') {
       events.push({
         id: `${position.vaultId}-maturity`,
         type: 'MATURITY',
