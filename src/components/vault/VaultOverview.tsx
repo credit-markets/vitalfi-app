@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
-import { formatCompactNumber } from "@/lib/utils/formatters";
+import { formatMonetary } from "@/lib/utils/formatters";
 import { getStatusColors } from "@/lib/utils/colors";
 import { formatDate, pluralize, cn } from "@/lib/utils";
 import { getTokenSymbol } from "@/lib/sdk/config";
@@ -61,11 +61,11 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              Raised: {formatCompactNumber(info.raisedSol)} {tokenSymbol} (
+              Raised: {formatMonetary(info.raisedSol, tokenSymbol, { compact: true })} (
               {computed.progressPct.toFixed(1)}%)
             </span>
             <span>
-              Remaining: {formatCompactNumber(computed.capRemainingSol)} {tokenSymbol} (
+              Remaining: {formatMonetary(computed.capRemainingSol, tokenSymbol, { compact: true })} (
               {(100 - computed.progressPct).toFixed(1)}%)
             </span>
           </div>
@@ -85,7 +85,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <div>
             <div className="text-muted-foreground mb-1">Min Investment</div>
             <div className="font-semibold">
-              {formatCompactNumber(info.minInvestmentSol)} {tokenSymbol}
+              {formatMonetary(info.minInvestmentSol, tokenSymbol, { compact: true })}
             </div>
           </div>
           <div>
@@ -95,7 +95,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <div>
             <div className="text-muted-foreground mb-1">Total Cap</div>
             <div className="font-semibold">
-              {formatCompactNumber(info.capSol)} {tokenSymbol}
+              {formatMonetary(info.capSol, tokenSymbol, { compact: true })}
             </div>
           </div>
         </div>

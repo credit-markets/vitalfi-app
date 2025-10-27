@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
-import { formatCompactNumber } from "@/lib/utils/formatters";
+import { formatMonetary } from "@/lib/utils/formatters";
 import { getTokenSymbol } from "@/lib/sdk/config";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { Clock, ExternalLink } from "lucide-react";
@@ -71,7 +71,7 @@ export function VaultFacts({ summary, lastUpdated }: VaultFactsProps) {
           <div>
             <div className="text-xs text-muted-foreground/80 mb-1">Raised / Cap</div>
             <div className="text-sm font-semibold text-foreground">
-              {formatCompactNumber(summary.raised)} {tokenSymbol} / {formatCompactNumber(summary.cap)} {tokenSymbol}
+              {formatMonetary(summary.raised, tokenSymbol, { compact: true })} / {formatMonetary(summary.cap, tokenSymbol, { compact: true })}
             </div>
           </div>
         </Tooltip>
