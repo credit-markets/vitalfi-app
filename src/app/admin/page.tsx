@@ -9,17 +9,15 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useVaultClient } from "@/hooks/wallet/use-vault-client";
 import { useVaultsAPI } from "@/hooks/api/use-vaults-api";
 import { useTokenBalance } from "@/hooks/wallet/use-token-balance";
 import {
-  validationError,
-  walletConnectionError,
-  vaultInit,
-  finalizeFunding,
-  matureVault,
-  closeVault,
-} from "@/lib/toast";
+  useInitializeVault,
+  useFinalizeFunding,
+  useMatureVault,
+  useCloseVault,
+} from "@/hooks/mutations";
+import { validationError, walletConnectionError } from "@/lib/toast";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSidebar } from "@/providers/SidebarContext";
@@ -67,8 +65,13 @@ function decimalToBN(decimal: number, decimals: number): BN {
 
 export default function AdminPage() {
   const { publicKey, connected } = useWallet();
-  const vaultClient = useVaultClient();
   const { isCollapsed } = useSidebar();
+
+  // Mutation hooks with automatic retry logic
+  const initializeVault = useInitializeVault();
+  const finalizeFunding = useFinalizeFunding();
+  const matureVault = useMatureVault();
+  const closeVault = useCloseVault();
 
   // Fetch all vaults for the authority
   const { data: vaultsResponse, isLoading: vaultsLoading } = useVaultsAPI({
@@ -139,7 +142,7 @@ export default function AdminPage() {
   };
 
   const handleInitializeVault = async () => {
-    if (!vaultClient || !publicKey) {
+    if (!publicKey) {
       walletConnectionError();
       return;
     }
@@ -215,7 +218,6 @@ export default function AdminPage() {
     }
 
     setLoading("initialize");
-    vaultInit.loading();
     try {
       const vaultId = new BN(vaultIdNum);
 
@@ -229,27 +231,25 @@ export default function AdminPage() {
       // Convert using safe precision method
       const minDeposit = decimalToBN(minDepositSol, decimals);
 
-      const txSig = await vaultClient.initializeVault(
+      await initializeVault.mutateAsync({
         vaultId,
         cap,
         targetApyBps,
         fundingEndTs,
         maturityTs,
         minDeposit,
-        assetMint
-      );
-
-      vaultInit.success(txSig, vaultIdNum.toString());
+        assetMint,
+      });
     } catch (error) {
+      // Error already handled by mutation hook
       console.error("Failed to initialize vault:", error);
-      vaultInit.error(error instanceof Error ? error : "Unknown error");
     } finally {
       setLoading(null);
     }
   };
 
   const handleFinalizeFunding = async () => {
-    if (!vaultClient || !publicKey) {
+    if (!publicKey) {
       walletConnectionError();
       return;
     }
@@ -266,7 +266,7 @@ export default function AdminPage() {
       return;
     }
 
-    if (!selectedVault.vaultId || !selectedVault.assetMint) {
+    if (!selectedVault.vaultId || !selectedVault.assetMint || !selectedVault.authority) {
       validationError("Vault data incomplete");
       return;
     }
@@ -275,29 +275,30 @@ export default function AdminPage() {
     let assetMint: PublicKey;
     try {
       assetMint = new PublicKey(selectedVault.assetMint);
+      // Authority is automatically derived from connected wallet
     } catch {
       validationError("Invalid asset mint address in vault");
       return;
     }
 
     setLoading("finalize");
-    finalizeFunding.loading();
     try {
       const vaultId = new BN(selectedVault.vaultId);
 
-      const txSig = await vaultClient.finalizeFunding(vaultId, assetMint);
-
-      finalizeFunding.success(txSig);
+      await finalizeFunding.mutateAsync({
+        vaultId,
+        assetMint,
+      });
     } catch (error) {
+      // Error already handled by mutation hook
       console.error("Failed to finalize funding:", error);
-      finalizeFunding.error(error instanceof Error ? error : "Unknown error");
     } finally {
       setLoading(null);
     }
   };
 
   const handleMatureVault = async () => {
-    if (!vaultClient || !publicKey) {
+    if (!publicKey) {
       walletConnectionError();
       return;
     }
@@ -314,7 +315,7 @@ export default function AdminPage() {
       return;
     }
 
-    if (!selectedVault.vaultId || !selectedVault.assetMint) {
+    if (!selectedVault.vaultId || !selectedVault.assetMint || !selectedVault.authority) {
       validationError("Vault data incomplete");
       return;
     }
@@ -329,13 +330,13 @@ export default function AdminPage() {
     let assetMint: PublicKey;
     try {
       assetMint = new PublicKey(selectedVault.assetMint);
+      // Authority is automatically derived from connected wallet
     } catch {
       validationError("Invalid asset mint address in vault");
       return;
     }
 
     setLoading("mature");
-    matureVault.loading();
     try {
       const vaultId = new BN(selectedVault.vaultId);
 
@@ -343,23 +344,21 @@ export default function AdminPage() {
       const decimals = getTokenDecimals(selectedVault.assetMint || '');
       const returnAmount = decimalToBN(returnAmountSol, decimals);
 
-      const txSig = await vaultClient.matureVault(
+      await matureVault.mutateAsync({
         vaultId,
         returnAmount,
-        assetMint
-      );
-
-      matureVault.success(txSig);
+        assetMint,
+      });
     } catch (error) {
+      // Error already handled by mutation hook
       console.error("Failed to mature vault:", error);
-      matureVault.error(error instanceof Error ? error : "Unknown error");
     } finally {
       setLoading(null);
     }
   };
 
   const handleCloseVault = async () => {
-    if (!vaultClient || !publicKey) {
+    if (!publicKey) {
       walletConnectionError();
       return;
     }
@@ -376,22 +375,23 @@ export default function AdminPage() {
       return;
     }
 
-    if (!selectedVault.vaultId) {
+    if (!selectedVault.vaultId || !selectedVault.authority) {
       validationError("Vault data incomplete");
       return;
     }
 
+    // Authority is automatically derived from connected wallet
+
     setLoading("close");
-    closeVault.loading();
     try {
       const vaultId = new BN(selectedVault.vaultId);
 
-      const txSig = await vaultClient.closeVault(vaultId);
-
-      closeVault.success(txSig);
+      await closeVault.mutateAsync({
+        vaultId,
+      });
     } catch (error) {
+      // Error already handled by mutation hook
       console.error("Failed to close vault:", error);
-      closeVault.error(error instanceof Error ? error : "Unknown error");
     } finally {
       setLoading(null);
     }

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { useDeposit } from "@/hooks/mutations";
 import { env } from "@/lib/env";
-import { formatDate, formatNumber } from "@/lib/utils";
+import { formatDate, formatNumber, daysBetween } from "@/lib/utils";
 import { getTokenDecimals, getTokenSymbol } from "@/lib/sdk/config";
 import { TrendingUp, AlertCircle, Info } from "lucide-react";
 import { useTokenBalance } from "@/hooks/wallet/use-token-balance";
@@ -217,7 +217,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                       amountNum *
                         (1 +
                           (info.expectedApyPct / 100) *
-                            (computed.daysToMaturity / 365))
+                            (daysBetween(info.fundingEndAt, info.maturityAt) / 365))
                     )}{" "}
                     {tokenSymbol}
                   </span>

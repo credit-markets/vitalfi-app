@@ -61,13 +61,35 @@ export function daysUntil(iso: string): number {
 }
 
 /**
- * Calculate expected yield based on principal, APY, and maturity date
+ * Calculate days between two dates
+ * @returns Number of days between the dates (minimum 0)
+ */
+export function daysBetween(startIso: string, endIso: string): number {
+  const days = Math.max(
+    0,
+    Math.ceil((new Date(endIso).getTime() - new Date(startIso).getTime()) / (1000 * 60 * 60 * 24))
+  );
+  return days;
+}
+
+/**
+ * Calculate expected yield based on principal, APY, and vault duration
  * @param principalSol Principal amount in SOL
  * @param apyPct Annual percentage yield
+ * @param fundingEndIso Funding end date (when vault becomes active)
  * @param maturityIso Maturity date in ISO format
  * @returns Expected yield in SOL
  */
-export function expectedYieldSol(principalSol: number, apyPct: number, maturityIso: string): number {
-  const days = daysUntil(maturityIso);
+export function expectedYieldSol(
+  principalSol: number,
+  apyPct: number,
+  maturityIso: string,
+  fundingEndIso?: string
+): number {
+  // If fundingEndIso is provided, use vault duration (fundingEnd → maturity)
+  // Otherwise, fall back to time remaining (now → maturity) for backwards compatibility
+  const days = fundingEndIso
+    ? daysBetween(fundingEndIso, maturityIso)
+    : daysUntil(maturityIso);
   return principalSol * (apyPct / 100) * (days / 365);
 }

@@ -213,9 +213,9 @@ export function usePortfolioAPI() {
     const totalExpectedYieldSol = positions
       .filter((p) => p.status !== "Matured") // Only count active positions
       .reduce((sum, p) => {
-        if (!p.maturityAt) return sum;
+        if (!p.maturityAt || !p.fundingEndAt) return sum;
         return (
-          sum + expectedYieldSol(p.depositedSol, p.expectedApyPct, p.maturityAt)
+          sum + expectedYieldSol(p.depositedSol, p.expectedApyPct, p.maturityAt, p.fundingEndAt)
         );
       }, 0);
 

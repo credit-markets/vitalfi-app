@@ -25,7 +25,7 @@ export default function PortfolioPage() {
   const { isCollapsed } = useSidebar();
   const { summary, positions, activity, connected, vaults } = usePortfolioAPI();
 
-  const [stageFilter, setStageFilter] = useState<StageFilter>(["Matured"]);
+  const [stageFilter, setStageFilter] = useState<StageFilter>(["Matured", "Funding", "Active", "Canceled"]);
   const [highlightedVault, setHighlightedVault] = useState<string | null>(null);
   const [claimingVaultId, setClaimingVaultId] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
