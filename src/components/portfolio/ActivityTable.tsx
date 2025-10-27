@@ -14,7 +14,7 @@ import {
 import { formatMonetary } from "@/lib/utils/formatters";
 import { formatDate, shortenAddress } from "@/lib/utils";
 import { ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { copyTransactionSignature, exportSuccess } from "@/lib/toast";
 import { getTokenSymbol } from "@/lib/sdk/config";
 import { NATIVE_MINT } from "@solana/spl-token";
 import type { PortfolioActivity } from "@/hooks/vault/use-portfolio-api";
@@ -31,22 +31,28 @@ const ITEMS_PER_PAGE = 10;
 export function ActivityTable({ activity }: ActivityTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(activity.length / ITEMS_PER_PAGE);
+  // Sort activity by date (newest first)
+  const sortedActivity = useMemo(() => {
+    return [...activity].sort((a, b) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [activity]);
+
+  const totalPages = Math.ceil(sortedActivity.length / ITEMS_PER_PAGE);
 
   const paginatedActivity = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return activity.slice(startIndex, endIndex);
-  }, [activity, currentPage]);
+    return sortedActivity.slice(startIndex, endIndex);
+  }, [sortedActivity, currentPage]);
 
-  const copyTxSig = (txSig: string) => {
-    navigator.clipboard.writeText(txSig);
-    toast.success("Transaction signature copied");
+  const copyTxSig = async (txSig: string) => {
+    await copyTransactionSignature(txSig);
   };
 
   const exportCSV = () => {
     const headers = ["Date", "Vault", "Amount", "Type", "Tx Signature"];
-    const rows = activity.map((a) => [
+    const rows = sortedActivity.map((a) => [
       new Date(a.date).toLocaleString(),
       a.vaultName,
       a.amountSol.toString(),
@@ -61,7 +67,7 @@ export function ActivityTable({ activity }: ActivityTableProps) {
     link.download = `activity-${Date.now()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("Activity exported to CSV");
+    exportSuccess("CSV");
   };
 
   const handlePreviousPage = () => {
@@ -173,8 +179,8 @@ export function ActivityTable({ activity }: ActivityTableProps) {
           {totalPages > 1 ? (
             <div className="flex items-center gap-2">
               <div className="text-sm text-muted-foreground" role="status" aria-live="polite">
-                Showing {paginatedActivity.length} of {activity.length}{" "}
-                {activity.length === 1 ? "transaction" : "transactions"}
+                Showing {paginatedActivity.length} of {sortedActivity.length}{" "}
+                {sortedActivity.length === 1 ? "transaction" : "transactions"}
               </div>
               <Button
                 variant="outline"
@@ -202,8 +208,8 @@ export function ActivityTable({ activity }: ActivityTableProps) {
             </div>
           ) : (
             <div className="text-sm text-muted-foreground" role="status">
-              Showing {paginatedActivity.length} of {activity.length}{" "}
-              {activity.length === 1 ? "transaction" : "transactions"}
+              Showing {paginatedActivity.length} of {sortedActivity.length}{" "}
+              {sortedActivity.length === 1 ? "transaction" : "transactions"}
             </div>
           )}
         </nav>

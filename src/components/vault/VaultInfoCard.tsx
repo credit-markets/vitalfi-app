@@ -7,7 +7,7 @@ import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { shortenAddress } from "@/lib/utils";
 import { SOLSCAN_BASE_URL, CLUSTER } from "@/lib/utils/constants";
 import { Copy, ExternalLink, Info, Eye } from "lucide-react";
-import { toast } from "sonner";
+import { copyToClipboard as copyToClipboardUtil } from "@/lib/toast";
 
 export interface VaultInfoCardProps {
   vaultId: string;
@@ -25,9 +25,8 @@ export function VaultInfoCard({ vaultId }: VaultInfoCardProps) {
     return null;
   }
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard`);
+  const copyToClipboard = async (text: string, label: string) => {
+    await copyToClipboardUtil(text, label);
   };
 
   const addresses = [

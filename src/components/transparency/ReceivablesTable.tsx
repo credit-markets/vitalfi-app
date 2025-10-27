@@ -40,7 +40,7 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
   // TODO: Implement filter UI with originators and payers dropdowns
   // For now, only search is active
 
-  // Apply filters and search
+  // Apply filters, search, and sort by maturity date
   const filteredReceivables = useMemo(() => {
     let result = filterReceivables(receivables, filters);
 
@@ -54,6 +54,11 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
           r.payer.toLowerCase().includes(term)
       );
     }
+
+    // Sort by maturity date (nearest maturity first)
+    result.sort((a, b) =>
+      new Date(a.maturityDate).getTime() - new Date(b.maturityDate).getTime()
+    );
 
     return result;
   }, [receivables, filters, searchTerm]);

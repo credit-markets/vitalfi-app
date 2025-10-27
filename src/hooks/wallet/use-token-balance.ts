@@ -32,7 +32,7 @@ export function useTokenBalance(mintAddress: string | null) {
 
         // Convert to human-readable amount
         return Number(accountInfo.amount) / Math.pow(10, decimals);
-      } catch (error) {
+      } catch {
         // Account doesn't exist or other error - return 0
         return 0;
       }

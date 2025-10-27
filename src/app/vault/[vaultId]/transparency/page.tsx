@@ -17,7 +17,7 @@ import { exportReceivablesCsv } from "@/lib/transparency/utils";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { validationError, errorToast } from "@/lib/toast";
 import type { Receivable, VaultSummary } from "@/types/vault";
 import { DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
 
@@ -78,7 +78,7 @@ export default function VaultTransparencyDetail() {
     try {
       // Early validation for empty receivables
       if (!receivables || receivables.length === 0) {
-        toast.error("No receivables to export");
+        validationError("No receivables to export");
         return;
       }
 
@@ -113,10 +113,10 @@ export default function VaultTransparencyDetail() {
         vaultId,
         receivablesCount: receivables.length,
       });
-      toast.error(error.message, {
-        description:
-          "Please try again or contact support if the issue persists.",
-      });
+      errorToast(
+        error.message,
+        "Please try again or contact support if the issue persists."
+      );
     }
   };
 

@@ -4,8 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { useVaultClient } from "@/hooks/wallet/use-vault-client";
-import { getCurrentNetwork } from "@/lib/sdk";
-import { toast } from "sonner";
+import { deposit as depositToast } from "@/lib/toast";
 
 export interface DepositParams {
   vaultId: BN;
@@ -46,7 +45,7 @@ export function useDeposit() {
     },
     onMutate: async () => {
       // Show loading toast
-      toast.loading("Depositing...", { id: "deposit" });
+      depositToast.loading();
     },
     onSuccess: (txSig, params) => {
       // Invalidate relevant queries to refetch
@@ -60,27 +59,11 @@ export function useDeposit() {
         queryKey: ["user-positions"],
       });
 
-      toast.success("Deposit successful!", {
-        id: "deposit",
-        description: `Transaction: ${txSig.slice(0, 8)}...`,
-        action: {
-          label: "View",
-          onClick: () => {
-            const cluster = getCurrentNetwork();
-            window.open(
-              `https://explorer.solana.com/tx/${txSig}?cluster=${cluster}`,
-              "_blank"
-            );
-          },
-        },
-      });
+      depositToast.success(txSig);
     },
     onError: (error: Error) => {
       console.error("Deposit error:", error);
-      toast.error("Deposit failed", {
-        id: "deposit",
-        description: error.message || "Transaction failed. Please try again.",
-      });
+      depositToast.error(error);
     },
   });
 }

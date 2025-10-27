@@ -32,7 +32,21 @@ export default function RootLayout({
               <SidebarProvider>
                 {children}
                 <MobileNav />
-                <Toaster position="bottom-right" theme="dark" />
+                <Toaster
+                  position="bottom-right"
+                  theme="dark"
+                  richColors
+                  closeButton
+                  duration={5000}
+                  toastOptions={{
+                    style: {
+                      background: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      color: 'hsl(var(--foreground))',
+                    },
+                    className: 'font-sans',
+                  }}
+                />
               </SidebarProvider>
             </VaultProgramProvider>
           </SolanaWalletProvider>
