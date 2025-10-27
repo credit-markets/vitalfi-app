@@ -126,11 +126,19 @@ export function exportReceivablesCsv(
 
   // Sanitize cells to prevent CSV injection
   const sanitizeCell = (value: string | number): string => {
-    const str = String(value);
-    // If cell starts with formula characters or tab, prefix with single quote
-    if (str.match(/^[=+\-@\t]/)) {
-      return `'${str}`;
+    let str = String(value);
+
+    // Escape double quotes by doubling them (RFC 4180)
+    str = str.replace(/"/g, '""');
+
+    // Remove null bytes, tabs, and newlines for safety
+    str = str.replace(/[\0\t\n\r]/g, ' ');
+
+    // If cell starts with formula characters, prefix with single quote
+    if (str.match(/^[=+\-@]/)) {
+      str = `'${str}`;
     }
+
     return str;
   };
 

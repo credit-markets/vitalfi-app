@@ -84,10 +84,18 @@ export default function VaultTransparencyDetail() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setTimeout(
+
+      // Store timeout ID for cleanup
+      const timeoutId = setTimeout(
         () => window.URL.revokeObjectURL(url),
         SAFARI_DOWNLOAD_DELAY_MS
       );
+
+      // Return cleanup function
+      return () => {
+        clearTimeout(timeoutId);
+        window.URL.revokeObjectURL(url);
+      };
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error("Failed to export CSV");
