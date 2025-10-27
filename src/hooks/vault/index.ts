@@ -6,3 +6,4 @@
 
 export { useVaultAPI } from './use-vault-api';
 export { usePortfolioAPI } from './use-portfolio-api';
+export { useTransparency } from './use-transparency';

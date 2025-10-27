@@ -11,3 +11,4 @@
 export * from "./use-vaults-api";
 export * from "./use-positions-api";
 export * from "./use-activity-api";
+export * from "./use-transparency-api";

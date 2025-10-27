@@ -1,42 +1,161 @@
+/**
+ * Transparency utilities and mock data generators
+ *
+ * This file contains all utilities for the transparency feature including:
+ * - Receivable filtering
+ * - CSV export
+ * - Mock data generation (until backend is ready)
+ */
+
 import type {
-  VaultSummary,
-  VaultTransparencyData,
   Receivable,
+  ReceivableFilters,
   ReceivableStatus,
   CollateralAnalytics,
   HedgePosition,
-  OriginatorInfo,
-  VaultFundingInfo,
+  VaultDocuments,
 } from "@/types/vault";
-import { MOCK_ADDRESSES } from "@/lib/solana/mock-data";
 
-// Mock originators
-const originators: Record<string, OriginatorInfo> = {
-  saude_plus: {
-    id: "saude_plus",
-    name: "Saúde+ Clínica",
-    country: "BR",
-    note: "Multi-specialty medical clinic serving 500+ patients/month in São Paulo",
-    website: "https://saudeplus.com.br",
-  },
-  vida_med: {
-    id: "vida_med",
-    name: "VidaMed Hospital",
-    country: "BR",
-    note: "Regional hospital network with emergency and surgical services",
-    website: "https://vidamed.com.br",
-  },
-};
+// ============================================================================
+// Client-side Filtering Utilities
+// ============================================================================
 
-// Helper to calculate days to/past maturity
+/**
+ * Helper function to filter items by field with type-safe array checking
+ */
+function filterByField<T, K extends keyof T>(
+  items: T[],
+  field: K,
+  values: T[K][] | undefined
+): T[] {
+  if (!values || values.length === 0) return items;
+  return items.filter(item => values.includes(item[field]));
+}
+
+/**
+ * Apply filters to receivables list (client-side)
+ */
+export function filterReceivables(
+  receivables: Receivable[],
+  filters: ReceivableFilters
+): Receivable[] {
+  let filtered = [...receivables];
+
+  // Apply field-based filters
+  filtered = filterByField(filtered, 'status', filters.status);
+  filtered = filterByField(filtered, 'originator', filters.originator);
+  filtered = filterByField(filtered, 'payer', filters.payer);
+
+  // Date range filter (by maturity date)
+  if (filters.dateRange) {
+    if (filters.dateRange.start) {
+      const startDate = new Date(filters.dateRange.start);
+      if (!isNaN(startDate.getTime())) {
+        filtered = filtered.filter(r => {
+          const maturityDate = new Date(r.maturityDate);
+          return !isNaN(maturityDate.getTime()) && maturityDate >= startDate;
+        });
+      }
+    }
+    if (filters.dateRange.end) {
+      const endDate = new Date(filters.dateRange.end);
+      if (!isNaN(endDate.getTime())) {
+        filtered = filtered.filter(r => {
+          const maturityDate = new Date(r.maturityDate);
+          return !isNaN(maturityDate.getTime()) && maturityDate <= endDate;
+        });
+      }
+    }
+  }
+
+  return filtered;
+}
+
+// ============================================================================
+// CSV Export
+// ============================================================================
+
+/**
+ * Export filtered receivables to CSV
+ */
+export function exportReceivablesCsv(
+  _vaultPda: string,
+  receivables: Receivable[]
+): Blob {
+  if (!receivables || receivables.length === 0) {
+    throw new Error('No receivables available to export. Please adjust your filters or search criteria.');
+  }
+
+  const headers = [
+    'ID',
+    'Originator',
+    'Payer',
+    'Currency',
+    'Face Value',
+    'Cost Basis',
+    'Advance %',
+    'Expected Repayment',
+    'Issue Date',
+    'Maturity Date',
+    'Days to Maturity',
+    'Days Past Due',
+    'Status',
+    'Invoice URL',
+    'Assignment URL',
+    'Tx URL',
+  ];
+
+  const rows = receivables.map(r => [
+    r.id,
+    r.originator,
+    r.payer,
+    r.currency,
+    r.faceValue.toString(),
+    r.costBasis.toString(),
+    (r.advancePct * 100).toFixed(2) + '%',
+    r.expectedRepayment.toString(),
+    r.issueDate || '',
+    r.maturityDate,
+    r.daysToMaturity?.toString() || '',
+    r.daysPastDue?.toString() || '',
+    r.status,
+    r.links?.invoiceUrl || '',
+    r.links?.assignmentUrl || '',
+    r.links?.txUrl || '',
+  ]);
+
+  // Sanitize cells to prevent CSV injection
+  const sanitizeCell = (value: string | number): string => {
+    const str = String(value);
+    // If cell starts with formula characters or tab, prefix with single quote
+    if (str.match(/^[=+\-@\t]/)) {
+      return `'${str}`;
+    }
+    return str;
+  };
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${sanitizeCell(cell)}"`).join(',')),
+  ].join('\n');
+
+  return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+}
+
+// ============================================================================
+// Mock Data Generation (Fallback until backend is ready)
+// ============================================================================
+
+/**
+ * Helper to calculate days to/past maturity
+ */
 function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPastDue?: number } {
   const now = new Date();
   const maturity = new Date(maturityDate);
 
-  // Validate date
   if (isNaN(maturity.getTime())) {
     console.warn('Invalid maturity date detected', { maturityDate });
-    return {}; // Return empty object if invalid date
+    return {};
   }
 
   const diffMs = maturity.getTime() - now.getTime();
@@ -49,7 +168,9 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
   }
 }
 
-// Generate realistic receivables
+/**
+ * Generate realistic receivables for mock data
+ */
 function generateReceivables(count: number, baseDate: Date, status: ReceivableStatus): Receivable[] {
   const receivables: Receivable[] = [];
   const payers = [
@@ -98,7 +219,9 @@ function generateReceivables(count: number, baseDate: Date, status: ReceivableSt
   return receivables;
 }
 
-// Calculate analytics from receivables
+/**
+ * Calculate analytics from receivables
+ */
 function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
   const faceValueTotal = receivables.reduce((sum, r) => sum + r.faceValue, 0);
   const costBasisTotal = receivables.reduce((sum, r) => sum + r.costBasis, 0);
@@ -142,93 +265,51 @@ function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
   };
 }
 
-// Mock vault summaries (all stages)
-export function getMockTransparencyVaults(): VaultSummary[] {
-  const now = new Date();
-
-  const maturityFunding = new Date(now);
-  maturityFunding.setDate(maturityFunding.getDate() + 240); // 8 months out
-
-  const maturityFunded = new Date(now);
-  maturityFunded.setDate(maturityFunded.getDate() + 180); // 6 months out
-
-  const maturityMatured = new Date(now);
-  maturityMatured.setDate(maturityMatured.getDate() - 30); // matured 30 days ago
-
-  return [
-    {
-      id: "vault-001",
-      title: "Medical Receivables Brazil Q4 2025",
-      status: "Active",
-      raised: 450000,
-      cap: 500000,
-      targetApy: 0.12,
-      maturityDate: maturityFunded.toISOString(),
-      originator: originators.saude_plus,
-    },
-    {
-      id: "vault-002",
-      title: "Healthcare Factoring Pool Q4",
-      status: "Matured",
-      raised: 300000,
-      cap: 300000,
-      targetApy: 0.105,
-      maturityDate: maturityMatured.toISOString(),
-      originator: originators.vida_med,
-    },
-    {
-      id: "vault-003",
-      title: "SME Receivables Brazil Q1 2026",
-      status: "Funding",
-      raised: 180000,
-      cap: 400000,
-      targetApy: 0.135,
-      maturityDate: maturityFunding.toISOString(),
-      originator: originators.saude_plus,
-    },
-  ];
-}
-
-// Mock vault transparency data
-export function getMockVaultTransparency(vaultId: string): VaultTransparencyData {
-  const vaults = getMockTransparencyVaults();
-  const vault = vaults.find(v => v.id === vaultId);
-
-  if (!vault) {
-    throw new Error(`Vault ${vaultId} not found`);
-  }
-
-  // Generate receivables based on vault status
+/**
+ * Generate mock transparency data for any vault based on its status
+ *
+ * This is a fallback used when the backend endpoint is not yet available.
+ * Once the backend is ready, this will no longer be called.
+ */
+export function generateMockTransparencyData(
+  vaultStatus: string,
+  vaultRaised: number,
+  vaultMaturityDate: string
+) {
   const baseDate = new Date();
   let receivables: Receivable[];
 
-  if (vault.status === "Active") {
-    // Active vault: mostly performing, some matured
+  // Generate receivables based on vault status
+  if (vaultStatus === "Active" || vaultStatus === "Funding") {
+    // Active/Funding vault: mostly performing, some matured
     receivables = [
       ...generateReceivables(35, baseDate, 'Performing'),
       ...generateReceivables(8, baseDate, 'Matured'),
     ];
-  } else {
+  } else if (vaultStatus === "Matured") {
     // Matured vault: mostly repaid, some still outstanding
     receivables = [
       ...generateReceivables(25, baseDate, 'Repaid'),
       ...generateReceivables(5, baseDate, 'Matured'),
     ];
+  } else {
+    // Canceled/Closed: no receivables
+    receivables = [];
   }
 
   const analytics = calculateAnalytics(receivables);
 
-  // Hedge position (only for funded vaults with BRL exposure)
+  // Hedge (only for Active/Funding vaults with exposure)
   const fundingStart = new Date();
   fundingStart.setDate(fundingStart.getDate() - 60); // started 60 days ago
 
-  const hedge: HedgePosition | undefined = vault.status === "Active" ? {
+  const hedge: HedgePosition | undefined = (vaultStatus === "Active" || vaultStatus === "Funding") ? {
     coveragePct: 0.85,
     instrument: 'NDF',
     pair: 'USD/BRL',
-    notional: vault.raised * 0.85,
+    notional: vaultRaised * 0.85,
     tenorStart: fundingStart.toISOString(),
-    tenorEnd: vault.maturityDate,
+    tenorEnd: vaultMaturityDate,
     referenceRate: 'PTAX',
     mtm: -2500, // negative MTM (hedge cost)
     realizedPnL: 0,
@@ -238,41 +319,41 @@ export function getMockVaultTransparency(vaultId: string): VaultTransparencyData
   } : undefined;
 
   // Documents
-  const documents = {
+  const documents: VaultDocuments = {
     files: [
       {
         id: 'doc-1',
         name: 'Term Sheet.pdf',
         type: 'pdf' as const,
-        url: `https://docs.vitalfi.io/${vaultId}/term-sheet.pdf`,
+        url: `https://docs.vitalfi.io/term-sheet.pdf`,
         uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       },
       {
         id: 'doc-2',
         name: 'Collateral Schedule.csv',
         type: 'csv' as const,
-        url: `https://docs.vitalfi.io/${vaultId}/collateral.csv`,
+        url: `https://docs.vitalfi.io/collateral.csv`,
         uploadedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
       },
       {
         id: 'doc-3',
         name: 'Purchase Agreement.pdf',
         type: 'pdf' as const,
-        url: `https://docs.vitalfi.io/${vaultId}/purchase-agreement.pdf`,
+        url: `https://docs.vitalfi.io/purchase-agreement.pdf`,
         uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       },
       {
         id: 'doc-4',
         name: 'Servicing Agreement.pdf',
         type: 'pdf' as const,
-        url: `https://docs.vitalfi.io/${vaultId}/servicing.pdf`,
+        url: `https://docs.vitalfi.io/servicing.pdf`,
         uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       },
       {
         id: 'doc-5',
         name: 'Monthly Report - Current.pdf',
         type: 'pdf' as const,
-        url: `https://docs.vitalfi.io/${vaultId}/report-current.pdf`,
+        url: `https://docs.vitalfi.io/report-current.pdf`,
         uploadedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
       },
     ],
@@ -283,115 +364,17 @@ export function getMockVaultTransparency(vaultId: string): VaultTransparencyData
       id: 'doc-6',
       name: 'Hedge Confirmation.pdf',
       type: 'pdf' as const,
-      url: `https://docs.vitalfi.io/${vaultId}/hedge-confirmation.pdf`,
+      url: `https://docs.vitalfi.io/hedge-confirmation.pdf`,
       uploadedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
     });
   }
 
   return {
-    summary: vault,
     collateral: {
       analytics,
       items: receivables,
     },
     hedge,
     documents,
-    lastUpdated: new Date().toISOString(),
-  };
-}
-
-// CSV export function
-export async function exportReceivablesCsv(
-  vaultId: string,
-  receivables: Receivable[]
-): Promise<Blob> {
-  const headers = [
-    'ID',
-    'Originator',
-    'Payer',
-    'Currency',
-    'Face Value',
-    'Cost Basis',
-    'Advance %',
-    'Expected Repayment',
-    'Issue Date',
-    'Maturity Date',
-    'Days to Maturity',
-    'Days Past Due',
-    'Status',
-    'Invoice URL',
-    'Assignment URL',
-    'Tx URL',
-  ];
-
-  const rows = receivables.map(r => [
-    r.id,
-    r.originator,
-    r.payer,
-    r.currency,
-    r.faceValue.toString(),
-    r.costBasis.toString(),
-    (r.advancePct * 100).toFixed(2) + '%',
-    r.expectedRepayment.toString(),
-    r.issueDate || '',
-    r.maturityDate,
-    r.daysToMaturity?.toString() || '',
-    r.daysPastDue?.toString() || '',
-    r.status,
-    r.links?.invoiceUrl || '',
-    r.links?.assignmentUrl || '',
-    r.links?.txUrl || '',
-  ]);
-
-  // Sanitize cells to prevent CSV injection
-  const sanitizeCell = (value: string | number): string => {
-    const str = String(value);
-    // If cell starts with formula characters or tab, prefix with single quote
-    // Protects against =cmd, +cmd, -cmd, @cmd, and tab injection attacks
-    if (str.match(/^[=+\-@\t]/)) {
-      return `'${str}`;
-    }
-    return str;
-  };
-
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.map(cell => `"${sanitizeCell(cell)}"`).join(',')),
-  ].join('\n');
-
-  return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-}
-
-// Get mock funding vault info (for vault detail page)
-export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
-  const vaults = getMockTransparencyVaults();
-  const vault = vaults.find(v => v.id === vaultId);
-
-  if (!vault) {
-    throw new Error(`Vault ${vaultId} not found`);
-  }
-
-  // Calculate funding dates relative to maturity
-  // Timeline: funding start -> funding end (45 days later) -> maturity (150 days after funding end)
-  const maturityDate = new Date(vault.maturityDate);
-
-  // Calculate funding end date (150 days before maturity)
-  const fundingEndAt = new Date(maturityDate);
-  fundingEndAt.setDate(fundingEndAt.getDate() - 150);
-
-  return {
-    status: vault.status, // Status comes from backend
-    name: vault.title,
-    expectedApyPct: vault.targetApy * 100, // Convert decimal to percentage
-    capSol: vault.cap,
-    minInvestmentSol: 100,
-    raisedSol: vault.raised,
-    totalClaimedSol: 0,
-    fundingEndAt: fundingEndAt.toISOString(),
-    maturityAt: vault.maturityDate,
-    originator: vault.originator.name,
-    payoutNum: null,
-    payoutDen: null,
-    addresses: MOCK_ADDRESSES,
   };
 }

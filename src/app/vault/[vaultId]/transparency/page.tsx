@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -9,93 +9,100 @@ import { CollateralSection } from "@/components/transparency/CollateralSection";
 import { HedgeCard } from "@/components/transparency/HedgeCard";
 import { DocumentsList } from "@/components/transparency/DocumentsList";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { useSidebar } from "@/providers/SidebarContext";
-import { getVaultTransparency, exportReceivablesCsv } from "@/lib/transparency/api";
+import { useVaultAPI, useTransparency } from "@/hooks/vault";
+import { exportReceivablesCsv } from "@/lib/transparency/utils";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import type { VaultTransparencyData, Receivable } from "@/types/vault";
+import type { Receivable, VaultSummary } from "@/types/vault";
+import { DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
 
 // Safari requires a delay before revoking blob URLs to ensure download starts
 const SAFARI_DOWNLOAD_DELAY_MS = 100;
+
+// Tab styling design with bottom border
+const TAB_TRIGGER_CLASSES =
+  "rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3";
 
 export default function VaultTransparencyDetail() {
   const params = useParams();
   const router = useRouter();
   const { isCollapsed } = useSidebar();
   const vaultId = params.vaultId as string;
+  const [activeTab, setActiveTab] = useState("collateral");
 
-  const [data, setData] = useState<VaultTransparencyData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Fetch vault data from backend API
+  const { info: vaultInfo, error: vaultError } = useVaultAPI(vaultId);
 
-  useEffect(() => {
-    let cancelled = false;
+  // Convert VaultFundingInfo to VaultSummary
+  const vaultSummary = useMemo<VaultSummary | null>(() => {
+    if (!vaultInfo) return null;
 
-    async function loadData() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Validate vaultId before making API call
-        if (!vaultId || typeof vaultId !== 'string' || vaultId.trim() === '') {
-          if (!cancelled) {
-            setError('Invalid vault ID');
-            setLoading(false);
-          }
-          return;
-        }
-
-        const transparencyData = await getVaultTransparency(vaultId);
-        if (!cancelled) {
-          setData(transparencyData);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const error = err instanceof Error ? err : new Error('Failed to load vault data');
-          console.error('Error loading vault transparency:', error, { vaultId });
-          setError(error.message);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadData();
-    return () => {
-      cancelled = true;
+    return {
+      id: vaultId,
+      title: vaultInfo.name,
+      status: vaultInfo.status,
+      raised: vaultInfo.raisedSol,
+      cap: vaultInfo.capSol,
+      targetApy: vaultInfo.expectedApyPct / 100, // Convert percentage to decimal
+      maturityDate: vaultInfo.maturityAt,
+      originator: DEFAULT_ORIGINATOR,
+      assetMint: vaultInfo.addresses.tokenMint,
     };
-  }, [vaultId]);
+  }, [vaultInfo, vaultId]);
 
-  const handleExportCsv = async (receivables: Receivable[]) => {
+  // Fetch transparency data (with fallback to mock data)
+  const {
+    data: transparencyData,
+    isLoading,
+    error: transparencyError,
+  } = useTransparency({
+    vaultPda: vaultId,
+    vaultSummary,
+    enabled: !!vaultSummary,
+  });
+
+  const handleExportCsv = (receivables: Receivable[]) => {
     try {
       // Early validation for empty receivables
       if (!receivables || receivables.length === 0) {
-        toast.error('No receivables to export');
+        toast.error("No receivables to export");
         return;
       }
 
-      const blob = await exportReceivablesCsv(vaultId, receivables);
+      const blob = exportReceivablesCsv(vaultId, receivables);
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.download = `${vaultId}-receivables-${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `${vaultId}-receivables-${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setTimeout(() => window.URL.revokeObjectURL(url), SAFARI_DOWNLOAD_DELAY_MS);
+      setTimeout(
+        () => window.URL.revokeObjectURL(url),
+        SAFARI_DOWNLOAD_DELAY_MS
+      );
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to export CSV');
-      console.error('Error exporting CSV:', error, { vaultId, receivablesCount: receivables.length });
+      const error =
+        err instanceof Error ? err : new Error("Failed to export CSV");
+      console.error("Error exporting CSV:", error, {
+        vaultId,
+        receivablesCount: receivables.length,
+      });
       toast.error(error.message, {
-        description: 'Please try again or contact support if the issue persists.',
+        description:
+          "Please try again or contact support if the issue persists.",
       });
     }
   };
+
+  const error = vaultError || transparencyError;
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,46 +127,79 @@ export default function VaultTransparencyDetail() {
             </Link>
           </div>
 
-          {loading ? (
+          {isLoading ? (
             <div className="space-y-6">
               <div className="h-40 bg-card border border-border rounded-lg animate-pulse" />
               <div className="h-96 bg-card border border-border rounded-lg animate-pulse" />
             </div>
           ) : error ? (
             <div className="text-center py-16">
-              <p className="text-red-400 text-lg mb-2">Error loading vault data</p>
+              <p className="text-red-400 text-lg mb-2">
+                Error loading vault data
+              </p>
               <p className="text-muted-foreground text-sm">{error}</p>
-              <Button className="mt-4" onClick={() => router.push(`/vault/${vaultId}`)}>
+              <Button
+                className="mt-4"
+                onClick={() => router.push(`/vault/${vaultId}`)}
+              >
                 Return to Vault
               </Button>
             </div>
-          ) : data ? (
+          ) : transparencyData ? (
             <ErrorBoundary>
               <div className="space-y-6">
-                {/* 1. Vault Facts */}
-                <VaultFacts summary={data.summary} lastUpdated={data.lastUpdated} />
-
-                {/* 2. Collateral Overview + Receivables Table */}
-                <CollateralSection
-                  analytics={data.collateral.analytics}
-                  receivables={data.collateral.items}
-                  onExportCsv={handleExportCsv}
+                {/* Vault Facts - Always visible at top */}
+                <VaultFacts
+                  summary={transparencyData.summary}
+                  lastUpdated={transparencyData.lastUpdated}
                 />
 
-                {/* 3 & 4: Hedge + Documents - Side by side on desktop */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* 3. Hedge Position */}
-                  {data.hedge && (
-                    <div>
-                      <HedgeCard hedge={data.hedge} />
-                    </div>
+                {/* Tabbed Navigation for Collateral, Hedge, and Documents */}
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto">
+                    <TabsTrigger
+                      value="collateral"
+                      className={TAB_TRIGGER_CLASSES}
+                    >
+                      Collateral
+                    </TabsTrigger>
+                    {transparencyData.hedge && (
+                      <TabsTrigger
+                        value="hedge"
+                        className={TAB_TRIGGER_CLASSES}
+                      >
+                        Hedge Position
+                      </TabsTrigger>
+                    )}
+                    <TabsTrigger
+                      value="documents"
+                      className={TAB_TRIGGER_CLASSES}
+                    >
+                      Documents
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* Collateral Tab - Overview + Receivables List */}
+                  <TabsContent value="collateral">
+                    <CollateralSection
+                      analytics={transparencyData.collateral.analytics}
+                      receivables={transparencyData.collateral.items}
+                      onExportCsv={handleExportCsv}
+                    />
+                  </TabsContent>
+
+                  {/* Hedge Tab */}
+                  {transparencyData.hedge && (
+                    <TabsContent value="hedge">
+                      <HedgeCard hedge={transparencyData.hedge} />
+                    </TabsContent>
                   )}
 
-                  {/* 4. Documents */}
-                  <div className={!data.hedge ? "lg:col-span-2" : ""}>
-                    <DocumentsList documents={data.documents} />
-                  </div>
-                </div>
+                  {/* Documents Tab */}
+                  <TabsContent value="documents">
+                    <DocumentsList documents={transparencyData.documents} />
+                  </TabsContent>
+                </Tabs>
               </div>
             </ErrorBoundary>
           ) : null}
