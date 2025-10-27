@@ -109,8 +109,8 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
 
   return (
     <div className="lg:sticky lg:top-24">
-      <Card className="p-4 sm:p-6 bg-card border border-primary/20">
-        <div className="space-y-4 sm:space-y-5">
+      <Card className="p-4 sm:p-5 bg-card border border-primary/20">
+        <div className="space-y-3 sm:space-y-4">
           {/* Title */}
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary" />
@@ -168,7 +168,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
               disabled={!connected || !computed.canDeposit}
-              className="text-base h-12 sm:h-12"
+              className="h-11"
             />
 
             {/* Validation Errors */}
@@ -236,7 +236,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
 
           {/* Deposit Button */}
           <Button
-            className="w-full h-12 text-base touch-manipulation"
+            className="w-full h-11 touch-manipulation"
             size="lg"
             disabled={!isValid || !!disabledMessage || deposit.isPending}
             onClick={handleDeposit}

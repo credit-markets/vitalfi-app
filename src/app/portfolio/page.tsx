@@ -164,24 +164,26 @@ export default function PortfolioPage() {
 
           {/* Filter Pills (multi-select) */}
           {positions.length > 1 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-muted-foreground mr-2">Filter by stage:</span>
-              {(["Matured", "Funding", "Active", "Canceled", "Closed"] as VaultStatus[]).map((stage) => {
-                const isSelected = stageFilter.includes(stage);
-                return (
-                  <button
-                    key={stage}
-                    onClick={() => toggleStage(stage)}
-                    className={`px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-all touch-manipulation ${
-                      isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card border-border hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                  >
-                    {stage}
-                  </button>
-                );
-              })}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-sm text-muted-foreground flex-shrink-0">Filter by stage:</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(["Matured", "Funding", "Active", "Canceled", "Closed"] as VaultStatus[]).map((stage) => {
+                  const isSelected = stageFilter.includes(stage);
+                  return (
+                    <button
+                      key={stage}
+                      onClick={() => toggleStage(stage)}
+                      className={`px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-all touch-manipulation min-h-[44px] sm:min-h-0 ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      {stage}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

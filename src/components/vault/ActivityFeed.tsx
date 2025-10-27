@@ -69,7 +69,7 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
   };
 
   return (
-    <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
+    <Card className="p-4 sm:p-6 bg-gradient-card border-border/50">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <h3 className="text-xl sm:text-2xl font-bold">Transactions</h3>
         <div className="sm:ml-auto">

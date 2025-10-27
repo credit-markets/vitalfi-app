@@ -10,7 +10,7 @@ import { useVaultsAPI } from "@/hooks/api";
 import { formatCompactNumber } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { fromBaseUnits, parseTimestamp } from "@/lib/api/formatters";
-import { getTokenDecimals } from "@/lib/sdk/config";
+import { getTokenDecimals, getTokenSymbol } from "@/lib/sdk/config";
 import type { VaultSummary } from "@/types/vault";
 import { SOL_DECIMALS, DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
 import { env } from "@/lib/env";
@@ -59,12 +59,15 @@ export default function Home() {
   }, [vaultsResponse]);
 
   // Calculate summary stats
-  const { totalTvl, activeCount } = useMemo(() => {
+  const { totalTvl, activeCount, tokenSymbol } = useMemo(() => {
     const totalTvl = vaults.reduce((sum, v) => sum + (v.raised || 0), 0);
     const activeCount = vaults.filter(
       (v) => v.status === "Funding" || v.status === "Active"
     ).length;
-    return { totalTvl, activeCount };
+    // Get token symbol from first vault (assuming all vaults use same token)
+    const firstVaultMint = vaults[0]?.assetMint;
+    const tokenSymbol = firstVaultMint ? getTokenSymbol(firstVaultMint) : 'USDT';
+    return { totalTvl, activeCount, tokenSymbol };
   }, [vaults]);
 
   const error =
@@ -126,7 +129,7 @@ export default function Home() {
           ) : (
             <VaultsClientWrapper
               vaults={vaults}
-              totalTvl={formatCompactNumber(totalTvl)}
+              totalTvl={`${formatCompactNumber(totalTvl)} ${tokenSymbol}`}
               activeCount={activeCount}
             />
           )}

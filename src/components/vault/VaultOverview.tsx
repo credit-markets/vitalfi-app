@@ -30,7 +30,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
   const tokenSymbol = getTokenSymbol(tokenMint);
 
   return (
-    <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
+    <Card className="p-4 sm:p-6 bg-gradient-card border-border/50">
       <div className="space-y-6">
         {/* Header: Title + Stage Pill */}
         <div className="flex items-start justify-between gap-3">

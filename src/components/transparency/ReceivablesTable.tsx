@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { formatCompactCurrency } from "@/lib/utils/formatters";
 import {
   Download,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import type { Receivable, ReceivableStatus, ReceivableFilters } from "@/types/vault";
 import { filterReceivables } from "@/lib/transparency/utils";
+import { useIsMobile } from "@/hooks/ui/use-mobile";
 
 interface ReceivablesTableProps {
   receivables: Receivable[];
@@ -36,6 +38,7 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const isMobile = useIsMobile();
 
   // TODO: Implement filter UI with originators and payers dropdowns
   // For now, only search is active
@@ -109,44 +112,46 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-2 w-full sm:flex-1">
           <Input
-            placeholder="Search by ID, originator, or payer..."
+            placeholder={isMobile ? "Search..." : "Search by ID, originator, or payer..."}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="max-w-sm"
+            className="flex-1 sm:max-w-sm"
           />
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className={showFilters ? 'bg-primary/10' : ''}
+            className={`touch-manipulation ${showFilters ? 'bg-primary/10' : ''}`}
           >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
+            <Filter className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Filters</span>
             {hasActiveFilters && (
               <span className="ml-1 text-xs">({Object.keys(filters).length})</span>
             )}
           </Button>
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="touch-manipulation hidden sm:flex">
               <X className="w-4 h-4 mr-1" />
               Clear
             </Button>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+          <span className="text-xs sm:text-sm text-muted-foreground">
             {filteredReceivables.length} receivable{filteredReceivables.length !== 1 ? 's' : ''}
           </span>
           <Button
             variant="outline"
             size="sm"
             onClick={() => onExportCsv(filteredReceivables)}
+            className="touch-manipulation"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
+            <Download className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">Export</span>
           </Button>
         </div>
       </div>
@@ -163,7 +168,7 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
                   onClick={() => toggleStatusFilter(status)}
                   aria-label={`Filter by ${status} status`}
                   aria-pressed={filters.status?.includes(status)}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                  className={`px-3 py-2 text-xs rounded-full border transition-colors touch-manipulation min-h-[44px] sm:min-h-0 sm:py-1 ${
                     filters.status?.includes(status)
                       ? 'bg-primary/20 border-primary text-primary'
                       : 'bg-card border-border text-muted-foreground hover:border-primary/50'
@@ -177,10 +182,100 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
         </div>
       )}
 
-      {/* Table */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
+      {/* Mobile Card View */}
+      {isMobile ? (
+        <div className="space-y-3">
+          {filteredReceivables.length === 0 ? (
+            <Card className="p-8 text-center text-muted-foreground">
+              No receivables match the current filters
+            </Card>
+          ) : (
+            paginatedReceivables.map(r => (
+              <Card key={r.id} className="p-4">
+                <div className="space-y-3">
+                  {/* Header: ID + Status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-mono text-xs text-muted-foreground">{r.id}</span>
+                    {getStatusBadge(r.status)}
+                  </div>
+
+                  {/* Originator & Payer */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Originator</span>
+                      <span className="font-medium">{r.originator}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Payer</span>
+                      <span className="font-medium truncate ml-2">{r.payer}</span>
+                    </div>
+                  </div>
+
+                  {/* Financial Info */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Face Value</div>
+                      <div className="text-sm font-bold">{formatCompactCurrency(r.faceValue)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Cost Basis</div>
+                      <div className="text-sm font-medium">{formatCompactCurrency(r.costBasis)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Advance %</div>
+                      <div className="text-sm font-medium">{(r.advancePct * 100).toFixed(1)}%</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Maturity</div>
+                      <div className="text-sm font-medium">
+                        {(() => {
+                          const maturityDate = new Date(r.maturityDate);
+                          const isValidDate = !isNaN(maturityDate.getTime());
+
+                          if (!isValidDate) {
+                            return <span className="text-red-400">Invalid</span>;
+                          }
+
+                          return (
+                            <>
+                              {maturityDate.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                              {r.status !== 'Repaid' && r.daysToMaturity !== undefined && r.daysToMaturity >= 0 && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  ({r.daysToMaturity}d)
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Invoice Link */}
+                  {r.links?.invoiceUrl && (
+                    <a
+                      href={r.links.invoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full p-2 text-sm text-primary border border-primary/20 rounded hover:bg-primary/5 transition-colors touch-manipulation"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View Invoice
+                    </a>
+                  )}
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      ) : (
+        /* Desktop Table View */
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow className="bg-muted/30">
                 <TableHead>ID</TableHead>
@@ -268,28 +363,38 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
           </Table>
         </div>
       </div>
+      )}
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <nav className="flex items-center justify-between px-2" aria-label="Pagination">
-          <div className="text-sm text-muted-foreground" role="status" aria-live="polite">
-            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to{' '}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredReceivables.length)} of{' '}
-            {filteredReceivables.length} receivables
+        <nav className="flex flex-col sm:flex-row items-center justify-between gap-3 px-2" aria-label="Pagination">
+          <div className="text-xs sm:text-sm text-muted-foreground order-2 sm:order-1" role="status" aria-live="polite">
+            {isMobile ? (
+              <>
+                {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredReceivables.length)} of {filteredReceivables.length}
+              </>
+            ) : (
+              <>
+                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to{' '}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredReceivables.length)} of{' '}
+                {filteredReceivables.length} receivables
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 order-1 sm:order-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               aria-label="Go to previous page"
+              className="touch-manipulation"
             >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Previous
+              <ChevronLeft className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Previous</span>
             </Button>
-            <div className="text-sm text-muted-foreground" aria-current="page">
-              Page {currentPage} of {totalPages}
+            <div className="text-xs sm:text-sm text-muted-foreground px-2" aria-current="page">
+              {currentPage}/{totalPages}
             </div>
             <Button
               variant="outline"
@@ -297,9 +402,10 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               aria-label="Go to next page"
+              className="touch-manipulation"
             >
-              Next
-              <ChevronRight className="w-4 h-4 ml-1" />
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="w-4 h-4 sm:ml-1" />
             </Button>
           </div>
         </nav>

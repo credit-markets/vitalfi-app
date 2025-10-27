@@ -8,6 +8,7 @@ import { DollarSign, TrendingUp, Target, Calendar } from "lucide-react";
 import type { PortfolioSummary, PortfolioPosition } from "@/hooks/vault/use-portfolio-api";
 import { getNextMaturity, getStageBreakdown } from "@/lib/portfolio/selectors";
 import { pluralize } from "@/lib/utils";
+import { getTokenSymbol } from "@/lib/sdk/config";
 
 interface PortfolioHeaderProps {
   summary: PortfolioSummary;
@@ -22,22 +23,30 @@ export function PortfolioHeader({ summary, positions }: PortfolioHeaderProps) {
   const nextMaturity = useMemo(() => getNextMaturity(positions), [positions]);
   const stageBreakdown = useMemo(() => getStageBreakdown(positions), [positions]);
 
+  // Get token symbol from first position (all positions should use same token)
+  const tokenSymbol = useMemo(() => {
+    if (positions.length === 0) return '';
+    const firstPosition = positions[0];
+    if (!firstPosition.assetMint) return '';
+    return getTokenSymbol(firstPosition.assetMint);
+  }, [positions]);
+
   const kpis = useMemo(() => [
     {
       label: "Invested Amount",
-      value: formatCompactNumber(summary.totalDepositedSol),
+      value: `${formatCompactNumber(summary.totalDepositedSol)} ${tokenSymbol}`,
       icon: DollarSign,
       tooltip: "Total amount deposited across all positions",
     },
     {
       label: "Expected Yield",
-      value: formatCompactNumber(summary.totalExpectedYieldSol),
+      value: `${formatCompactNumber(summary.totalExpectedYieldSol)} ${tokenSymbol}`,
       icon: TrendingUp,
       tooltip: "Expected yield across active positions at maturity",
     },
     {
       label: "Expected Value at Maturity",
-      value: formatCompactNumber(summary.totalAtMaturitySol),
+      value: `${formatCompactNumber(summary.totalAtMaturitySol)} ${tokenSymbol}`,
       icon: Target,
       tooltip: "Total principal + expected yield",
     },
@@ -51,7 +60,7 @@ export function PortfolioHeader({ summary, positions }: PortfolioHeaderProps) {
         ? `Nearest upcoming maturity: ${nextMaturity.vaultName}`
         : "No active positions with upcoming maturity",
     },
-  ], [summary, nextMaturity]);
+  ], [summary, nextMaturity, tokenSymbol]);
 
   return (
     <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
