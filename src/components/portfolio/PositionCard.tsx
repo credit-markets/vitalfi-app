@@ -60,7 +60,7 @@ export function PositionCard({
   const stage = getPositionStage(status, hasClaimed);
 
   // Calculate expected values for funding stage
-  const expectedYield = expectedYieldSol(depositedSol, expectedApyPct, maturityAt);
+  const expectedYield = expectedYieldSol(depositedSol, expectedApyPct, maturityAt, fundingEndAt);
   const expectedTotal = depositedSol + expectedYield;
 
   // Calculate realized APR for matured positions

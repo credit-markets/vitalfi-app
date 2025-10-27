@@ -5,6 +5,7 @@ import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { useVaultClient } from "@/hooks/wallet/use-vault-client";
 import { deposit as depositToast } from "@/lib/toast";
+import { invalidateWithRetry } from "@/lib/utils/query-helpers";
 
 export interface DepositParams {
   vaultId: BN;
@@ -47,19 +48,20 @@ export function useDeposit() {
       // Show loading toast
       depositToast.loading();
     },
-    onSuccess: (txSig, params) => {
-      // Invalidate relevant queries to refetch
-      queryClient.invalidateQueries({
-        queryKey: ["vault", params.authority.toBase58(), params.vaultId.toString()],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["position"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["user-positions"],
-      });
-
+    onSuccess: (txSig) => {
       depositToast.success(txSig);
+
+      // Run retry logic in background without blocking mutation completion
+      // This allows the button to return to normal state immediately
+      invalidateWithRetry(queryClient, [
+        { queryKey: ["vaults-api"] }, // Refetch all vaults (includes this vault)
+        { queryKey: ["positions-api"] }, // Refetch positions
+        { queryKey: ["activity-api"] }, // Refetch activity feed
+        { queryKey: ["activity-infinite"] }, // Refetch infinite scroll activity
+        { queryKey: ["portfolio-api"] }, // Refetch portfolio data
+      ]).catch((error) => {
+        console.error('[useDeposit] Background retry failed:', error);
+      });
     },
     onError: (error: Error) => {
       console.error("Deposit error:", error);

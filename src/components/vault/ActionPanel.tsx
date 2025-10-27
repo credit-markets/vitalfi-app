@@ -217,7 +217,10 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                       amountNum *
                         (1 +
                           (info.expectedApyPct / 100) *
-                            (computed.daysToMaturity / 365))
+                            (Math.max(
+                              0,
+                              (new Date(info.maturityAt).getTime() - new Date(info.fundingEndAt).getTime()) / (1000 * 60 * 60 * 24)
+                            ) / 365))
                     )}{" "}
                     {tokenSymbol}
                   </span>
