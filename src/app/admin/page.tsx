@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
@@ -25,6 +25,14 @@ import type { VaultDTO } from "@/lib/api/backend";
 const FUNDING_DURATION_SECONDS = 10 * 60; // 10 minutes
 const MATURITY_DURATION_SECONDS = 20 * 60; // 20 minutes from now (10 min after funding)
 
+// Validation constants
+const MAX_VAULT_ID = 1_000_000; // Maximum reasonable vault ID
+const MAX_CAP_SOL = 1_000_000_000; // 1 billion tokens max cap
+const MAX_APY_BPS = 100_000; // 10,000% APY max (100,000 basis points)
+const MAX_MIN_DEPOSIT = 1_000_000; // 1 million tokens max minimum deposit
+const MIN_FUNDING_DURATION = 60; // 1 minute minimum
+const MAX_FUNDING_DURATION = 365 * 24 * 60 * 60; // 1 year maximum
+
 // Helper to format token amount with correct symbol and decimals
 function formatTokenAmount(amountStr: string | null, mintAddress: string | null): string {
   if (!amountStr || !mintAddress) return '0';
@@ -32,6 +40,22 @@ function formatTokenAmount(amountStr: string | null, mintAddress: string | null)
   const symbol = getTokenSymbol(mintAddress);
   const amount = parseInt(amountStr) / Math.pow(10, decimals);
   return `${amount.toFixed(2)} ${symbol}`;
+}
+
+// Safe conversion from decimal to BN with proper precision
+// Avoids floating point precision loss by using string multiplication
+function decimalToBN(decimal: number, decimals: number): BN {
+  // Convert to string to avoid floating point issues
+  const decimalStr = decimal.toString();
+  const [whole, fraction = ''] = decimalStr.split('.');
+
+  // Pad or truncate fraction to match decimals
+  const paddedFraction = fraction.padEnd(decimals, '0').slice(0, decimals);
+
+  // Combine whole and fraction parts
+  const combined = whole + paddedFraction;
+
+  return new BN(combined);
 }
 
 export default function AdminPage() {
@@ -47,6 +71,18 @@ export default function AdminPage() {
 
   const vaults = vaultsResponse?.items || [];
 
+  // Memoize filtered vault lists to avoid unnecessary re-renders
+  const fundingVaults = useMemo(() => vaults.filter((v) => v.status === "Funding"), [vaults]);
+  const activeVaults = useMemo(() => vaults.filter((v) => v.status === "Active"), [vaults]);
+  const closableVaults = useMemo(() => vaults.filter((v) => v.status === "Matured" || v.status === "Canceled"), [vaults]);
+
+  // Helper function to get selected vault
+  const getSelectedVault = useMemo(() => {
+    return (vaultPda: string): VaultDTO | undefined => {
+      return vaults.find((v) => v.vaultPda === vaultPda);
+    };
+  }, [vaults]);
+
   // Mature Vault Form State
   const [matureForm, setMatureForm] = useState({
     vaultPda: "",
@@ -59,11 +95,6 @@ export default function AdminPage() {
 
   // Fetch token balance for the selected vault's token
   const { data: tokenBalance = 0, isLoading: balanceLoading } = useTokenBalance(matureVaultTokenMint);
-
-  // Helper function moved before usage
-  function getSelectedVault(vaultPda: string): VaultDTO | undefined {
-    return vaults.find((v) => v.vaultPda === vaultPda);
-  }
 
   // Initialize Vault Form State
   const [initForm, setInitForm] = useState({
@@ -105,28 +136,35 @@ export default function AdminPage() {
       return;
     }
 
-    // Input validation
+    // Input validation with max bounds
+    // Reject scientific notation
+    if (/[eE]/.test(initForm.vaultId) || /[eE]/.test(initForm.cap) ||
+        /[eE]/.test(initForm.targetApyBps) || /[eE]/.test(initForm.minDeposit)) {
+      toast.error("Scientific notation is not allowed");
+      return;
+    }
+
     const vaultIdNum = parseInt(initForm.vaultId);
-    if (isNaN(vaultIdNum) || vaultIdNum < 0) {
-      toast.error("Vault ID must be a non-negative number");
+    if (isNaN(vaultIdNum) || vaultIdNum < 0 || vaultIdNum > MAX_VAULT_ID) {
+      toast.error(`Vault ID must be between 0 and ${MAX_VAULT_ID}`);
       return;
     }
 
     const capSol = parseFloat(initForm.cap);
-    if (isNaN(capSol) || capSol <= 0) {
-      toast.error("Cap must be a positive number");
+    if (isNaN(capSol) || capSol <= 0 || capSol > MAX_CAP_SOL) {
+      toast.error(`Cap must be between 0 and ${MAX_CAP_SOL}`);
       return;
     }
 
     const targetApyBps = parseInt(initForm.targetApyBps);
-    if (isNaN(targetApyBps) || targetApyBps < 0) {
-      toast.error("Target APY must be a non-negative number");
+    if (isNaN(targetApyBps) || targetApyBps < 0 || targetApyBps > MAX_APY_BPS) {
+      toast.error(`Target APY must be between 0 and ${MAX_APY_BPS} basis points`);
       return;
     }
 
     const minDepositSol = parseFloat(initForm.minDeposit);
-    if (isNaN(minDepositSol) || minDepositSol <= 0) {
-      toast.error("Minimum deposit must be a positive number");
+    if (isNaN(minDepositSol) || minDepositSol <= 0 || minDepositSol > MAX_MIN_DEPOSIT) {
+      toast.error(`Minimum deposit must be between 0 and ${MAX_MIN_DEPOSIT}`);
       return;
     }
 
@@ -142,8 +180,20 @@ export default function AdminPage() {
       return;
     }
 
+    const fundingDuration = fundingEndTsNum - now;
+    if (fundingDuration < MIN_FUNDING_DURATION || fundingDuration > MAX_FUNDING_DURATION) {
+      toast.error(`Funding duration must be between ${MIN_FUNDING_DURATION}s and ${MAX_FUNDING_DURATION}s`);
+      return;
+    }
+
     if (isNaN(maturityTsNum) || maturityTsNum <= fundingEndTsNum) {
       toast.error("Maturity timestamp must be after funding end");
+      return;
+    }
+
+    const maturityDuration = maturityTsNum - fundingEndTsNum;
+    if (maturityDuration < MIN_FUNDING_DURATION || maturityDuration > MAX_FUNDING_DURATION) {
+      toast.error(`Maturity duration must be between ${MIN_FUNDING_DURATION}s and ${MAX_FUNDING_DURATION}s`);
       return;
     }
 
@@ -160,14 +210,15 @@ export default function AdminPage() {
     try {
       const vaultId = new BN(vaultIdNum);
 
-      // Convert SOL to lamports (multiply by 10^9)
-      const cap = new BN(Math.floor(capSol * 1_000_000_000));
+      // Get decimals for the token and convert using safe precision method
+      const decimals = getTokenDecimals(initForm.assetMint);
+      const cap = decimalToBN(capSol, decimals);
 
       const fundingEndTs = new BN(fundingEndTsNum);
       const maturityTs = new BN(maturityTsNum);
 
-      // Convert SOL to lamports (multiply by 10^9)
-      const minDeposit = new BN(Math.floor(minDepositSol * 1_000_000_000));
+      // Convert using safe precision method
+      const minDeposit = decimalToBN(minDepositSol, decimals);
 
       const txSig = await vaultClient.initializeVault(
         vaultId,
@@ -307,8 +358,9 @@ export default function AdminPage() {
     try {
       const vaultId = new BN(selectedVault.vaultId);
 
-      // Convert SOL to lamports (multiply by 10^9)
-      const returnAmount = new BN(Math.floor(returnAmountSol * 1_000_000_000));
+      // Get decimals for the token and convert using safe precision method
+      const decimals = getTokenDecimals(selectedVault.assetMint || '');
+      const returnAmount = decimalToBN(returnAmountSol, decimals);
 
       const txSig = await vaultClient.matureVault(
         vaultId,
@@ -633,13 +685,11 @@ export default function AdminPage() {
                     <option value="">
                       {vaultsLoading ? "Loading vaults..." : "Select a vault"}
                     </option>
-                    {vaults
-                      .filter((v) => v.status === "Funding")
-                      .map((vault) => (
-                        <option key={vault.vaultPda} value={vault.vaultPda}>
-                          Vault #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} / {formatTokenAmount(vault.cap, vault.assetMint)}
-                        </option>
-                      ))}
+                    {fundingVaults.map((vault) => (
+                      <option key={vault.vaultPda} value={vault.vaultPda}>
+                        Vault #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} / {formatTokenAmount(vault.cap, vault.assetMint)}
+                      </option>
+                    ))}
                   </Select>
                   {finalizeForm.vaultPda && getSelectedVault(finalizeForm.vaultPda) && (
                     <div className="mt-3 p-3 bg-card border border-border/50 rounded-lg">
@@ -693,13 +743,11 @@ export default function AdminPage() {
                     <option value="">
                       {vaultsLoading ? "Loading vaults..." : "Select a vault"}
                     </option>
-                    {vaults
-                      .filter((v) => v.status === "Active")
-                      .map((vault) => (
-                        <option key={vault.vaultPda} value={vault.vaultPda}>
-                          Vault #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} deposited
-                        </option>
-                      ))}
+                    {activeVaults.map((vault) => (
+                      <option key={vault.vaultPda} value={vault.vaultPda}>
+                        Vault #{vault.vaultId} - {vault.status} - {formatTokenAmount(vault.totalDeposited, vault.assetMint)} deposited
+                      </option>
+                    ))}
                   </Select>
                   {matureForm.vaultPda && getSelectedVault(matureForm.vaultPda) && (
                     <div className="mt-3 p-3 bg-card border border-border/50 rounded-lg space-y-2">
@@ -796,13 +844,11 @@ export default function AdminPage() {
                     <option value="">
                       {vaultsLoading ? "Loading vaults..." : "Select a vault"}
                     </option>
-                    {vaults
-                      .filter((v) => v.status === "Matured" || v.status === "Canceled")
-                      .map((vault) => (
-                        <option key={vault.vaultPda} value={vault.vaultPda}>
-                          Vault #{vault.vaultId} - {vault.status} - Claimed: {formatTokenAmount(vault.totalClaimed, vault.assetMint)}
-                        </option>
-                      ))}
+                    {closableVaults.map((vault) => (
+                      <option key={vault.vaultPda} value={vault.vaultPda}>
+                        Vault #{vault.vaultId} - {vault.status} - Claimed: {formatTokenAmount(vault.totalClaimed, vault.assetMint)}
+                      </option>
+                    ))}
                   </Select>
                   {closeForm.vaultPda && getSelectedVault(closeForm.vaultPda) && (
                     <div className="mt-3 p-3 bg-card border border-border/50 rounded-lg space-y-2">
