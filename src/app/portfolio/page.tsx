@@ -17,14 +17,15 @@ import { useClaim } from "@/hooks/mutations";
 import { env } from "@/lib/env";
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
+import type { VaultStatus } from "@/types/vault";
 
-type StageFilter = "all" | "Funding" | "Funded" | "Matured";
+type StageFilter = VaultStatus[];
 
 export default function PortfolioPage() {
   const { isCollapsed } = useSidebar();
   const { summary, positions, activity, connected, vaults } = usePortfolioAPI();
 
-  const [stageFilter, setStageFilter] = useState<StageFilter>("all");
+  const [stageFilter, setStageFilter] = useState<StageFilter>(["Matured"]);
   const [highlightedVault, setHighlightedVault] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,10 +94,18 @@ export default function PortfolioPage() {
     }
   };
 
+  const toggleStage = (stage: VaultStatus) => {
+    if (stageFilter.includes(stage)) {
+      setStageFilter(stageFilter.filter(s => s !== stage));
+    } else {
+      setStageFilter([...stageFilter, stage]);
+    }
+  };
+
   const filteredPositions: PortfolioPosition[] =
-    stageFilter === "all"
+    stageFilter.length === 0
       ? positions
-      : positions.filter((p) => p.stage === stageFilter);
+      : positions.filter((p) => stageFilter.includes(p.status));
 
   if (!connected) {
     return (
@@ -146,23 +155,26 @@ export default function PortfolioPage() {
           {/* Timeline */}
           <Timeline positions={positions} onEventClick={scrollToVault} />
 
-          {/* Filter Pills (if multiple positions) */}
+          {/* Filter Pills (multi-select) */}
           {positions.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground mr-2">Filter by stage:</span>
-              {(["all", "Funding", "Funded", "Matured"] as StageFilter[]).map((stage) => (
-                <button
-                  key={stage}
-                  onClick={() => setStageFilter(stage)}
-                  className={`px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-all touch-manipulation ${
-                    stageFilter === stage
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card border-border hover:bg-accent hover:text-accent-foreground"
-                  }`}
-                >
-                  {stage === "all" ? "All" : stage}
-                </button>
-              ))}
+              {(["Matured", "Funding", "Active", "Canceled"] as VaultStatus[]).map((stage) => {
+                const isSelected = stageFilter.includes(stage);
+                return (
+                  <button
+                    key={stage}
+                    onClick={() => toggleStage(stage)}
+                    className={`px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-all touch-manipulation ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card border-border hover:bg-accent hover:text-accent-foreground"
+                    }`}
+                  >
+                    {stage}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -170,9 +182,9 @@ export default function PortfolioPage() {
           {filteredPositions.length === 0 ? (
             <Card className="p-8 sm:p-12 bg-card border-border text-center">
               <div className="text-muted-foreground mb-4">
-                {stageFilter === "all"
+                {stageFilter.length === 0
                   ? "No positions found. Start investing to see your portfolio here."
-                  : `No ${stageFilter.toLowerCase()} positions.`}
+                  : `No positions matching the selected filters.`}
               </div>
             </Card>
           ) : (

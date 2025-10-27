@@ -1,17 +1,18 @@
 "use client";
 
-import { StageFilter, type StageFilterValue } from "./StageFilter";
+import { StatusFilter, type StatusFilterValue } from "./StageFilter";
 
 interface StatsFilterBarProps {
   totalTvl: string;
   activeCount: number;
-  stage: StageFilterValue;
-  onStageChange: (value: StageFilterValue) => void;
+  status: StatusFilterValue;
+  onStatusChange: (value: StatusFilterValue) => void;
   counts?: {
     all: number;
     Funding: number;
-    Funded: number;
+    Active: number;
     Matured: number;
+    Canceled: number;
     Closed: number;
   };
 }
@@ -19,8 +20,8 @@ interface StatsFilterBarProps {
 export function StatsFilterBar({
   totalTvl,
   activeCount,
-  stage,
-  onStageChange,
+  status,
+  onStatusChange,
   counts
 }: StatsFilterBarProps) {
   return (
@@ -47,7 +48,7 @@ export function StatsFilterBar({
       </div>
 
       {/* Filter Section */}
-      <StageFilter value={stage} onValueChange={onStageChange} counts={counts} />
+      <StatusFilter value={status} onValueChange={onStatusChange} counts={counts} />
     </div>
   );
 }

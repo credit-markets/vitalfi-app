@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, User } from "lucide-react";
+import { BarChart3, User, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 /**
  * Mobile bottom navigation bar
@@ -12,10 +13,15 @@ import { cn } from "@/lib/utils";
  */
 export function MobileNav() {
   const pathname = usePathname();
+  const { publicKey } = useWallet();
+
+  // Check if user is authorized to see admin panel
+  const isAuthorized = publicKey?.toBase58() === process.env.NEXT_PUBLIC_VAULT_AUTHORITY;
 
   const navLinks = [
     { name: "Vaults", href: "/", icon: BarChart3 },
     { name: "Portfolio", href: "/portfolio", icon: User },
+    ...(isAuthorized ? [{ name: "Admin", href: "/admin", icon: Settings }] : []),
   ];
 
   return (
@@ -23,7 +29,7 @@ export function MobileNav() {
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent pointer-events-none" />
 
-      <div className="relative grid grid-cols-2 gap-1 px-2 py-2 pb-safe">
+      <div className={cn("relative grid gap-1 px-2 py-2 pb-safe", navLinks.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
         {navLinks.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href;

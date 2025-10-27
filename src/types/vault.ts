@@ -1,10 +1,10 @@
 
-// Vault stages - single source of truth
-export const VAULT_STAGES = ['Funding', 'Funded', 'Matured', 'Closed'] as const;
-export type VaultStage = typeof VAULT_STAGES[number];
+// Vault statuses (matching backend exactly)
+export const VAULT_STATUSES = ['Funding', 'Active', 'Matured', 'Canceled', 'Closed'] as const;
+export type VaultStatus = typeof VAULT_STATUSES[number];
 
 export interface VaultFundingInfo {
-  stage: VaultStage;
+  status: VaultStatus;
   name: string;                     // vault name/title (e.g., "Medical Receivables Brazil Q4 2025")
   expectedApyPct: number;           // e.g., 12.0
   capSol: number;
@@ -30,7 +30,8 @@ export interface VaultFundingInfo {
 export type EventTag =
   | "Deposit"
   | "Claim"
-  | "Params";
+  | "Withdraw"
+  | "System";
 
 // Vault event for activity feed (SIMPLIFIED - funding model only)
 export interface VaultEvent {
@@ -54,12 +55,13 @@ export interface OriginatorInfo {
 export interface VaultSummary {
   id: string;
   title: string;
-  stage: VaultStage;
-  raised: number;       // SOL
-  cap: number;          // SOL
+  status: VaultStatus;
+  raised: number;       // Token amount (USDT/USDC/wSOL)
+  cap: number;          // Token amount (USDT/USDC/wSOL)
   targetApy: number;    // annualized, e.g., 0.12 for 12%
   maturityDate: string; // ISO
   originator: OriginatorInfo;
+  assetMint?: string;   // Token mint address
 }
 
 export type ReceivableStatus = 'Performing' | 'Matured' | 'Repaid' | 'Disputed';

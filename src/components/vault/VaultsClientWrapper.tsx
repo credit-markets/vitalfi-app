@@ -3,9 +3,9 @@
 import { useState, useMemo } from "react";
 import { VaultCard } from "@/components/transparency/VaultCard";
 import { StatsFilterBar } from "./StatsFilterBar";
-import type { StageFilterValue } from "./StageFilter";
+import type { StatusFilterValue } from "./StageFilter";
 import type { VaultSummary } from "@/types/vault";
-import { VAULT_STAGES } from "@/types/vault";
+import { VAULT_STATUSES } from "@/types/vault";
 
 interface VaultsClientWrapperProps {
   vaults: VaultSummary[];
@@ -14,33 +14,33 @@ interface VaultsClientWrapperProps {
 }
 
 export function VaultsClientWrapper({ vaults, totalTvl, activeCount }: VaultsClientWrapperProps) {
-  const [stage, setStage] = useState<StageFilterValue>('all');
+  const [status, setStatus] = useState<StatusFilterValue>('Funding');
 
   // Validate and filter out malformed vaults
   const validVaults = useMemo(() => {
     return vaults.filter(v =>
       v &&
       typeof v.id === 'string' &&
-      typeof v.stage === 'string' &&
+      typeof v.status === 'string' &&
       typeof v.targetApy === 'number' &&
       !isNaN(v.targetApy)
     );
   }, [vaults]);
 
-  // Filter vaults based on selected stage
+  // Filter vaults based on selected status
   const filteredVaults = useMemo(() => {
-    if (stage === 'all') return validVaults;
-    return validVaults.filter(v => v.stage === stage);
-  }, [validVaults, stage]);
+    if (status === 'all') return validVaults;
+    return validVaults.filter(v => v.status === status);
+  }, [validVaults, status]);
 
-  // Calculate counts for each stage using a single pass
+  // Calculate counts for each status using a single pass
   const counts = useMemo(() => {
-    const result = { all: 0, Funding: 0, Funded: 0, Matured: 0, Closed: 0 };
+    const result = { all: 0, Funding: 0, Active: 0, Matured: 0, Canceled: 0, Closed: 0 };
     validVaults.forEach(v => {
       result.all++;
-      // Count all valid vault stages
-      if (VAULT_STAGES.includes(v.stage as typeof VAULT_STAGES[number])) {
-        result[v.stage as keyof typeof result]++;
+      // Count all valid vault statuses
+      if (VAULT_STATUSES.includes(v.status as typeof VAULT_STATUSES[number])) {
+        result[v.status as keyof typeof result]++;
       }
     });
     return result;
@@ -61,8 +61,8 @@ export function VaultsClientWrapper({ vaults, totalTvl, activeCount }: VaultsCli
       <StatsFilterBar
         totalTvl={totalTvl}
         activeCount={activeCount}
-        stage={stage}
-        onStageChange={setStage}
+        status={status}
+        onStatusChange={setStatus}
         counts={counts}
       />
 
@@ -79,7 +79,7 @@ export function VaultsClientWrapper({ vaults, totalTvl, activeCount }: VaultsCli
         <div className="text-center py-12">
           <div className="max-w-md mx-auto bg-muted/30 rounded-lg border border-border p-8">
             <p className="text-muted-foreground">
-              No vaults in this stage.
+              No vaults with this status.
             </p>
           </div>
         </div>

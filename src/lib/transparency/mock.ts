@@ -159,7 +159,7 @@ export function getMockTransparencyVaults(): VaultSummary[] {
     {
       id: "vault-001",
       title: "Medical Receivables Brazil Q4 2025",
-      stage: "Funded",
+      status: "Active",
       raised: 450000,
       cap: 500000,
       targetApy: 0.12,
@@ -169,7 +169,7 @@ export function getMockTransparencyVaults(): VaultSummary[] {
     {
       id: "vault-002",
       title: "Healthcare Factoring Pool Q4",
-      stage: "Matured",
+      status: "Matured",
       raised: 300000,
       cap: 300000,
       targetApy: 0.105,
@@ -179,7 +179,7 @@ export function getMockTransparencyVaults(): VaultSummary[] {
     {
       id: "vault-003",
       title: "SME Receivables Brazil Q1 2026",
-      stage: "Funding",
+      status: "Funding",
       raised: 180000,
       cap: 400000,
       targetApy: 0.135,
@@ -198,12 +198,12 @@ export function getMockVaultTransparency(vaultId: string): VaultTransparencyData
     throw new Error(`Vault ${vaultId} not found`);
   }
 
-  // Generate receivables based on vault stage
+  // Generate receivables based on vault status
   const baseDate = new Date();
   let receivables: Receivable[];
 
-  if (vault.stage === "Funded") {
-    // Funded vault: mostly performing, some matured
+  if (vault.status === "Active") {
+    // Active vault: mostly performing, some matured
     receivables = [
       ...generateReceivables(35, baseDate, 'Performing'),
       ...generateReceivables(8, baseDate, 'Matured'),
@@ -222,7 +222,7 @@ export function getMockVaultTransparency(vaultId: string): VaultTransparencyData
   const fundingStart = new Date();
   fundingStart.setDate(fundingStart.getDate() - 60); // started 60 days ago
 
-  const hedge: HedgePosition | undefined = vault.stage === "Funded" ? {
+  const hedge: HedgePosition | undefined = vault.status === "Active" ? {
     coveragePct: 0.85,
     instrument: 'NDF',
     pair: 'USD/BRL',
@@ -380,7 +380,7 @@ export function getMockFundingVaultInfo(vaultId: string): VaultFundingInfo {
   fundingEndAt.setDate(fundingEndAt.getDate() - 150);
 
   return {
-    stage: vault.stage, // Stage is computed dynamically by the hook
+    status: vault.status, // Status comes from backend
     name: vault.title,
     expectedApyPct: vault.targetApy * 100, // Convert decimal to percentage
     capSol: vault.cap,

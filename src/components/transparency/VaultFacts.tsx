@@ -3,7 +3,9 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
-import { formatCompactCurrency } from "@/lib/utils/formatters";
+import { formatMonetary } from "@/lib/utils/formatters";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 import { Clock, ExternalLink } from "lucide-react";
 import type { VaultSummary } from "@/types/vault";
 
@@ -19,6 +21,7 @@ export function VaultFacts({ summary, lastUpdated }: VaultFactsProps) {
     ? Math.floor((maturityDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : 0;
   const isMatured = daysToMaturity < 0;
+  const tokenSymbol = getTokenSymbol(summary.assetMint || NATIVE_MINT.toBase58());
 
   // Format last updated time ago
   const getTimeAgo = (isoDate: string) => {
@@ -41,14 +44,14 @@ export function VaultFacts({ summary, lastUpdated }: VaultFactsProps) {
           </h2>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge
-              variant={summary.stage === 'Funded' ? 'default' : 'secondary'}
+              variant={summary.status === 'Active' ? 'default' : 'secondary'}
               className={
-                summary.stage === 'Funded'
+                summary.status === 'Active'
                   ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
                   : 'bg-green-500/10 text-green-400 border-green-500/20'
               }
             >
-              {summary.stage}
+              {summary.status}
             </Badge>
             {lastUpdated && (
               <Tooltip content={<p className="text-xs">Last data refresh</p>}>
@@ -68,7 +71,7 @@ export function VaultFacts({ summary, lastUpdated }: VaultFactsProps) {
           <div>
             <div className="text-xs text-muted-foreground/80 mb-1">Raised / Cap</div>
             <div className="text-sm font-semibold text-foreground">
-              {formatCompactCurrency(summary.raised)} / {formatCompactCurrency(summary.cap)}
+              {formatMonetary(summary.raised, tokenSymbol, { compact: true })} / {formatMonetary(summary.cap, tokenSymbol, { compact: true })}
             </div>
           </div>
         </Tooltip>

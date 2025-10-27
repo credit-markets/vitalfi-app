@@ -6,7 +6,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
-import { formatCurrency, shortenAddress } from "@/lib/utils";
+import { formatNumber, shortenAddress } from "@/lib/utils";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 import { Copy, ExternalLink, TrendingUp, DollarSign, LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { EventTag } from "@/types/vault";
@@ -16,13 +18,15 @@ type ActivityFilter = "all" | "deposits" | "claims";
 const activityIcons: Record<EventTag, LucideIcon> = {
   Deposit: TrendingUp,
   Claim: DollarSign,
-  Params: DollarSign,
+  Withdraw: DollarSign,
+  System: DollarSign,
 };
 
 const activityColors: Record<EventTag, string> = {
   Deposit: "text-accent",
   Claim: "text-primary",
-  Params: "text-muted-foreground",
+  Withdraw: "text-orange-500",
+  System: "text-muted-foreground",
 };
 
 export interface ActivityFeedProps {
@@ -30,7 +34,7 @@ export interface ActivityFeedProps {
 }
 
 /**
- * Funding Transactions table
+ * Transactions table
  * Shows deposits and claims only (no PPS, shares, queue columns)
  */
 export function ActivityFeed({ vaultId }: ActivityFeedProps) {
@@ -41,6 +45,8 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
   if (!info) {
     return null;
   }
+
+  const tokenSymbol = getTokenSymbol(info.addresses.tokenMint || NATIVE_MINT.toBase58());
 
   const filteredActivity = filter === "all"
     ? events
@@ -58,13 +64,13 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
   return (
     <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-        <h3 className="text-xl sm:text-2xl font-bold">Funding Transactions</h3>
+        <h3 className="text-xl sm:text-2xl font-bold">Transactions</h3>
         <div className="sm:ml-auto">
           <Tabs value={filter} onValueChange={(v) => setFilter(v as ActivityFilter)}>
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="deposits">Deposits</TabsTrigger>
-              <TabsTrigger value="claims" disabled={info.stage !== 'Matured'}>
+              <TabsTrigger value="claims" disabled={info.status !== 'Matured'}>
                 Claims
               </TabsTrigger>
             </TabsList>
@@ -79,7 +85,7 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
               <TableRow>
                 <TableHead className="min-w-[100px]">Time</TableHead>
                 <TableHead className="min-w-[80px]">Type</TableHead>
-                <TableHead className="min-w-[120px] text-right">Amount (SOL)</TableHead>
+                <TableHead className="min-w-[120px] text-right">Amount ({tokenSymbol})</TableHead>
                 <TableHead className="min-w-[120px]">Wallet</TableHead>
                 <TableHead className="min-w-[80px]">Tx</TableHead>
               </TableRow>
@@ -112,7 +118,7 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
                         </div>
                       </TableCell>
                       <TableCell className="font-medium text-right">
-                        {formatCurrency(event.amountSol)}
+                        {formatNumber(event.amountSol)} {tokenSymbol}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

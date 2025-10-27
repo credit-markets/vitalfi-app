@@ -2,17 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, User, ChevronLeft, ChevronRight, ExternalLink, FileText, Shield } from "lucide-react";
+import { BarChart3, User, ChevronLeft, ChevronRight, ExternalLink, FileText, Shield, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/providers/SidebarContext";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export function Sidebar() {
   const { isCollapsed, setIsCollapsed } = useSidebar();
   const pathname = usePathname();
+  const { publicKey } = useWallet();
+
+  // Check if user is authorized to see admin panel
+  const isAuthorized = publicKey?.toBase58() === process.env.NEXT_PUBLIC_VAULT_AUTHORITY;
 
   const navLinks = [
     { name: "Vaults", href: "/", icon: BarChart3 },
     { name: "Portfolio", href: "/portfolio", icon: User },
+    ...(isAuthorized ? [{ name: "Admin", href: "/admin", icon: Settings }] : []),
   ];
 
   const externalLinks = [

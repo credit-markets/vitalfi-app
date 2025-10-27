@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { useDeposit } from "@/hooks/mutations";
 import { env } from "@/lib/env";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { getTokenDecimals } from "@/lib/sdk/config";
+import { formatDate, formatNumber } from "@/lib/utils";
+import { getTokenDecimals, getTokenSymbol } from "@/lib/sdk/config";
 import { TrendingUp, AlertCircle, Info } from "lucide-react";
-import { useWalletBalance } from "@/hooks/wallet/use-wallet-balance";
+import { useTokenBalance } from "@/hooks/wallet/use-token-balance";
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 import { NATIVE_MINT } from "@solana/spl-token";
@@ -29,12 +29,22 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
   const { info, computed } = useVaultAPI(vaultId);
   const [depositAmount, setDepositAmount] = useState("");
   const deposit = useDeposit();
-  const { data: walletBalance = 0 } = useWalletBalance();
+
+  // Get token mint (use default if not loaded yet)
+  const tokenMint = info?.addresses.tokenMint || NATIVE_MINT.toBase58();
+
+  // Always use token balance hook (we use wSOL, not native SOL)
+  // Must be called before any conditional returns
+  const { data: tokenBalance = 0, isLoading: tokenBalanceLoading } = useTokenBalance(tokenMint);
+  const walletBalance = tokenBalance;
 
   // Early return if data not loaded (error state handled by parent)
   if (!info || !computed) {
     return null;
   }
+
+  // Get token symbol for display
+  const tokenSymbol = getTokenSymbol(tokenMint);
 
   const amountNum = parseFloat(depositAmount) || 0;
 
@@ -48,7 +58,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
 
   // Disabled state messages
   const getDisabledMessage = () => {
-    if (info.stage === "Funded" || info.stage === "Matured") {
+    if (info.status === "Active" || info.status === "Matured") {
       return {
         title: "Funding Closed",
         message:
@@ -129,17 +139,27 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
           {/* Deposit Input */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium">Amount (SOL)</label>
+              <label className="text-sm font-medium">Amount ({tokenSymbol})</label>
               {connected && computed.canDeposit && (
-                <button
-                  className="text-xs text-foreground hover:underline active:underline touch-manipulation p-1"
-                  onClick={() => {
-                    const maxDeposit = Math.min(walletBalance, computed.capRemainingSol);
-                    setDepositAmount(maxDeposit.toFixed(4));
-                  }}
-                >
-                  Max: {formatCurrency(walletBalance)} SOL
-                </button>
+                <div className="text-xs text-muted-foreground">
+                  {tokenBalanceLoading ? (
+                    "Loading balance..."
+                  ) : (
+                    <>
+                      Balance:{" "}
+                      <button
+                        type="button"
+                        className="font-medium text-foreground hover:text-primary hover:underline transition-colors cursor-pointer"
+                        onClick={() => {
+                          const maxDeposit = Math.min(walletBalance, computed.capRemainingSol);
+                          setDepositAmount(maxDeposit.toString());
+                        }}
+                      >
+                        {formatNumber(walletBalance)} {tokenSymbol}
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
             <Input
@@ -156,8 +176,8 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
               <div className="mt-2 text-xs text-destructive flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 <span>
-                  Minimum investment: {formatCurrency(info.minInvestmentSol)}{" "}
-                  SOL
+                  Minimum investment: {formatNumber(info.minInvestmentSol)}{" "}
+                  {tokenSymbol}
                 </span>
               </div>
             )}
@@ -166,7 +186,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                 <AlertCircle className="w-3 h-3" />
                 <span>
                   Amount exceeds available capacity:{" "}
-                  {formatCurrency(computed.capRemainingSol)} SOL
+                  {formatNumber(computed.capRemainingSol)} {tokenSymbol}
                 </span>
               </div>
             )}
@@ -179,7 +199,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">You Invest</span>
                   <span className="font-bold text-foreground">
-                    {formatCurrency(amountNum)} SOL
+                    {formatNumber(amountNum)} {tokenSymbol}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -193,13 +213,13 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
                     Est. Return at Maturity
                   </span>
                   <span className="font-medium">
-                    {formatCurrency(
+                    {formatNumber(
                       amountNum *
                         (1 +
                           (info.expectedApyPct / 100) *
                             (computed.daysToMaturity / 365))
                     )}{" "}
-                    SOL
+                    {tokenSymbol}
                   </span>
                 </div>
               </div>
@@ -227,7 +247,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
               ? "Connect Wallet"
               : disabledMessage
               ? disabledMessage.title
-              : "Deposit SOL"}
+              : `Deposit ${tokenSymbol}`}
           </Button>
 
           {/* Help Text */}

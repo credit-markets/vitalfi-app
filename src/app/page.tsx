@@ -7,10 +7,9 @@ import { VaultsClientWrapper } from "@/components/vault/VaultsClientWrapper";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/providers/SidebarContext";
 import { useVaultsAPI } from "@/hooks/api";
-import { formatCurrency } from "@/lib/utils/formatters";
+import { formatCompactNumber } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { fromBaseUnits, parseTimestamp } from "@/lib/api/formatters";
-import { mapVaultStatusToStage } from "@/lib/api/backend";
 import { getTokenDecimals } from "@/lib/sdk/config";
 import type { VaultSummary } from "@/types/vault";
 import { SOL_DECIMALS, DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
@@ -45,18 +44,16 @@ export default function Home() {
       const raised = fromBaseUnits(vault.totalDeposited, decimals);
       const cap = fromBaseUnits(vault.cap, decimals);
 
-      // Map backend status to frontend stage
-      const stage = mapVaultStatusToStage(vault.status);
-
       return {
         id: vault.vaultId,
         title: vault.vaultId,
-        stage,
+        status: vault.status,
         raised,
         cap,
         targetApy: vault.targetApyBps ? vault.targetApyBps / 10000 : 0,
         maturityDate: parseTimestamp(vault.maturityTs)?.toISOString() || "",
         originator: DEFAULT_ORIGINATOR,
+        assetMint: vault.assetMint || undefined,
       };
     });
   }, [vaultsResponse]);
@@ -65,7 +62,7 @@ export default function Home() {
   const { totalTvl, activeCount } = useMemo(() => {
     const totalTvl = vaults.reduce((sum, v) => sum + (v.raised || 0), 0);
     const activeCount = vaults.filter(
-      (v) => v.stage === "Funding" || v.stage === "Funded"
+      (v) => v.status === "Funding" || v.status === "Active"
     ).length;
     return { totalTvl, activeCount };
   }, [vaults]);
@@ -129,7 +126,7 @@ export default function Home() {
           ) : (
             <VaultsClientWrapper
               vaults={vaults}
-              totalTvl={formatCurrency(totalTvl, "SOL")}
+              totalTvl={formatCompactNumber(totalTvl)}
               activeCount={activeCount}
             />
           )}

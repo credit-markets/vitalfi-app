@@ -3,9 +3,11 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
-import { formatCompactCurrency } from "@/lib/utils/formatters";
-import { getStageColors } from "@/lib/utils/colors";
+import { formatMonetary } from "@/lib/utils/formatters";
+import { getStatusColors } from "@/lib/utils/colors";
 import { formatDate, pluralize, cn } from "@/lib/utils";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 
 export interface VaultOverviewProps {
   vaultId: string;
@@ -23,6 +25,10 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
     return null;
   }
 
+  // Get token symbol for display
+  const tokenMint = info.addresses.tokenMint || NATIVE_MINT.toBase58();
+  const tokenSymbol = getTokenSymbol(tokenMint);
+
   return (
     <Card className="p-6 sm:p-8 bg-gradient-card border-border/50">
       <div className="space-y-6">
@@ -31,9 +37,9 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <h3 className="text-xl sm:text-2xl font-bold flex-1 min-w-0">{info.name}</h3>
           <Badge
             variant="outline"
-            className={cn("flex-shrink-0", getStageColors(info.stage))}
+            className={cn("flex-shrink-0", getStatusColors(info.status))}
           >
-            {info.stage}
+            {info.status}
           </Badge>
         </div>
 
@@ -55,11 +61,11 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              Raised: {formatCompactCurrency(info.raisedSol)} (
+              Raised: {formatMonetary(info.raisedSol, tokenSymbol, { compact: true })} (
               {computed.progressPct.toFixed(1)}%)
             </span>
             <span>
-              Remaining: {formatCompactCurrency(computed.capRemainingSol)} (
+              Remaining: {formatMonetary(computed.capRemainingSol, tokenSymbol, { compact: true })} (
               {(100 - computed.progressPct).toFixed(1)}%)
             </span>
           </div>
@@ -79,7 +85,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <div>
             <div className="text-muted-foreground mb-1">Min Investment</div>
             <div className="font-semibold">
-              {formatCompactCurrency(info.minInvestmentSol)} SOL
+              {formatMonetary(info.minInvestmentSol, tokenSymbol, { compact: true })}
             </div>
           </div>
           <div>
@@ -89,7 +95,7 @@ export function VaultOverview({ vaultId }: VaultOverviewProps) {
           <div>
             <div className="text-muted-foreground mb-1">Total Cap</div>
             <div className="font-semibold">
-              {formatCompactCurrency(info.capSol)} SOL
+              {formatMonetary(info.capSol, tokenSymbol, { compact: true })}
             </div>
           </div>
         </div>

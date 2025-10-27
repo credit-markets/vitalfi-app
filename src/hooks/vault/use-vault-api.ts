@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { VaultEvent, VaultFundingInfo } from "@/types/vault";
+import { VaultEvent, VaultFundingInfo, EventTag } from "@/types/vault";
 import { useVaultsAPI, useActivityAPI } from "@/hooks/api";
 import {
   VITALFI_VAULT_PROGRAM_ID,
@@ -9,7 +9,6 @@ import {
   getCurrentNetwork,
 } from "@/lib/sdk";
 import { fromBaseUnits, parseTimestamp, toISOString } from "@/lib/api/formatters";
-import { mapVaultStatusToStage } from "@/lib/api/backend";
 import { getTokenDecimals } from "@/lib/sdk/config";
 import { env } from "@/lib/env";
 import { SOL_DECIMALS, DEFAULT_ORIGINATOR } from "@/lib/utils/constants";
@@ -20,7 +19,7 @@ import { PublicKey } from "@solana/web3.js";
 interface ComputedVaultData {
   capRemainingSol: number;
   progressPct: number;
-  stage: VaultFundingInfo["stage"];
+  status: VaultFundingInfo["status"];
   daysToMaturity: number;
   daysToFundingEnd: number;
   canDeposit: boolean;
@@ -83,14 +82,11 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
 
     const decimals = vaultDTO.assetMint ? getTokenDecimals(vaultDTO.assetMint) : SOL_DECIMALS;
 
-    // Map backend status to UI stage
-    const stage = mapVaultStatusToStage(vaultDTO.status);
-
     const fundingEndDate = parseTimestamp(vaultDTO.fundingEndTs);
     const maturityDate = parseTimestamp(vaultDTO.maturityTs);
 
     return {
-      stage,
+      status: vaultDTO.status,
       name: vaultId,
       expectedApyPct: vaultDTO.targetApyBps ? vaultDTO.targetApyBps / 100 : 0,
       capSol: fromBaseUnits(vaultDTO.cap, decimals),
@@ -129,20 +125,53 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
 
     return activityResponse.items.map((activity) => {
       const decimals = activity.assetMint ? getTokenDecimals(activity.assetMint) : SOL_DECIMALS;
+
+      // Map activity types to display labels
+      let tag: EventTag;
+      let note: string;
+
+      switch (activity.type) {
+        case "deposit":
+          tag = "Deposit";
+          note = "Deposit";
+          break;
+        case "claim":
+          tag = "Claim";
+          note = "Claim";
+          break;
+        case "vault_created":
+          tag = "System";
+          note = "Vault Created";
+          break;
+        case "funding_finalized":
+          tag = "System";
+          note = "Funding Finalized";
+          break;
+        case "authority_withdraw":
+          tag = "Withdraw";
+          note = "Authority Withdraw";
+          break;
+        case "matured":
+          tag = "System";
+          note = "Vault Matured";
+          break;
+        case "vault_closed":
+          tag = "System";
+          note = "Vault Closed";
+          break;
+        default:
+          tag = "System";
+          note = activity.type;
+      }
+
       return {
         id: activity.id,
-        tag:
-          activity.type === "deposit"
-            ? "Deposit"
-            : activity.type === "claim"
-              ? "Claim"
-              : "Params",
+        tag,
         ts: activity.blockTime || new Date().toISOString(),
         wallet: activity.owner || activity.authority || "Unknown",
         amountSol: fromBaseUnits(activity.amount, decimals),
         txUrl: `${baseUrl}/${activity.txSig}${cluster}`,
-        note:
-          activity.type.charAt(0).toUpperCase() + activity.type.slice(1),
+        note,
       };
     });
   }, [activityResponse]);
@@ -173,14 +202,6 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
     const fundingEnds = new Date(info.fundingEndAt);
     const maturity = new Date(info.maturityAt);
 
-    // Compute stage dynamically
-    let stage: typeof info.stage = "Funding";
-    if (now >= maturity) {
-      stage = "Matured";
-    } else if (now >= fundingEnds || capRemainingSol <= 0) {
-      stage = "Funded";
-    }
-
     // Days to maturity from now (minimum 0)
     const daysToMaturity = Math.max(
       0,
@@ -196,15 +217,15 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
     return {
       capRemainingSol,
       progressPct,
-      stage,
+      status: info.status,
       daysToMaturity,
       daysToFundingEnd,
-      canDeposit: stage === "Funding" && capRemainingSol > 0,
+      canDeposit: info.status === "Funding" && capRemainingSol > 0,
     };
   }, [info]);
 
   return {
-    info: info && computed ? { ...info, stage: computed.stage } : null,
+    info,
     events,
     computed,
     error,

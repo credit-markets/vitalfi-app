@@ -9,39 +9,12 @@
  */
 
 import { env } from "@/lib/env";
-import type { VaultStage } from "@/types/vault";
 
 // ============================================================================
 // DTOs (matching backend/src/types/dto.ts exactly)
 // ============================================================================
 
 export type VaultStatus = "Funding" | "Active" | "Matured" | "Canceled";
-
-/**
- * Maps backend VaultStatus to frontend VaultStage
- *
- * Backend statuses:
- * - Funding: Accepting deposits
- * - Active: Funded, authority has withdrawn funds
- * - Canceled: Funding failed (< 2/3 cap), users can claim refunds
- * - Matured: Vault matured, users can claim payouts
- *
- * Frontend stages:
- * - Funding: Vault is accepting deposits
- * - Funded: Vault is active and funded
- * - Matured: Vault has matured
- * - Closed: Vault is canceled (funding failed)
- */
-export function mapVaultStatusToStage(status: VaultStatus): VaultStage {
-  const mapping: Record<VaultStatus, VaultStage> = {
-    'Funding': 'Funding',
-    'Active': 'Funded',
-    'Matured': 'Matured',
-    'Canceled': 'Closed',  // Funding failed - show as closed to users
-  };
-
-  return mapping[status] || 'Funding'; // Safe default
-}
 
 export interface VaultDTO {
   vaultPda: string;
@@ -78,12 +51,11 @@ export interface PositionDTO {
 export type ActivityType =
   | "deposit"
   | "claim"
+  | "vault_created"
   | "funding_finalized"
   | "authority_withdraw"
   | "matured"
-  | "canceled"
-  | "vault_created"
-  | "position_created";
+  | "vault_closed";
 
 export interface ActivityDTO {
   id: string;
