@@ -14,7 +14,7 @@ interface VaultsClientWrapperProps {
 }
 
 export function VaultsClientWrapper({ vaults, totalTvl, activeCount }: VaultsClientWrapperProps) {
-  const [status, setStatus] = useState<StatusFilterValue>('all');
+  const [status, setStatus] = useState<StatusFilterValue>('Funding');
 
   // Validate and filter out malformed vaults
   const validVaults = useMemo(() => {

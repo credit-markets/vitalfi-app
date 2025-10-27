@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -12,28 +11,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCompactCurrency } from "@/lib/utils/formatters";
-import { formatDate } from "@/lib/utils";
-import { shortenAddress } from "@/lib/utils";
-import { Copy, ExternalLink, TrendingUp, DollarSign, Download } from "lucide-react";
+import { formatMonetary } from "@/lib/utils/formatters";
+import { formatDate, shortenAddress } from "@/lib/utils";
+import { ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { getTokenSymbol } from "@/lib/sdk/config";
+import { NATIVE_MINT } from "@solana/spl-token";
 import type { PortfolioActivity } from "@/hooks/vault/use-portfolio-api";
 
 interface ActivityTableProps {
   activity: PortfolioActivity[];
 }
 
-type ActivityFilter = "all" | "Deposit" | "Claim";
+const ITEMS_PER_PAGE = 10;
 
 /**
- * Activity table with maturity model columns: Type | Amount | Stage | Date | Transaction | Status
- * No PPS, shares, or unlock columns
+ * Activity table with pagination
  */
 export function ActivityTable({ activity }: ActivityTableProps) {
-  const [filter, setFilter] = useState<ActivityFilter>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredActivity =
-    filter === "all" ? activity : activity.filter((a) => a.type === filter);
+  const totalPages = Math.ceil(activity.length / ITEMS_PER_PAGE);
+
+  const paginatedActivity = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return activity.slice(startIndex, endIndex);
+  }, [activity, currentPage]);
 
   const copyTxSig = (txSig: string) => {
     navigator.clipboard.writeText(txSig);
@@ -41,14 +45,12 @@ export function ActivityTable({ activity }: ActivityTableProps) {
   };
 
   const exportCSV = () => {
-    const headers = ["Type", "Amount (SOL)", "Vault", "Status", "Date", "Transaction Status", "Tx Signature"];
-    const rows = filteredActivity.map((a) => [
-      a.type,
-      a.amountSol.toString(),
-      a.vaultName,
-      a.vaultStatus,
+    const headers = ["Date", "Vault", "Amount", "Type", "Tx Signature"];
+    const rows = activity.map((a) => [
       new Date(a.date).toLocaleString(),
-      a.status,
+      a.vaultName,
+      a.amountSol.toString(),
+      a.type,
       a.txSig,
     ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -62,124 +64,97 @@ export function ActivityTable({ activity }: ActivityTableProps) {
     toast.success("Activity exported to CSV");
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "success":
-        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Success</Badge>;
-      case "pending":
-        return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending</Badge>;
-      case "failed":
-        return <Badge className="bg-red-500/10 text-red-500 border-red-500/20">Failed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
   };
 
-  const getTypeIcon = (type: string) => {
-    return type === "Deposit" ? TrendingUp : DollarSign;
-  };
-
-  const getTypeColor = (type: string) => {
-    return type === "Deposit" ? "text-accent" : "text-primary";
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
   return (
-    <Card className="p-4 sm:p-6 bg-card border border-border">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3 sm:gap-4">
-        <h3 className="text-base sm:text-lg font-semibold">Activity</h3>
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-lg font-semibold">Activity</h3>
         <div className="flex items-center gap-2">
-          <Tabs value={filter} onValueChange={(v) => setFilter(v as ActivityFilter)}>
-            <TabsList className="h-8 sm:h-9">
-              <TabsTrigger value="all" className="text-xs px-3 touch-manipulation">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="Deposit" className="text-xs px-3 touch-manipulation">
-                Deposits
-              </TabsTrigger>
-              <TabsTrigger value="Claim" className="text-xs px-3 touch-manipulation">
-                Claims
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <button
-            onClick={exportCSV}
-            className="p-2 hover:bg-accent/10 rounded-lg transition-colors"
-            title="Export CSV"
-          >
-            <Download className="w-4 h-4 text-muted-foreground" />
-          </button>
+          <Button variant="outline" size="sm" onClick={exportCSV}>
+            Export CSV
+          </Button>
         </div>
       </div>
 
+      {/* Table */}
       <div className="border border-border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-muted/30">
-              <TableRow>
-                <TableHead className="text-xs">Type</TableHead>
-                <TableHead className="text-xs text-right">Amount (SOL)</TableHead>
-                <TableHead className="text-xs">Vault</TableHead>
-                <TableHead className="text-xs">Stage</TableHead>
-                <TableHead className="text-xs">Date</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
-                <TableHead className="text-xs">Transaction</TableHead>
+            <TableHeader>
+              <TableRow className="bg-muted/30">
+                <TableHead className="py-4 text-center">Date</TableHead>
+                <TableHead className="py-4 text-center">Vault</TableHead>
+                <TableHead className="py-4 text-center">Amount</TableHead>
+                <TableHead className="py-4 text-center">Type</TableHead>
+                <TableHead className="py-4 text-center">Transaction</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredActivity.length === 0 ? (
+              {paginatedActivity.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-sm">
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-12 text-muted-foreground"
+                  >
                     No activity found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredActivity.map((activity, idx) => {
-                  const Icon = getTypeIcon(activity.type);
-                  const color = getTypeColor(activity.type);
+                paginatedActivity.map((activityItem, idx) => {
+                  const tokenMint =
+                    activityItem.assetMint || NATIVE_MINT.toBase58();
+                  const tokenSymbol = getTokenSymbol(tokenMint);
 
                   return (
-                    <TableRow key={`${activity.txSig}-${idx}`} className="hover:bg-muted/20 transition-colors">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Icon className={`w-4 h-4 ${color}`} />
-                          <span className="text-xs sm:text-sm font-medium">{activity.type}</span>
-                        </div>
+                    <TableRow
+                      key={`${activityItem.txSig}-${idx}`}
+                      className="hover:bg-muted/20"
+                    >
+                      <TableCell className="text-sm py-4 text-center">
+                        {formatDate(activityItem.date)}
                       </TableCell>
-                      <TableCell className="text-right font-medium text-xs sm:text-sm">
-                        {formatCompactCurrency(activity.amountSol)}
+                      <TableCell className="text-sm py-4 text-center">
+                        {activityItem.vaultName}
                       </TableCell>
-                      <TableCell className="text-xs sm:text-sm text-muted-foreground max-w-[200px] truncate">
-                        {activity.vaultName}
+                      <TableCell className="text-sm py-4 text-center font-medium">
+                        {formatMonetary(activityItem.amountSol, tokenSymbol)}
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {activity.vaultStatus}
+                      <TableCell className="text-sm py-4 text-center">
+                        <Badge
+                          className={
+                            activityItem.type === "Deposit"
+                              ? "bg-primary/70 text-primary-foreground border-primary/70"
+                              : "bg-green-500/10 text-green-400 border-green-500/20"
+                          }
+                        >
+                          {activityItem.type}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {formatDate(activity.date)}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(activity.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <code className="text-xs bg-muted/30 px-2 py-1 rounded font-mono">
-                            {shortenAddress(activity.txSig, 4)}
-                          </code>
+                      <TableCell className="text-sm py-4 text-center">
+                        <div className="flex gap-2 justify-center">
                           <button
-                            onClick={() => copyTxSig(activity.txSig)}
-                            className="p-1 hover:bg-muted rounded transition-colors"
-                            title="Copy transaction signature"
+                            onClick={() => copyTxSig(activityItem.txSig)}
+                            className="text-xs bg-muted/30 px-2 py-1 rounded font-mono hover:bg-muted/50 transition-colors cursor-pointer"
+                            title="Click to copy transaction signature"
                           >
-                            <Copy className="w-3 h-3 text-muted-foreground" />
+                            {shortenAddress(activityItem.txSig, 4)}
                           </button>
                           <a
-                            href={`https://explorer.solana.com/tx/${activity.txSig}?cluster=devnet`}
+                            href={`https://explorer.solana.com/tx/${activityItem.txSig}?cluster=devnet`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1 hover:bg-muted rounded transition-colors"
-                            title="View on Solana Explorer"
+                            className="inline-flex items-center justify-center p-1 text-primary hover:text-primary/80 transition-colors"
+                            aria-label="View transaction on Solana Explorer"
                           >
-                            <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                            <ExternalLink className="w-4 h-4" />
                           </a>
                         </div>
                       </TableCell>
@@ -192,11 +167,45 @@ export function ActivityTable({ activity }: ActivityTableProps) {
         </div>
       </div>
 
-      {filteredActivity.length > 0 && (
-        <div className="mt-3 text-xs text-muted-foreground text-center">
-          Showing {filteredActivity.length} {filteredActivity.length === 1 ? "transaction" : "transactions"}
+      {/* Pagination */}
+      {activity.length > 0 && (
+        <div className="flex items-center justify-end">
+          {totalPages > 1 ? (
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-muted-foreground">
+                Showing {paginatedActivity.length} of {activity.length}{" "}
+                {activity.length === 1 ? "transaction" : "transactions"}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Showing {paginatedActivity.length} of {activity.length}{" "}
+              {activity.length === 1 ? "transaction" : "transactions"}
+            </div>
+          )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

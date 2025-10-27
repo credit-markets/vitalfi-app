@@ -39,6 +39,7 @@ export type PortfolioActivity = {
   status: 'success'; // Backend only returns confirmed transactions
   vaultId: string;
   vaultName: string;
+  assetMint?: string;
 };
 
 export type PortfolioSummary = {
@@ -163,7 +164,7 @@ export function usePortfolioAPI() {
         originatorShort: DEFAULT_ORIGINATOR.name,
         collateralShort: DEFAULT_COLLATERAL_TYPE,
         minInvestmentSOL: minInvestmentSol,
-        assetMint: vault.assetMint,
+        assetMint: vault.assetMint || undefined,
       });
     }
 
@@ -194,6 +195,7 @@ export function usePortfolioAPI() {
           status: "success" as const, // Confirmed transactions only
           vaultId: vault?.vaultId || "",
           vaultName: vault?.vaultId || "",
+          assetMint: act.assetMint || undefined,
         };
       });
   }, [activityResponse, vaultsResponse]);

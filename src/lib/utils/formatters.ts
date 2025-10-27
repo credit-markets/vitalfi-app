@@ -108,3 +108,51 @@ export function formatCurrency(n: number, currency: string = 'USD'): string {
 export function formatPercentPY(p: number): string {
   return `${(p * 100).toFixed(1)}% p.y.`;
 }
+
+/**
+ * Format monetary amount with proper precision and symbol
+ * Used for unified position cards
+ */
+export function formatMonetary(
+  amount: number,
+  symbol: 'SOL' | 'USDC' | 'USDT' | string,
+  options?: {
+    compact?: boolean;
+    precision?: number;
+  }
+): string {
+  const { compact = false, precision } = options || {};
+
+  // Determine precision based on symbol if not specified
+  const decimals = precision ?? (symbol === 'SOL' ? 4 : 2);
+
+  if (compact) {
+    if (amount >= 1_000_000) {
+      return `${(amount / 1_000_000).toFixed(1)}M ${symbol}`;
+    }
+    if (amount >= 1_000) {
+      return `${(amount / 1_000).toFixed(1)}K ${symbol}`;
+    }
+  }
+
+  // Format the number with appropriate decimals
+  const formatted = amount.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+
+  return `${formatted} ${symbol}`;
+}
+
+/**
+ * Get full precision string for title attributes
+ */
+export function formatMonetaryPrecise(
+  amount: number,
+  symbol: string
+): string {
+  return `${amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 9,
+  })} ${symbol}`;
+}
