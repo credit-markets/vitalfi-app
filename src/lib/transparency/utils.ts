@@ -154,11 +154,14 @@ export function exportReceivablesCsv(
 // Mock Data Generation (Fallback until backend is ready)
 // ============================================================================
 
+// Cache current time to avoid creating new Date() for each receivable
+const NOW_MS = Date.now();
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 /**
- * Helper to calculate days to/past maturity
+ * Helper to calculate days to/past maturity (optimized)
  */
 function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPastDue?: number } {
-  const now = new Date();
   const maturity = new Date(maturityDate);
 
   if (isNaN(maturity.getTime())) {
@@ -166,8 +169,8 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
     return {};
   }
 
-  const diffMs = maturity.getTime() - now.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffMs = maturity.getTime() - NOW_MS;
+  const diffDays = Math.floor(diffMs / MS_PER_DAY);
 
   if (diffDays >= 0) {
     return { daysToMaturity: diffDays };
@@ -177,10 +180,13 @@ function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPas
 }
 
 /**
- * Generate realistic receivables for mock data
+ * Generate fixed 15 mock receivables scaled to vault raised amount
+ * Uses deterministic data for consistency
  */
-function generateReceivables(count: number, baseDate: Date, status: ReceivableStatus): Receivable[] {
-  const receivables: Receivable[] = [];
+function generateFixedReceivables(vaultRaised: number, status: ReceivableStatus): Receivable[] {
+  const baseDate = new Date();
+
+  // Fixed payer distribution (realistic Brazilian healthcare payers)
   const payers = [
     "SUS - Sistema Único de Saúde",
     "Unimed São Paulo",
@@ -190,20 +196,44 @@ function generateReceivables(count: number, baseDate: Date, status: ReceivableSt
     "Golden Cross",
   ];
 
-  for (let i = 0; i < count; i++) {
-    const faceValue = 1000 + Math.random() * 9000; // 1k-10k SOL equivalent
-    const advancePct = 0.75 + Math.random() * 0.15; // 75-90% advance rate
-    const costBasis = faceValue * advancePct;
-    const issueDate = new Date(baseDate);
-    issueDate.setDate(issueDate.getDate() - Math.floor(Math.random() * 60)); // 0-60 days ago
-    const maturityDate = new Date(issueDate);
-    maturityDate.setDate(maturityDate.getDate() + 30 + Math.floor(Math.random() * 60)); // 30-90 day terms
+  // Fixed originator distribution
+  const originators = [
+    "Saúde+ Clínica",
+    "VidaMed Hospital",
+    "Hospital São Lucas",
+  ];
 
-    const originator = Math.random() > 0.5 ? "Saúde+ Clínica" : "VidaMed Hospital";
-    const payer = payers[Math.floor(Math.random() * payers.length)];
+  // 15 fixed receivables with deterministic sizes (as % of vault raised)
+  // Total face value will be ~120-130% of vault raised (typical advance rate ~80%)
+  const sizeDistribution = [
+    0.15, 0.12, 0.10, 0.09, 0.08,  // Top 5: 54%
+    0.07, 0.06, 0.06, 0.05, 0.05,  // Mid 5: 29%
+    0.04, 0.04, 0.03, 0.03, 0.03   // Low 5: 17%
+  ]; // Total: 100% of raised amount
+
+  // Scale to face value (assuming ~80% advance rate on average)
+  const totalFaceValue = vaultRaised / 0.80;
+
+  const receivables: Receivable[] = [];
+
+  for (let i = 0; i < 15; i++) {
+    const faceValue = totalFaceValue * sizeDistribution[i];
+    const advancePct = 0.75 + (i % 5) * 0.03; // 75-87% range, deterministic
+    const costBasis = faceValue * advancePct;
+
+    // Deterministic dates based on index
+    const issueDate = new Date(baseDate);
+    issueDate.setDate(issueDate.getDate() - (15 + i * 3)); // Staggered 15-60 days ago
+
+    const maturityDate = new Date(issueDate);
+    maturityDate.setDate(maturityDate.getDate() + (45 + i * 4)); // 45-101 day terms
+
+    // Deterministic assignments
+    const originator = originators[i % originators.length];
+    const payer = payers[i % payers.length];
 
     receivables.push({
-      id: `INV-${(i + 1).toString().padStart(4, '0')}`,
+      id: `INV-${(1001 + i).toString()}`,
       originator,
       payer,
       currency: 'BRL',
@@ -216,9 +246,9 @@ function generateReceivables(count: number, baseDate: Date, status: ReceivableSt
       ...calculateDays(maturityDate.toISOString()),
       status,
       links: {
-        invoiceUrl: `https://docs.vitalfi.io/invoices/INV-${i + 1}.pdf`,
-        assignmentUrl: `https://docs.vitalfi.io/assignments/ASG-${i + 1}.pdf`,
-        txUrl: `https://solscan.io/tx/${Math.random().toString(36).substring(2, 15)}`,
+        invoiceUrl: `https://docs.vitalfi.io/invoices/INV-${1001 + i}.pdf`,
+        assignmentUrl: `https://docs.vitalfi.io/assignments/ASG-${1001 + i}.pdf`,
+        txUrl: `https://solscan.io/tx/mock${(1001 + i).toString(36)}`,
       },
       notes: status === 'Disputed' ? 'Payment delayed due to administrative review' : undefined,
     });
@@ -228,35 +258,43 @@ function generateReceivables(count: number, baseDate: Date, status: ReceivableSt
 }
 
 /**
- * Calculate analytics from receivables
+ * Calculate analytics from receivables (optimized - single pass)
  */
 function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
-  const faceValueTotal = receivables.reduce((sum, r) => sum + r.faceValue, 0);
-  const costBasisTotal = receivables.reduce((sum, r) => sum + r.costBasis, 0);
-  const outstandingTotal = receivables.filter(r => r.status === 'Performing' || r.status === 'Matured').reduce((sum, r) => sum + r.expectedRepayment, 0);
-
-  // Calculate WAL (weighted average life)
-  const totalNotional = receivables.reduce((sum, r) => sum + r.faceValue, 0);
-  const weightedDays = receivables.reduce((sum, r) => {
-    const days = r.daysToMaturity || 0;
-    return sum + (r.faceValue / totalNotional) * days;
-  }, 0);
-
-  // Top originator concentration
+  let faceValueTotal = 0;
+  let costBasisTotal = 0;
+  let outstandingTotal = 0;
+  let weightedDays = 0;
   const originatorTotals: Record<string, number> = {};
-  receivables.forEach(r => {
+  const payerTotals: Record<string, number> = {};
+
+  // Single pass through receivables
+  for (const r of receivables) {
+    faceValueTotal += r.faceValue;
+    costBasisTotal += r.costBasis;
+
+    if (r.status === 'Performing' || r.status === 'Matured') {
+      outstandingTotal += r.expectedRepayment;
+    }
+
     originatorTotals[r.originator] = (originatorTotals[r.originator] || 0) + r.faceValue;
-  });
+    payerTotals[r.payer] = (payerTotals[r.payer] || 0) + r.faceValue;
+  }
+
+  // Calculate WAL in second pass (need totalNotional first)
+  if (faceValueTotal > 0) {
+    for (const r of receivables) {
+      const days = r.daysToMaturity || 0;
+      weightedDays += (r.faceValue / faceValueTotal) * days;
+    }
+  }
+
+  // Find max concentrations
   const originatorValues = Object.values(originatorTotals);
   const topOriginatorPct = originatorValues.length > 0 && faceValueTotal > 0
     ? Math.max(...originatorValues) / faceValueTotal
     : 0;
 
-  // Top payer concentration
-  const payerTotals: Record<string, number> = {};
-  receivables.forEach(r => {
-    payerTotals[r.payer] = (payerTotals[r.payer] || 0) + r.faceValue;
-  });
   const payerValues = Object.values(payerTotals);
   const topPayerPct = payerValues.length > 0 && faceValueTotal > 0
     ? Math.max(...payerValues) / faceValueTotal
@@ -278,53 +316,57 @@ function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
  *
  * This is a fallback used when the backend endpoint is not yet available.
  * Once the backend is ready, this will no longer be called.
+ *
+ * Uses fixed 15 receivables scaled to vault raised amount for realistic sizing.
  */
 export function generateMockTransparencyData(
   vaultStatus: string,
   vaultRaised: number,
   vaultMaturityDate: string
 ) {
-  const baseDate = new Date();
   let receivables: Receivable[];
+  let hedge: HedgePosition | undefined;
 
-  // Generate receivables based on vault status
-  if (vaultStatus === "Active" || vaultStatus === "Funding") {
-    // Active/Funding vault: mostly performing, some matured
-    receivables = [
-      ...generateReceivables(35, baseDate, 'Performing'),
-      ...generateReceivables(8, baseDate, 'Matured'),
-    ];
+  // Only generate fake data for Active and Matured vaults
+  // All other statuses (Funding, Canceled, Closed) show empty states
+  if (vaultStatus === "Active") {
+    // Active vault: all performing receivables
+    receivables = generateFixedReceivables(vaultRaised, 'Performing');
+
+    // Active vault has hedge position
+    const fundingStart = new Date();
+    fundingStart.setDate(fundingStart.getDate() - 60);
+    hedge = {
+      coveragePct: 0.85,
+      instrument: 'NDF',
+      pair: 'USD/BRL',
+      notional: vaultRaised * 0.85,
+      tenorStart: fundingStart.toISOString(),
+      tenorEnd: vaultMaturityDate,
+      referenceRate: 'PTAX',
+      mtm: vaultRaised * -0.02, // -2% of notional as hedge cost
+      realizedPnL: 0,
+      counterparty: 'Itaú BBA',
+      venue: 'B3',
+      basisNote: 'Small basis risk exists between medical receivable maturities and NDF settlement dates',
+    };
   } else if (vaultStatus === "Matured") {
-    // Matured vault: mostly repaid, some still outstanding
-    receivables = [
-      ...generateReceivables(25, baseDate, 'Repaid'),
-      ...generateReceivables(5, baseDate, 'Matured'),
-    ];
+    // Matured vault: mix of repaid and matured receivables
+    const allReceivables = generateFixedReceivables(vaultRaised, 'Performing');
+    // Convert 12 to repaid, keep 3 as matured
+    receivables = allReceivables.map((r, i) =>
+      i < 12 ? { ...r, status: 'Repaid' as ReceivableStatus } : { ...r, status: 'Matured' as ReceivableStatus }
+    );
+
+    // Matured vault: hedge is settled/closed, show empty state
+    hedge = undefined;
   } else {
-    // Canceled/Closed: no receivables
+    // Funding/Canceled/Closed: empty state (no fake data)
     receivables = [];
+    hedge = undefined;
   }
 
   const analytics = calculateAnalytics(receivables);
-
-  // Hedge (only for Active/Funding vaults with exposure)
-  const fundingStart = new Date();
-  fundingStart.setDate(fundingStart.getDate() - 60); // started 60 days ago
-
-  const hedge: HedgePosition | undefined = (vaultStatus === "Active" || vaultStatus === "Funding") ? {
-    coveragePct: 0.85,
-    instrument: 'NDF',
-    pair: 'USD/BRL',
-    notional: vaultRaised * 0.85,
-    tenorStart: fundingStart.toISOString(),
-    tenorEnd: vaultMaturityDate,
-    referenceRate: 'PTAX',
-    mtm: -2500, // negative MTM (hedge cost)
-    realizedPnL: 0,
-    counterparty: 'Itaú BBA',
-    venue: 'B3',
-    basisNote: 'Small basis risk exists between medical receivable maturities and NDF settlement dates',
-  } : undefined;
 
   // Documents
   const documents: VaultDocuments = {

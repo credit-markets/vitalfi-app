@@ -181,14 +181,12 @@ export default function VaultTransparencyDetail() {
                     >
                       Collateral
                     </TabsTrigger>
-                    {transparencyData.hedge && (
-                      <TabsTrigger
-                        value="hedge"
-                        className={TAB_TRIGGER_CLASSES}
-                      >
-                        Hedge Position
-                      </TabsTrigger>
-                    )}
+                    <TabsTrigger
+                      value="hedge"
+                      className={TAB_TRIGGER_CLASSES}
+                    >
+                      Hedge Position
+                    </TabsTrigger>
                     <TabsTrigger
                       value="documents"
                       className={TAB_TRIGGER_CLASSES}
@@ -206,12 +204,10 @@ export default function VaultTransparencyDetail() {
                     />
                   </TabsContent>
 
-                  {/* Hedge Tab */}
-                  {transparencyData.hedge && (
-                    <TabsContent value="hedge">
-                      <HedgeCard hedge={transparencyData.hedge} />
-                    </TabsContent>
-                  )}
+                  {/* Hedge Tab - Always show */}
+                  <TabsContent value="hedge">
+                    <HedgeCard hedge={transparencyData.hedge} />
+                  </TabsContent>
 
                   {/* Documents Tab */}
                   <TabsContent value="documents">

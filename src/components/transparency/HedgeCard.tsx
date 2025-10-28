@@ -8,10 +8,23 @@ import { Shield, TrendingDown, TrendingUp, AlertCircle } from "lucide-react";
 import type { HedgePosition } from "@/types/vault";
 
 interface HedgeCardProps {
-  hedge: HedgePosition;
+  hedge?: HedgePosition;
 }
 
 export function HedgeCard({ hedge }: HedgeCardProps) {
+  // Show empty state if no hedge data
+  if (!hedge) {
+    return (
+      <Card className="p-8 text-center">
+        <Shield className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Hedge Position</h3>
+        <p className="text-sm text-muted-foreground">
+          Hedge information will appear here once available for this vault
+        </p>
+      </Card>
+    );
+  }
+
   const tenorStart = new Date(hedge.tenorStart);
   const tenorEnd = new Date(hedge.tenorEnd);
   const hasMtm = hedge.mtm !== undefined;

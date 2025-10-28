@@ -1,6 +1,10 @@
-# VitalFi - Solana Healthcare Vault Application
+# VitalFi App
 
-A Next.js application for depositing SOL into a transparent DeFi vault that finances medical receivables in Brazil, helping doctors get paid faster while generating yield for depositors.
+**DeFi app for healthcare financing - Earn Yield. Empower Healthcare.**
+
+Built by Credit Markets | Part of the VitalFi ecosystem
+
+Next.js application enabling liquidity providers to earn up to 16% APY backed by institutional-grade Brazilian medical receivables. Deposit USDT into transparent vaults, track portfolio performance, and access full collateral transparency.
 
 ## 🚀 Features
 
@@ -188,11 +192,21 @@ Test on devnet:
 
 ## 📄 License
 
-TBD
+MIT
 
 ## 🔗 Links
 
-- [Landing Page](../vitalfi-health-yield)
+- **Live App:** https://app.vitalfi.lat
+- **Landing Page:** https://vitalfi.lat
+- **Documentation:** https://docs.vitalfi.lat
+- **VitalFi Program:** https://github.com/credit-markets/vitalfi-programs
+- **Backend API:** https://github.com/credit-markets/vitalfi-backend
 - [Solana Docs](https://docs.solana.com)
 - [Wallet Adapter Docs](https://github.com/solana-labs/wallet-adapter)
 - [Next.js Docs](https://nextjs.org/docs)
+
+---
+
+**Powered by Credit Markets | Built on Solana**
+
+_Earn Yield. Empower Healthcare._
