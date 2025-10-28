@@ -14,6 +14,18 @@ interface CollateralSectionProps {
 }
 
 export function CollateralSection({ analytics, receivables, onExportCsv }: CollateralSectionProps) {
+  // If no receivables, show a simple message
+  if (receivables.length === 0) {
+    return (
+      <Card className="p-8 text-center">
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Collateral Yet</h3>
+        <p className="text-sm text-muted-foreground">
+          Receivables will appear here once the vault transitions to Active status
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Analytics Summary Strip */}

@@ -52,7 +52,19 @@ export function useTransparency({
     return errorMessage.includes("404") || errorMessage.includes("Failed to fetch");
   }, [apiError]);
 
-  // Transform data
+  // Transform data - memoize mock data generation
+  const mockDataCache = useMemo(() => {
+    if (!useMockData || !vaultSummary) return null;
+
+    console.warn(`Transparency endpoint not available for ${vaultPda}, using mock data`);
+
+    return generateMockTransparencyData(
+      vaultSummary.status,
+      vaultSummary.raised,
+      vaultSummary.maturityDate
+    );
+  }, [useMockData, vaultSummary, vaultPda]);
+
   const data = useMemo<VaultTransparencyData | null>(() => {
     if (!vaultSummary) return null;
 
@@ -68,24 +80,16 @@ export function useTransparency({
     }
 
     // Fallback to mock data if backend not available
-    if (useMockData) {
-      console.warn(`Transparency endpoint not available for ${vaultPda}, using mock data`);
-
-      const mockData = generateMockTransparencyData(
-        vaultSummary.status,
-        vaultSummary.raised,
-        vaultSummary.maturityDate
-      );
-
+    if (useMockData && mockDataCache) {
       return {
         summary: vaultSummary,
-        ...mockData,
+        ...mockDataCache,
         lastUpdated: new Date().toISOString(),
       };
     }
 
     return null;
-  }, [apiData, vaultSummary, useMockData, vaultPda]);
+  }, [apiData, vaultSummary, useMockData, mockDataCache]);
 
   // Error handling
   const error = useMemo(() => {

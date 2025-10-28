@@ -37,8 +37,18 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
   const [filters, setFilters] = useState<ReceivableFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const isMobile = useIsMobile();
+
+  // Debounce search term (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // TODO: Implement filter UI with originators and payers dropdowns
   // For now, only search is active
@@ -47,9 +57,9 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
   const filteredReceivables = useMemo(() => {
     let result = filterReceivables(receivables, filters);
 
-    // Apply search
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    // Apply search (debounced)
+    if (debouncedSearchTerm) {
+      const term = debouncedSearchTerm.toLowerCase();
       result = result.filter(
         r =>
           r.id.toLowerCase().includes(term) ||
@@ -64,7 +74,7 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
     );
 
     return result;
-  }, [receivables, filters, searchTerm]);
+  }, [receivables, filters, debouncedSearchTerm]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredReceivables.length / ITEMS_PER_PAGE);
@@ -107,6 +117,15 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
       return { ...prev, status: updated.length > 0 ? updated : undefined };
     });
   };
+
+  // Don't show toolbar if there are no receivables at all
+  if (receivables.length === 0) {
+    return (
+      <Card className="p-8 text-center text-muted-foreground">
+        No receivables available for this vault
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -223,7 +242,7 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Advance %</div>
-                      <div className="text-sm font-medium">{(r.advancePct * 100).toFixed(1)}%</div>
+                      <div className="text-sm font-medium">{((r.advancePct ?? 0) * 100).toFixed(1)}%</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Maturity</div>
@@ -309,7 +328,7 @@ export function ReceivablesTable({ receivables, onExportCsv }: ReceivablesTableP
                       {formatCompactCurrency(r.costBasis)}
                     </TableCell>
                     <TableCell className="text-right text-sm">
-                      {(r.advancePct * 100).toFixed(1)}%
+                      {((r.advancePct ?? 0) * 100).toFixed(1)}%
                     </TableCell>
                     <TableCell className="text-sm">
                       {(() => {
