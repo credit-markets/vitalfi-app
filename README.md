@@ -2,8 +2,6 @@
 
 **DeFi app for healthcare financing - Earn Yield. Empower Healthcare.**
 
-Built by Credit Markets | Part of the VitalFi ecosystem
-
 Next.js application enabling liquidity providers to earn up to 16% APY backed by institutional-grade Brazilian medical receivables. Deposit USDT into transparent vaults, track portfolio performance, and access full collateral transparency.
 
 ## 🚀 Features
