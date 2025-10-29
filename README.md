@@ -9,7 +9,8 @@ Next.js application enabling liquidity providers to earn up to 16% APY backed by
 ## 🚀 Features
 
 - **Solana Wallet Integration** - Connect with Phantom, Solflare, and other Solana wallets
-- **Fixed-Yield Funding Vaults** - Deposit SOL during funding phase with locked capital until maturity
+- **Fixed-Yield Funding Vaults** - Deposit USDT during funding phase with locked capital until maturity
+- **Jupiter Swap Integration** - Convert tokens to USDT directly within vault action panel
 - **Real-time Vault Metrics** - View TVL, expected APY, funding progress, and timeline
 - **Portfolio Tracking** - Monitor positions across multiple vaults with expected returns
 - **Transparency Dashboard** - Full receivables transparency with collateral analytics, hedge positions, and documents
@@ -23,6 +24,8 @@ Next.js application enabling liquidity providers to earn up to 16% APY backed by
 - **Styling**: Tailwind CSS v4
 - **Blockchain**: Solana Web3.js
 - **Wallet Adapter**: @solana/wallet-adapter-react
+- **State Management**: TanStack Query (React Query) for API state
+- **Token Swaps**: Jupiter Aggregator V6 API
 - **UI Components**: Custom components with shadcn/ui patterns
 - **Icons**: Lucide React
 - **Forms**: React Hook Form + Zod
@@ -46,15 +49,17 @@ vitalfi-app/
 │   │   ├── transparency/        # Transparency components (Accounts, Charts, Events, etc.)
 │   │   └── layout/              # Layout components (Header, Sidebar)
 │   ├── lib/
-│   │   ├── solana/              # Solana integration and mock data
-│   │   ├── transparency/        # Transparency API and mock data
-│   │   └── utils.ts             # Utility functions
+│   │   ├── api/                 # Backend API client and formatters
+│   │   ├── sdk/                 # Solana program SDK and config
+│   │   ├── jupiter/             # Jupiter swap integration
+│   │   ├── transparency/        # Transparency mock data
+│   │   └── utils/               # Utility functions and formatters
 │   ├── contexts/
 │   │   ├── WalletProvider.tsx   # Solana wallet context
 │   │   └── SidebarContext.tsx   # Sidebar state management
 │   ├── hooks/                   # Custom React hooks
-│   │   ├── useFundingVault.ts   # Funding vault data hook
-│   │   └── usePortfolio.ts      # Portfolio data hook
+│   │   ├── api/                 # API hooks (useVaultsAPI, usePortfolioAPI)
+│   │   └── jupiter/             # Jupiter hooks (useJupiterQuote, useJupiterTokens)
 │   └── types/
 │       └── vault.ts             # Vault type definitions
 ├── public/
@@ -143,7 +148,7 @@ Currently integrated wallets:
 
 The vault operates on a **fixed-yield funding model** with the following mechanics:
 
-- **Funding Phase**: Users deposit SOL during the funding period (limited capacity)
+- **Funding Phase**: Users deposit USDT during the funding period (limited capacity)
 - **Locked Capital**: All deposits are locked until vault maturity date
 - **Fixed APY**: Expected annual percentage yield (e.g., 12% APY) set at funding
 - **Maturity**: At maturity, users claim principal + accrued yield
@@ -160,10 +165,11 @@ The `/transparency` page provides comprehensive vault reporting:
 
 ### Pages
 
-1. **Vault Dashboard** (`/`) - Main funding vault page with KPIs, overview, and participation panel
-2. **Portfolio** (`/portfolio`) - User positions across all vaults with expected returns and timeline
-3. **Transparency** (`/transparency`) - Vault selection hub
-4. **Transparency Detail** (`/transparency/[vaultId]`) - Full receivables transparency for specific vault
+1. **Vault Dashboard** (`/`) - Main vault listing page with TVL, active vaults, and vault cards
+2. **Vault Detail** (`/vault/[vaultId]`) - Individual vault page with KPIs, analytics, and action panel (deposit, withdraw, convert)
+3. **Portfolio** (`/portfolio`) - User positions across all vaults with expected returns and timeline
+4. **Transparency Detail** (`/vault/[vaultId]/transparency`) - Full receivables transparency for specific vault
+5. **Admin** (`/admin`) - Admin panel for vault management (authorized users only)
 
 ## 🧪 Development
 
@@ -178,9 +184,10 @@ npm run lint     # Run ESLint
 
 ### Key Development Notes
 
-- **Mock Data**: Currently using mock data in `src/lib/solana/mock-data.ts` and `src/lib/transparency/mock.ts` for development
+- **Backend API**: Vault data is fetched from VitalFi backend API (vitalfi-backend)
+- **Mock Data**: Transparency page uses mock data in `src/lib/transparency/mock.ts`
 - **Devnet First**: Always test on Solana devnet before mainnet deployment
-- **Type Safety**: Comprehensive TypeScript types in `src/types/vault.ts`
+- **Type Safety**: Comprehensive TypeScript types in `src/types/`
 - **Funding Model**: Fixed-yield vaults with locked capital until maturity (no early withdrawals)
 
 ### Solana Development
