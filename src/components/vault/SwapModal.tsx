@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { X, ArrowDown, AlertCircle, Info, Zap, ChevronDown, Search } from "lucide-react";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
@@ -91,6 +91,20 @@ export function SwapModal({ isOpen, onClose, onSwapSuccess }: SwapModalProps) {
 
   const canSwap =
     isMainnet && amountNum > 0 && !!quote && amountNum <= tokenBalance;
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen || showTokenPicker) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, showTokenPicker]);
 
   const handleSwap = async () => {
     if (!canSwap || !quote || !preview) return;
