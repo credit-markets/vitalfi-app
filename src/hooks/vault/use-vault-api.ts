@@ -126,7 +126,6 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
     return activityResponse.items.map((activity) => {
       const decimals = activity.assetMint ? getTokenDecimals(activity.assetMint) : SOL_DECIMALS;
 
-      // Map activity types to display labels
       let tag: EventTag;
       let note: string;
 
@@ -141,11 +140,11 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
           break;
         case "vault_created":
           tag = "System";
-          note = "Vault Created";
+          note = "Initialize";
           break;
         case "funding_finalized":
           tag = "System";
-          note = "Funding Finalized";
+          note = "End Funding";
           break;
         case "authority_withdraw":
           tag = "Withdraw";
@@ -153,11 +152,11 @@ export function useVaultAPI(vaultId: string): UseVaultReturn {
           break;
         case "matured":
           tag = "System";
-          note = "Vault Matured";
+          note = "Repay";
           break;
         case "vault_closed":
           tag = "System";
-          note = "Vault Closed";
+          note = "Close";
           break;
         default:
           tag = "System";

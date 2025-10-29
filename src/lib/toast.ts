@@ -297,8 +297,48 @@ export const closeVault = {
     transactionError(error, "Vault closure failed", { id: "close-vault" }),
 };
 
+/**
+ * Swap operation toasts
+ */
+export const swap = {
+  loading: (amount: number, fromToken: string, toToken: string) =>
+    transactionLoading(
+      "Processing swap...",
+      {
+        id: "swap",
+        description: `Swapping ${amount} ${fromToken} to ${toToken}`
+      }
+    ),
+
+  success: (
+    signature: string,
+    inputAmount: number,
+    inputToken: string,
+    outputAmount: number,
+    outputToken: string
+  ) =>
+    transactionSuccess(
+      signature,
+      "Swap successful!",
+      {
+        id: "swap",
+        description: `${inputAmount} ${inputToken} → ${outputAmount.toFixed(4)} ${outputToken}`,
+      }
+    ),
+
+  error: (error: Error | string) =>
+    transactionError(error, "Swap failed", { id: "swap" }),
+};
+
 // ============================================================================
 // Re-export base toast for custom usage
 // ============================================================================
 
 export { sonnerToast as toast };
+
+/**
+ * Dismiss a toast by ID
+ */
+export function dismiss(toastId: string | number) {
+  return sonnerToast.dismiss(toastId);
+}

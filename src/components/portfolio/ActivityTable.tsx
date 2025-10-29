@@ -144,7 +144,17 @@ export function ActivityTable({ activity }: ActivityTableProps) {
                           className={
                             activityItem.type === "Deposit"
                               ? "bg-primary/70 text-primary-foreground border-primary/70"
-                              : "bg-green-500/10 text-green-400 border-green-500/20"
+                              : activityItem.type === "Claim"
+                              ? "bg-green-500/10 text-green-400 border-green-500/20"
+                              : activityItem.type === "Vault Created"
+                              ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                              : activityItem.type === "Funding Finalized"
+                              ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
+                              : activityItem.type === "Matured"
+                              ? "bg-green-500/10 text-green-400 border-green-500/20"
+                              : activityItem.type === "Vault Closed"
+                              ? "bg-muted/50 text-muted-foreground border-muted"
+                              : "bg-orange-500/10 text-orange-400 border-orange-500/20"
                           }
                         >
                           {activityItem.type}
