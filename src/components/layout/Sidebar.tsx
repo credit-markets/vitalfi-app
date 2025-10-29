@@ -24,7 +24,7 @@ export function Sidebar() {
   const externalLinks = [
     { name: "Privacy Policy", href: "https://vitalfi.io/privacy", icon: Shield },
     { name: "Terms of Service", href: "https://vitalfi.io/terms", icon: FileText },
-    { name: "Docs", href: "https://docs.vitalfi.io", icon: FileText },
+    { name: "Docs", href: "https://vitalfi.io/learn-more", icon: FileText },
   ];
 
   return (
