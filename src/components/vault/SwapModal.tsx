@@ -124,6 +124,108 @@ export function SwapModal({ isOpen, onClose, onSwapSuccess }: SwapModalProps) {
   const priceImpactHigh = (preview?.priceImpact || 0) > 1;
   const priceImpactVeryHigh = (preview?.priceImpact || 0) > 5;
 
+  // Token Picker Modal (full overlay)
+  if (showTokenPicker) {
+    return (
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setShowTokenPicker(false)}
+        />
+
+        {/* Token Picker Modal */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <Card className="w-full max-w-md p-5 relative bg-gradient-card border-border/50 shadow-2xl pointer-events-auto animate-in zoom-in-95 duration-200 max-h-[600px] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <h3 className="text-lg font-bold">Select Token</h3>
+              <button
+                onClick={() => setShowTokenPicker(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors rounded-lg p-1.5 hover:bg-muted/50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative mb-4 flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search tokens..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+
+            {/* Popular Tokens Label */}
+            {!searchQuery && (
+              <div className="text-xs font-medium text-muted-foreground mb-2 px-1 flex-shrink-0">
+                Popular Tokens
+              </div>
+            )}
+
+            {/* Token List - Scrollable */}
+            <div className="overflow-y-auto flex-1 -mx-1 px-1 space-y-1">
+              {isSearching ? (
+                <div className="text-center py-12 text-sm text-muted-foreground">
+                  Searching...
+                </div>
+              ) : filteredTokens.length === 0 ? (
+                <div className="text-center py-12 text-sm text-muted-foreground">
+                  No tokens found
+                </div>
+              ) : (
+                filteredTokens.slice(0, 50).map((token) => (
+                  <button
+                    key={token.address}
+                    onClick={() => handleSelectToken(token)}
+                    className="w-full px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-3 text-left group"
+                  >
+                    {token.logoURI ? (
+                      <Image
+                        src={token.logoURI}
+                        alt={token.symbol}
+                        width={32}
+                        height={32}
+                        className="rounded-full flex-shrink-0"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
+                        {token.symbol.slice(0, 2)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm group-hover:text-primary transition-colors">
+                        {token.symbol}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {token.name}
+                      </div>
+                    </div>
+                    {token.tags?.includes("verified") && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 px-2 text-[10px] flex-shrink-0"
+                      >
+                        ✓
+                      </Badge>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Main Swap Modal
   return (
     <>
       {/* Backdrop */}
@@ -163,147 +265,64 @@ export function SwapModal({ isOpen, onClose, onSwapSuccess }: SwapModalProps) {
           )}
 
           <div className="space-y-4">
-            {/* From Token Section - Fixed Height */}
+            {/* From Token Section */}
             <div>
               <label className="text-sm font-medium mb-2 block text-muted-foreground">
                 You pay
               </label>
-              <div className="relative">
-                <div className="p-4 bg-muted/20 border border-border rounded-lg hover:border-primary/30 transition-colors">
-                  <div className="flex items-center justify-between gap-3">
-                    {/* Token Selector */}
-                    <button
-                      onClick={() => setShowTokenPicker(!showTokenPicker)}
-                      className="flex items-center gap-2 px-2.5 py-1.5 bg-background/50 hover:bg-background rounded-lg transition-colors group flex-shrink-0"
-                    >
-                      {selectedToken.logoURI ? (
-                        <Image
-                          src={selectedToken.logoURI}
-                          alt={selectedToken.symbol}
-                          width={24}
-                          height={24}
-                          className="rounded-full"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                          {selectedToken.symbol.slice(0, 2)}
-                        </div>
-                      )}
-                      <span className="font-semibold text-sm">{selectedToken.symbol}</span>
-                      <ChevronDown
-                        className={`h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-all ${
-                          showTokenPicker ? 'rotate-180' : ''
-                        }`}
+              <div className="p-4 bg-muted/20 border border-border rounded-lg hover:border-primary/30 transition-colors">
+                <div className="flex items-center justify-between gap-3">
+                  {/* Token Selector Button */}
+                  <button
+                    onClick={() => setShowTokenPicker(true)}
+                    className="flex items-center gap-2 px-2.5 py-1.5 bg-background/50 hover:bg-background rounded-lg transition-colors group flex-shrink-0"
+                  >
+                    {selectedToken.logoURI ? (
+                      <Image
+                        src={selectedToken.logoURI}
+                        alt={selectedToken.symbol}
+                        width={24}
+                        height={24}
+                        className="rounded-full"
+                        unoptimized
                       />
-                    </button>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                        {selectedToken.symbol.slice(0, 2)}
+                      </div>
+                    )}
+                    <span className="font-semibold text-sm">{selectedToken.symbol}</span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </button>
 
-                    {/* Amount Input */}
-                    <div className="flex-1 min-w-0">
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="0"
-                        value={amount}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          // Allow numbers and decimal point
-                          if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                            setAmount(value);
-                          }
-                        }}
-                        className="text-right text-2xl font-bold bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto w-full"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Balance */}
-                  <div className="flex justify-end mt-2">
-                    <button
-                      onClick={() => setAmount(tokenBalance.toString())}
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      Balance: {formatCompactNumber(tokenBalance)}
-                    </button>
+                  {/* Amount Input */}
+                  <div className="flex-1 min-w-0">
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={amount}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Allow numbers and decimal point
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          setAmount(value);
+                        }
+                      }}
+                      className="text-right text-2xl font-bold bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto w-full"
+                    />
                   </div>
                 </div>
 
-                {/* Token Picker Dropdown - Absolute positioned overlay */}
-                {showTokenPicker && (
-                  <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-card border border-border rounded-lg shadow-2xl z-10 max-h-[400px] overflow-hidden flex flex-col">
-                    {/* Search Input */}
-                    <div className="relative mb-3">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Search tokens..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 h-9"
-                        autoFocus
-                      />
-                    </div>
-
-                    {/* Popular Tokens Label */}
-                    {!searchQuery && (
-                      <div className="text-xs font-medium text-muted-foreground mb-2 px-1">
-                        Popular Tokens
-                      </div>
-                    )}
-
-                    {/* Token List - Scrollable */}
-                    <div className="overflow-y-auto flex-1 -mx-1 px-1 space-y-1">
-                      {isSearching ? (
-                        <div className="text-center py-8 text-sm text-muted-foreground">
-                          Searching...
-                        </div>
-                      ) : filteredTokens.length === 0 ? (
-                        <div className="text-center py-8 text-sm text-muted-foreground">
-                          No tokens found
-                        </div>
-                      ) : (
-                        filteredTokens.slice(0, 50).map((token) => (
-                          <button
-                            key={token.address}
-                            onClick={() => handleSelectToken(token)}
-                            className="w-full px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2.5 text-left group"
-                          >
-                            {token.logoURI ? (
-                              <Image
-                                src={token.logoURI}
-                                alt={token.symbol}
-                                width={28}
-                                height={28}
-                                className="rounded-full flex-shrink-0"
-                                unoptimized
-                              />
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
-                                {token.symbol.slice(0, 2)}
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-sm group-hover:text-primary transition-colors">
-                                {token.symbol}
-                              </div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                {token.name}
-                              </div>
-                            </div>
-                            {token.tags?.includes("verified") && (
-                              <Badge
-                                variant="secondary"
-                                className="h-5 px-2 text-[10px] flex-shrink-0"
-                              >
-                                ✓
-                              </Badge>
-                            )}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
+                {/* Balance */}
+                <div className="flex justify-end mt-2">
+                  <button
+                    onClick={() => setAmount(tokenBalance.toString())}
+                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Balance: {formatCompactNumber(tokenBalance)}
+                  </button>
+                </div>
               </div>
             </div>
 
