@@ -204,35 +204,11 @@ const HEDGE_DOCUMENT = {
   uploadedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
 };
 
-/**
- * Helper to calculate days to/past maturity (optimized)
- */
-function calculateDays(maturityDate: string): { daysToMaturity?: number; daysPastDue?: number } {
-  const maturity = new Date(maturityDate);
+// Pre-computed static template for 15 receivables (computed once at module load)
+// This avoids expensive date calculations on every call
+const RECEIVABLE_TEMPLATE = (() => {
+  const baseDate = NOW_MS;
 
-  if (isNaN(maturity.getTime())) {
-    console.warn('Invalid maturity date detected', { maturityDate });
-    return {};
-  }
-
-  const diffMs = maturity.getTime() - NOW_MS;
-  const diffDays = Math.floor(diffMs / MS_PER_DAY);
-
-  if (diffDays >= 0) {
-    return { daysToMaturity: diffDays };
-  } else {
-    return { daysPastDue: Math.abs(diffDays) };
-  }
-}
-
-/**
- * Generate fixed 15 mock receivables scaled to vault raised amount
- * Uses deterministic data for consistency
- */
-function generateFixedReceivables(vaultRaised: number, status: ReceivableStatus): Receivable[] {
-  const baseDate = new Date();
-
-  // Fixed payer distribution (realistic Brazilian healthcare payers)
   const payers = [
     "SUS - Sistema Único de Saúde",
     "Unimed São Paulo",
@@ -242,65 +218,70 @@ function generateFixedReceivables(vaultRaised: number, status: ReceivableStatus)
     "Golden Cross",
   ];
 
-  // Fixed originator distribution
   const originators = [
     "Saúde+ Clínica",
     "VidaMed Hospital",
     "Hospital São Lucas",
   ];
 
-  // 15 fixed receivables with deterministic sizes (as % of vault raised)
-  // Total face value will be ~120-130% of vault raised (typical advance rate ~80%)
   const sizeDistribution = [
-    0.15, 0.12, 0.10, 0.09, 0.08,  // Top 5: 54%
-    0.07, 0.06, 0.06, 0.05, 0.05,  // Mid 5: 29%
-    0.04, 0.04, 0.03, 0.03, 0.03   // Low 5: 17%
-  ]; // Total: 100% of raised amount
+    0.15, 0.12, 0.10, 0.09, 0.08,
+    0.07, 0.06, 0.06, 0.05, 0.05,
+    0.04, 0.04, 0.03, 0.03, 0.03
+  ];
 
-  // Scale to face value (assuming ~80% advance rate on average)
-  const totalFaceValue = vaultRaised / 0.80;
+  return Array.from({ length: 15 }, (_, i) => {
+    const issueDate = baseDate - ((15 + i * 3) * MS_PER_DAY);
+    const maturityDate = issueDate + ((45 + i * 4) * MS_PER_DAY);
 
-  const receivables: Receivable[] = [];
-
-  for (let i = 0; i < 15; i++) {
-    const faceValue = totalFaceValue * sizeDistribution[i];
-    const advancePct = 0.75 + (i % 5) * 0.03; // 75-87% range, deterministic
-    const costBasis = faceValue * advancePct;
-
-    // Deterministic dates based on index
-    const issueDate = new Date(baseDate);
-    issueDate.setDate(issueDate.getDate() - (15 + i * 3)); // Staggered 15-60 days ago
-
-    const maturityDate = new Date(issueDate);
-    maturityDate.setDate(maturityDate.getDate() + (45 + i * 4)); // 45-101 day terms
-
-    // Deterministic assignments
-    const originator = originators[i % originators.length];
-    const payer = payers[i % payers.length];
-
-    receivables.push({
-      id: `INV-${(1001 + i).toString()}`,
-      originator,
-      payer,
-      currency: 'BRL',
-      faceValue: parseFloat(faceValue.toFixed(2)),
-      costBasis: parseFloat(costBasis.toFixed(2)),
-      advancePct: parseFloat(advancePct.toFixed(4)),
-      expectedRepayment: parseFloat(faceValue.toFixed(2)),
-      issueDate: issueDate.toISOString(),
-      maturityDate: maturityDate.toISOString(),
-      ...calculateDays(maturityDate.toISOString()),
-      status,
+    return {
+      id: `INV-${1001 + i}`,
+      originator: originators[i % originators.length],
+      payer: payers[i % payers.length],
+      currency: 'BRL' as const,
+      sizeRatio: sizeDistribution[i],
+      advancePct: 0.75 + (i % 5) * 0.03,
+      issueDate: new Date(issueDate).toISOString(),
+      maturityDate: new Date(maturityDate).toISOString(),
+      maturityDays: Math.floor((maturityDate - NOW_MS) / MS_PER_DAY),
       links: {
         invoiceUrl: `https://docs.vitalfi.io/invoices/INV-${1001 + i}.pdf`,
         assignmentUrl: `https://docs.vitalfi.io/assignments/ASG-${1001 + i}.pdf`,
         txUrl: `https://solscan.io/tx/mock${(1001 + i).toString(36)}`,
       },
-      notes: status === 'Disputed' ? 'Payment delayed due to administrative review' : undefined,
-    });
-  }
+    };
+  });
+})();
 
-  return receivables;
+/**
+ * Generate fixed 15 mock receivables scaled to vault raised amount
+ * Uses pre-computed template for instant generation
+ */
+function generateFixedReceivables(vaultRaised: number, status: ReceivableStatus): Receivable[] {
+  const totalFaceValue = vaultRaised / 0.80;
+
+  return RECEIVABLE_TEMPLATE.map((template) => {
+    const faceValue = totalFaceValue * template.sizeRatio;
+    const costBasis = faceValue * template.advancePct;
+
+    return {
+      id: template.id,
+      originator: template.originator,
+      payer: template.payer,
+      currency: template.currency,
+      faceValue: parseFloat(faceValue.toFixed(2)),
+      costBasis: parseFloat(costBasis.toFixed(2)),
+      advancePct: parseFloat(template.advancePct.toFixed(4)),
+      expectedRepayment: parseFloat(faceValue.toFixed(2)),
+      issueDate: template.issueDate,
+      maturityDate: template.maturityDate,
+      daysToMaturity: template.maturityDays >= 0 ? template.maturityDays : undefined,
+      daysPastDue: template.maturityDays < 0 ? Math.abs(template.maturityDays) : undefined,
+      status,
+      links: template.links,
+      notes: status === 'Disputed' ? 'Payment delayed due to administrative review' : undefined,
+    };
+  });
 }
 
 /**
@@ -311,8 +292,10 @@ function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
   let costBasisTotal = 0;
   let outstandingTotal = 0;
   let weightedDays = 0;
-  const originatorTotals: Record<string, number> = {};
-  const payerTotals: Record<string, number> = {};
+  let maxOriginatorTotal = 0;
+  let maxPayerTotal = 0;
+  const originatorTotals = new Map<string, number>();
+  const payerTotals = new Map<string, number>();
 
   // Single pass through receivables
   for (const r of receivables) {
@@ -323,37 +306,28 @@ function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
       outstandingTotal += r.expectedRepayment;
     }
 
-    originatorTotals[r.originator] = (originatorTotals[r.originator] || 0) + r.faceValue;
-    payerTotals[r.payer] = (payerTotals[r.payer] || 0) + r.faceValue;
+    // Track concentrations inline
+    const originatorTotal = (originatorTotals.get(r.originator) || 0) + r.faceValue;
+    originatorTotals.set(r.originator, originatorTotal);
+    if (originatorTotal > maxOriginatorTotal) maxOriginatorTotal = originatorTotal;
+
+    const payerTotal = (payerTotals.get(r.payer) || 0) + r.faceValue;
+    payerTotals.set(r.payer, payerTotal);
+    if (payerTotal > maxPayerTotal) maxPayerTotal = payerTotal;
+
+    // Calculate weighted days inline
+    const days = r.daysToMaturity || 0;
+    weightedDays += r.faceValue * days;
   }
-
-  // Calculate WAL in second pass (need totalNotional first)
-  if (faceValueTotal > 0) {
-    for (const r of receivables) {
-      const days = r.daysToMaturity || 0;
-      weightedDays += (r.faceValue / faceValueTotal) * days;
-    }
-  }
-
-  // Find max concentrations
-  const originatorValues = Object.values(originatorTotals);
-  const topOriginatorPct = originatorValues.length > 0 && faceValueTotal > 0
-    ? Math.max(...originatorValues) / faceValueTotal
-    : 0;
-
-  const payerValues = Object.values(payerTotals);
-  const topPayerPct = payerValues.length > 0 && faceValueTotal > 0
-    ? Math.max(...payerValues) / faceValueTotal
-    : 0;
 
   return {
     receivableCount: receivables.length,
     faceValueTotal: parseFloat(faceValueTotal.toFixed(2)),
     costBasisTotal: parseFloat(costBasisTotal.toFixed(2)),
     outstandingTotal: parseFloat(outstandingTotal.toFixed(2)),
-    weightedAvgLifeDays: Math.round(weightedDays),
-    topOriginatorPct: parseFloat(topOriginatorPct.toFixed(4)),
-    topPayerPct: parseFloat(topPayerPct.toFixed(4)),
+    weightedAvgLifeDays: faceValueTotal > 0 ? Math.round(weightedDays / faceValueTotal) : 0,
+    topOriginatorPct: faceValueTotal > 0 ? parseFloat((maxOriginatorTotal / faceValueTotal).toFixed(4)) : 0,
+    topPayerPct: faceValueTotal > 0 ? parseFloat((maxPayerTotal / faceValueTotal).toFixed(4)) : 0,
   };
 }
 
