@@ -120,7 +120,7 @@ export function ActivityFeed({ vaultId }: ActivityFeedProps) {
                         <div className="flex items-center gap-2">
                           <Icon className={`w-4 h-4 ${color} flex-shrink-0`} />
                           <Badge variant="outline" className="capitalize text-xs">
-                            {event.tag}
+                            {event.note || event.tag}
                           </Badge>
                         </div>
                       </TableCell>

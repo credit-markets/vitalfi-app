@@ -154,9 +154,55 @@ export function exportReceivablesCsv(
 // Mock Data Generation (Fallback until backend is ready)
 // ============================================================================
 
-// Cache current time to avoid creating new Date() for each receivable
 const NOW_MS = Date.now();
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+// Cache static documents to avoid recreating on every call
+const BASE_DOCUMENTS = [
+  {
+    id: 'doc-1',
+    name: 'Term Sheet.pdf',
+    type: 'pdf' as const,
+    url: `https://docs.vitalfi.io/term-sheet.pdf`,
+    uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'doc-2',
+    name: 'Collateral Schedule.csv',
+    type: 'csv' as const,
+    url: `https://docs.vitalfi.io/collateral.csv`,
+    uploadedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'doc-3',
+    name: 'Purchase Agreement.pdf',
+    type: 'pdf' as const,
+    url: `https://docs.vitalfi.io/purchase-agreement.pdf`,
+    uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'doc-4',
+    name: 'Servicing Agreement.pdf',
+    type: 'pdf' as const,
+    url: `https://docs.vitalfi.io/servicing.pdf`,
+    uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'doc-5',
+    name: 'Monthly Report - Current.pdf',
+    type: 'pdf' as const,
+    url: `https://docs.vitalfi.io/report-current.pdf`,
+    uploadedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+const HEDGE_DOCUMENT = {
+  id: 'doc-6',
+  name: 'Hedge Confirmation.pdf',
+  type: 'pdf' as const,
+  url: `https://docs.vitalfi.io/hedge-confirmation.pdf`,
+  uploadedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+};
 
 /**
  * Helper to calculate days to/past maturity (optimized)
@@ -311,15 +357,40 @@ function calculateAnalytics(receivables: Receivable[]): CollateralAnalytics {
   };
 }
 
+// Cache mock data results by vault parameters to avoid regeneration
+const mockDataCache = new Map<string, ReturnType<typeof generateMockTransparencyDataInternal>>();
+
 /**
  * Generate mock transparency data for any vault based on its status
- *
- * This is a fallback used when the backend endpoint is not yet available.
- * Once the backend is ready, this will no longer be called.
- *
- * Uses fixed 15 receivables scaled to vault raised amount for realistic sizing.
+ * Results are cached by vaultStatus + vaultRaised + vaultMaturityDate
  */
 export function generateMockTransparencyData(
+  vaultStatus: string,
+  vaultRaised: number,
+  vaultMaturityDate: string
+) {
+  const cacheKey = `${vaultStatus}:${vaultRaised}:${vaultMaturityDate}`;
+
+  const cached = mockDataCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const result = generateMockTransparencyDataInternal(vaultStatus, vaultRaised, vaultMaturityDate);
+  mockDataCache.set(cacheKey, result);
+
+  // Limit cache size to prevent memory leaks (keep last 20 vaults)
+  if (mockDataCache.size > 20) {
+    const firstKey = mockDataCache.keys().next().value;
+    if (firstKey) {
+      mockDataCache.delete(firstKey);
+    }
+  }
+
+  return result;
+}
+
+function generateMockTransparencyDataInternal(
   vaultStatus: string,
   vaultRaised: number,
   vaultMaturityDate: string
@@ -368,56 +439,9 @@ export function generateMockTransparencyData(
 
   const analytics = calculateAnalytics(receivables);
 
-  // Documents
   const documents: VaultDocuments = {
-    files: [
-      {
-        id: 'doc-1',
-        name: 'Term Sheet.pdf',
-        type: 'pdf' as const,
-        url: `https://docs.vitalfi.io/term-sheet.pdf`,
-        uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'doc-2',
-        name: 'Collateral Schedule.csv',
-        type: 'csv' as const,
-        url: `https://docs.vitalfi.io/collateral.csv`,
-        uploadedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'doc-3',
-        name: 'Purchase Agreement.pdf',
-        type: 'pdf' as const,
-        url: `https://docs.vitalfi.io/purchase-agreement.pdf`,
-        uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'doc-4',
-        name: 'Servicing Agreement.pdf',
-        type: 'pdf' as const,
-        url: `https://docs.vitalfi.io/servicing.pdf`,
-        uploadedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'doc-5',
-        name: 'Monthly Report - Current.pdf',
-        type: 'pdf' as const,
-        url: `https://docs.vitalfi.io/report-current.pdf`,
-        uploadedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ],
+    files: hedge ? [...BASE_DOCUMENTS, HEDGE_DOCUMENT] : BASE_DOCUMENTS,
   };
-
-  if (hedge) {
-    documents.files.push({
-      id: 'doc-6',
-      name: 'Hedge Confirmation.pdf',
-      type: 'pdf' as const,
-      url: `https://docs.vitalfi.io/hedge-confirmation.pdf`,
-      uploadedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-    });
-  }
 
   return {
     collateral: {

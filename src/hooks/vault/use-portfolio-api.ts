@@ -31,7 +31,7 @@ export type PortfolioPosition = {
 };
 
 export type PortfolioActivity = {
-  type: 'Deposit' | 'Claim';
+  type: 'Deposit' | 'Claim' | 'Vault Created' | 'Funding Finalized' | 'Matured' | 'Vault Closed' | 'System';
   amountSol: number;
   vaultStatus: VaultStatus;
   date: string;
@@ -174,33 +174,50 @@ export function usePortfolioAPI() {
     return results;
   }, [positionsResponse, vaultsResponse]);
 
+  // Map backend activity types to display names
+  const mapActivityType = (type: string): PortfolioActivity['type'] => {
+    switch (type) {
+      case "deposit":
+        return "Deposit";
+      case "claim":
+        return "Claim";
+      case "vault_created":
+        return "Vault Created";
+      case "funding_finalized":
+        return "Funding Finalized";
+      case "matured":
+        return "Matured";
+      case "vault_closed":
+        return "Vault Closed";
+      case "authority_withdraw":
+        return "System";
+      default:
+        return "System";
+    }
+  };
+
   // Transform activity DTOs to portfolio activity
   const activity = useMemo<PortfolioActivity[]>(() => {
     if (!activityResponse || !vaultsResponse) return [];
 
-    return activityResponse.items
-      .filter(
-        (act) =>
-          act.type === "deposit" || act.type === "claim"
-      )
-      .map((act) => {
-        const vault = vaultsResponse.items.find(
-          (v) => v.vaultPda === act.vaultPda
-        );
-        const decimals = act.assetMint ? getTokenDecimals(act.assetMint) : SOL_DECIMALS;
+    return activityResponse.items.map((act) => {
+      const vault = vaultsResponse.items.find(
+        (v) => v.vaultPda === act.vaultPda
+      );
+      const decimals = act.assetMint ? getTokenDecimals(act.assetMint) : SOL_DECIMALS;
 
-        return {
-          type: act.type === "deposit" ? "Deposit" : "Claim",
-          amountSol: fromBaseUnits(act.amount, decimals),
-          vaultStatus: vault?.status || 'Funding',
-          date: act.blockTime || new Date().toISOString(),
-          txSig: act.txSig,
-          status: "success" as const, // Confirmed transactions only
-          vaultId: vault?.vaultId || "",
-          vaultName: vault?.vaultId || "",
-          assetMint: act.assetMint || undefined,
-        };
-      });
+      return {
+        type: mapActivityType(act.type),
+        amountSol: act.amount ? fromBaseUnits(act.amount, decimals) : 0,
+        vaultStatus: vault?.status || 'Funding',
+        date: act.blockTime || new Date().toISOString(),
+        txSig: act.txSig,
+        status: "success" as const,
+        vaultId: vault?.vaultId || "",
+        vaultName: vault?.vaultId || "",
+        assetMint: act.assetMint || undefined,
+      };
+    });
   }, [activityResponse, vaultsResponse]);
 
   // Calculate summary
