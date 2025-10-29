@@ -11,8 +11,9 @@ import type {
   JupiterToken,
 } from "./types";
 
-const JUPITER_API_BASE = "https://quote-api.jup.ag/v6";
-const JUPITER_TOKEN_LIST = "https://token.jup.ag/strict";
+// Use the free tier API endpoint (no auth required)
+const JUPITER_API_BASE = "https://public.jupiterapi.com";
+const JUPITER_TOKEN_LIST = "https://tokens.jup.ag/tokens?tags=verified";
 
 /**
  * Fetch swap quote from Jupiter
