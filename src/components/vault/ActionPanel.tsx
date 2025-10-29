@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
+import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { useDeposit } from "@/hooks/mutations";
+import { SwapModal } from "./SwapModal";
 import { env } from "@/lib/env";
 import { formatDate, formatNumber, daysBetween } from "@/lib/utils";
 import { getTokenDecimals, getTokenSymbol } from "@/lib/sdk/config";
@@ -28,6 +30,7 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
   const { connected } = useWallet();
   const { info, computed } = useVaultAPI(vaultId);
   const [depositAmount, setDepositAmount] = useState("");
+  const [showSwapModal, setShowSwapModal] = useState(false);
   const deposit = useDeposit();
 
   // Get token mint (use default if not loaded yet)
@@ -108,16 +111,44 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
   };
 
   return (
-    <div className="lg:sticky lg:top-24">
-      <Card className="p-4 sm:p-5 bg-card border border-primary/20">
-        <div className="space-y-3 sm:space-y-4">
-          {/* Title */}
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <h3 className="text-lg sm:text-xl font-bold">
-              Participate in Vault
-            </h3>
-          </div>
+    <>
+      <SwapModal
+        isOpen={showSwapModal}
+        onClose={() => setShowSwapModal(false)}
+        onSwapSuccess={(amount) => {
+          setDepositAmount(amount.toFixed(2));
+        }}
+      />
+      <div className="lg:sticky lg:top-24">
+        <Card className="p-4 sm:p-5 bg-card border border-primary/20">
+          <div className="space-y-3 sm:space-y-4">
+            {/* Title */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h3 className="text-lg sm:text-xl font-bold">
+                  Participate in Vault
+                </h3>
+              </div>
+              {/* Jupiter Swap Button */}
+              {connected && computed?.canDeposit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSwapModal(true)}
+                  className="gap-1.5"
+                >
+                  <span className="hidden sm:inline">Convert</span>
+                  <Image
+                    src="/jup.png"
+                    alt="Jupiter"
+                    width={16}
+                    height={16}
+                    className="opacity-80"
+                  />
+                </Button>
+              )}
+            </div>
 
           {/* Disabled State Banner */}
           {disabledMessage && (
@@ -262,5 +293,6 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
         </div>
       </Card>
     </div>
+    </>
   );
 }
