@@ -45,10 +45,10 @@ export function PortfolioHeader({ summary, positions }: PortfolioHeaderProps) {
       tooltip: "Expected yield across active positions at maturity",
     },
     {
-      label: "Expected Value at Maturity",
-      value: `${formatCompactNumber(summary.totalAtMaturitySol)} ${tokenSymbol}`,
+      label: "Average Yield",
+      value: `${summary.averageApyPct.toFixed(2)}%`,
       icon: Target,
-      tooltip: "Total principal + expected yield",
+      tooltip: "Weighted average APY across active positions",
     },
     {
       label: "Next Maturity",
