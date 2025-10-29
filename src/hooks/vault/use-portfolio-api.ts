@@ -46,6 +46,7 @@ export type PortfolioSummary = {
   totalDepositedSol: number;
   totalExpectedYieldSol: number; // across active positions
   totalAtMaturitySol: number;
+  averageApyPct: number; // weighted average APY across active positions
 };
 
 /**
@@ -243,10 +244,24 @@ export function usePortfolioAPI() {
 
     const totalAtMaturitySol = totalDepositedSol + totalExpectedYieldSol;
 
+    // Calculate weighted average APY across active positions
+    const activePositions = positions.filter(
+      (p) => p.status !== "Matured" && p.status !== "Canceled" && p.status !== "Closed"
+    );
+
+    const averageApyPct =
+      activePositions.length > 0
+        ? activePositions.reduce(
+            (sum, p) => sum + p.expectedApyPct * p.depositedSol,
+            0
+          ) / totalDepositedSol
+        : 0;
+
     return {
       totalDepositedSol,
       totalExpectedYieldSol,
       totalAtMaturitySol,
+      averageApyPct,
     };
   }, [positions]);
 

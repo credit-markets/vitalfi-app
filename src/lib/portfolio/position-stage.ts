@@ -7,6 +7,7 @@ import type { VaultStatus } from "@/types/vault";
 
 export type PositionStage =
   | 'funding'
+  | 'active'
   | 'matured-claimable'
   | 'matured-claimed'
   | 'canceled-refundable'
@@ -22,8 +23,10 @@ export function getPositionStage(
 ): PositionStage {
   switch (vaultStatus) {
     case 'Funding':
-    case 'Active':
       return 'funding';
+
+    case 'Active':
+      return 'active';
 
     case 'Matured':
       return hasClaimed ? 'matured-claimed' : 'matured-claimable';
@@ -47,6 +50,8 @@ export function getStageBadgeText(stage: PositionStage): string {
   switch (stage) {
     case 'funding':
       return 'Funding';
+    case 'active':
+      return 'Active';
     case 'matured-claimable':
       return 'Matured';
     case 'matured-claimed':
@@ -68,6 +73,8 @@ export function getStageBadgeText(stage: PositionStage): string {
 export function getStageBadgeColors(stage: PositionStage): string {
   switch (stage) {
     case 'funding':
+      return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+    case 'active':
       return 'bg-primary/10 text-primary border-primary/20';
     case 'matured-claimable':
     case 'matured-claimed':
@@ -87,13 +94,18 @@ export function getStageBadgeColors(stage: PositionStage): string {
  */
 export function getStateLineText(
   stage: PositionStage,
-  fundingEndsInDays?: number
+  fundingEndsInDays?: number,
+  maturityInDays?: number
 ): string {
   switch (stage) {
     case 'funding':
       return fundingEndsInDays !== undefined
         ? `Funding ends in ${fundingEndsInDays} ${fundingEndsInDays === 1 ? 'day' : 'days'}`
         : 'Funding phase active';
+    case 'active':
+      return maturityInDays !== undefined
+        ? `Matures in ${maturityInDays} ${maturityInDays === 1 ? 'day' : 'days'}`
+        : 'Vault is active';
     case 'matured-claimable':
       return 'Vault matured — funds ready to claim';
     case 'matured-claimed':
@@ -115,6 +127,7 @@ export function getStateLineText(
 export function getOutcomeTitle(stage: PositionStage): string {
   switch (stage) {
     case 'funding':
+    case 'active':
       return 'Projected Return at Maturity';
     case 'matured-claimable':
     case 'matured-claimed':
