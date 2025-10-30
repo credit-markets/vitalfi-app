@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useVaultAPI } from "@/hooks/vault/use-vault-api";
 import { useDeposit } from "@/hooks/mutations";
 import { SwapModal } from "./SwapModal";
+import { MintDevnetUSDT } from "./MintDevnetUSDT";
 import { env } from "@/lib/env";
 import { formatDate, formatNumber, daysBetween } from "@/lib/utils";
 import { getTokenDecimals, getTokenSymbol } from "@/lib/sdk/config";
@@ -119,7 +120,8 @@ export function ActionPanel({ vaultId }: ActionPanelProps) {
           setDepositAmount(amount.toFixed(2));
         }}
       />
-      <div className="lg:sticky lg:top-24">
+      <div className="lg:sticky lg:top-24 space-y-4">
+        <MintDevnetUSDT />
         <Card className="p-4 sm:p-5 bg-card border border-primary/20">
           <div className="space-y-3 sm:space-y-4">
             {/* Title */}
